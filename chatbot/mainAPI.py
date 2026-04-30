@@ -19,11 +19,14 @@ client = OpenAI(
 )
 
 HYPERPARAMETERS = {
-    "token_limit": 4096,
-    "token_multiplier": 1.6,
+    "token_limit": 32768,
+    "token_multiplier": 1.5,
     "stream": True,
     "reasoning_effort": "high",
-    "system_prompt": "Answer in a concise manner. Use the execute_terminal_command tool if you need to access the user's system.",
+    "system_prompt": "You are a professional software engineer. "
+    + "Ensure maintainability and readability in your responses. "
+    + "Use tools when necesssary to provide accurate and efficient answers. "
+    + "User is using Windows Powershell as their terminal.",
 }
 
 def printStreamResponse(response):
@@ -116,6 +119,13 @@ def multiTurnLoop(model_name):
     
         # Inner loop to handle potential back-and-forth tool executions
         while True:
+            # Calculate available tokens safely
+            available_tokens = HYPERPARAMETERS["token_limit"] - token_estimates["total_tokens"]
+            
+            if available_tokens <= 0:
+                print("\n\033[91m[Error] Context window exceeded. Please restart the conversation to continue.\033[0m")
+                break # Breaks the inner loop to prevent the crash
+
             response = callModel(
                 model_name=model_name,
                 token_limit=HYPERPARAMETERS["token_limit"] - token_estimates["total_tokens"],
