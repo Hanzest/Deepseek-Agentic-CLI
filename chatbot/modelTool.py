@@ -31,8 +31,13 @@ def execute_terminal_command(command: str) -> str:
     
     if consent == 'y':
         try:
-            # Capture output and errors natively
-            result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
+            # Optimization: Add timeout=15 seconds to prevent lagged in Python
+            result = subprocess.run(
+                ["powershell", "-Command", command], 
+                capture_output=True, 
+                text=True,
+                timeout=15 
+            )
             output = result.stdout if result.stdout else result.stderr
             
             if not output:
@@ -40,6 +45,13 @@ def execute_terminal_command(command: str) -> str:
             
             print(f"\033[92m[Execution Result]:\033[0m\n{output}")    
             return output
+            
+        # Optimization: Handle exception when timeout is exceeded
+        except subprocess.TimeoutExpired:
+            error_msg = "Error: Command execution timed out after 15 seconds. Process terminated."
+            print(f"\033[91m{error_msg}\033[0m")
+            return error_msg
+            
         except Exception as e:
             error_msg = f"Error executing command: {str(e)}"
             print(f"\033[91m{error_msg}\033[0m")

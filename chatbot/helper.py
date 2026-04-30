@@ -1,3 +1,11 @@
+import tiktoken
+
+try:
+    ENCODER = tiktoken.get_encoding("cl100k_base")
+except Exception as e:
+    print(f"Error loading tokenizer: {str(e)}. Token estimation will be less accurate.")
+    ENCODER = None  # Fallback to None if tokenizer fails to load
+
 def startChat():
     print("Choose a model to interact with:")
     print("1. deepseek-v4-flash")
@@ -49,21 +57,28 @@ def _estimate_text_tokens(content, token_multiplier):
     """
     if not content:
         return 0
+    
+    # Optimization: Use tiktoken if available for more accurate token counts
+    if ENCODER:
+        if isinstance(content, list):
+            flat = "".join(str(item) for item in content)
+            return len(ENCODER.encode(flat))
+        elif isinstance(content, str):
+            return len(ENCODER.encode(content))
+        else:
+            return len(ENCODER.encode(str(content)))
 
+    # Fallback: heuristic estimation if tokenizer is unavailable
     if isinstance(content, list):
-        # Multimodal content blocks – flatten to a single string
         flat = "".join(str(item) for item in content)
         return (len(flat) / 4) * token_multiplier
 
     if isinstance(content, str):
         if len(content) > 10000:
-            # Character-based for massive strings (e.g. terminal / subprocess output)
             return (len(content) / 4) * token_multiplier
         else:
-            # Word-based for normal conversational text
             return len(content.split()) * token_multiplier
 
-    # Fallback for unexpected types
     return (len(str(content)) / 4) * token_multiplier
 
 
@@ -99,7 +114,7 @@ def _estimate_tool_call_tokens(tool_call, token_multiplier):
         func_name = func.get("name", "")
         tokens += _estimate_text_tokens(func_name, token_multiplier)
 
-        # Arguments (JSON string) – always use character-based for precision
+        # Arguments (JSON string) ï¿½ always use character-based for precision
         func_args = func.get("arguments", "")
         if isinstance(func_args, str) and func_args:
             tokens += (len(func_args) / 4) * token_multiplier

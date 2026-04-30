@@ -1,5 +1,7 @@
 import os
 import json
+from pyexpat.errors import messages
+from pyexpat.errors import messages
 from urllib import response
 from xml.parsers.expat import model
 from sympy import content
@@ -107,7 +109,13 @@ def multiTurnLoop(model_name):
     available_tools = [terminal_tool_schema]
 
     while not stop:
+        # Optimization: Sliding Context Window
+        # If the total tokens exceed 80% of the limit, remove older messages (keeping the system prompt)
         token_estimates = estimateTokens(messages, reasoning_history, HYPERPARAMETERS["token_multiplier"])
+        while token_estimates["total_tokens"] > (HYPERPARAMETERS["token_limit"] * 0.8) and len(messages) > 3:
+            messages.pop(1) # Remove the oldest user message
+            messages.pop(1) # Remove the corresponding assistant message
+            token_estimates = estimateTokens(messages, reasoning_history, HYPERPARAMETERS["token_multiplier"])
         print(f"System:\n-Input Tokens: {token_estimates['input_tokens']}.\n-Output Tokens: {token_estimates['output_tokens']}\n-Total Tokens: {token_estimates['total_tokens']}.")
         
         user_input = input("Enter your message (type 'exit' to quit):\n")
@@ -138,11 +146,9 @@ def multiTurnLoop(model_name):
 
             reasoning_content, content, tool_calls = printStreamResponse(response)
             
-            # Formulate Assistant's response to append to history
+            # Optimization: Standardised Message History
+            # Not passing reasoning_content into history
             assistant_message = {"role": "assistant"}
-
-            if reasoning_content: assistant_message["reasoning_content"] = reasoning_content
-
             if content: assistant_message["content"] = content
             if tool_calls: assistant_message["tool_calls"] = tool_calls
             messages.append(assistant_message)
