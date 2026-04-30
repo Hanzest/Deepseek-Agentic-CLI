@@ -1,11 +1,15 @@
-import os
+﻿import os
 import json
 from helper import startChat, estimateTokens, thinkingToggle
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Import the tool schema and execution function
-from modelTool import terminal_tool_schema, execute_terminal_command
+# Import the tool schemas and execution functions
+from modelTool import (
+    terminal_tool_schema, execute_terminal_command,
+    patch_file_schema, patch_file,
+    read_file_chunk_schema, read_file_chunk,
+)
 
 load_dotenv()
 
@@ -23,7 +27,15 @@ HYPERPARAMETERS = {
     "system_prompt": "You are a professional software engineer. "
     + "Ensure maintainability and readability in your responses. "
     + "Use tools when necesssary to provide accurate and efficient answers. "
-    + "User is using Windows Powershell as their terminal.",
+    + "User is using Windows Powershell as their terminal. "
+    + "Read docs directory markdowns for information about the codebase and coding style. ",
+}
+
+# Registry mapping tool function names to (schema, handler)
+TOOL_REGISTRY = {
+    "execute_terminal_command": (terminal_tool_schema, execute_terminal_command),
+    "patch_file":                (patch_file_schema, patch_file),
+    "read_file_chunk":           (read_file_chunk_schema, read_file_chunk),
 }
 
 def printStreamResponse(response):
@@ -101,7 +113,7 @@ def multiTurnLoop(model_name):
     stop = False
     reasoning_history = ""
     messages = [{"role": "system", "content": HYPERPARAMETERS["system_prompt"]}]
-    available_tools = [terminal_tool_schema]
+    available_tools = [schema for schema, _ in TOOL_REGISTRY.values()]
 
     while not stop:
         # Optimization: Sliding Context Window
@@ -154,8 +166,9 @@ def multiTurnLoop(model_name):
                     func_name = tc["function"]["name"]
                     func_args = json.loads(tc["function"]["arguments"])
                     
-                    if func_name == "execute_terminal_command":
-                        result = execute_terminal_command(func_args.get("command", ""))
+                    if func_name in TOOL_REGISTRY:
+                        _, handler = TOOL_REGISTRY[func_name]
+                        result = handler(**func_args)
                     else:
                         result = f"Error: Tool '{func_name}' not found."
                         
