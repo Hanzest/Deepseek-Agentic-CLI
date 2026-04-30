@@ -1,43 +1,59 @@
-﻿# Agent Guidelines — Avoid Errors & Bugs
+﻿# Agent Guidelines — Tool Usage & Conventions
 
-## 1. Always run from project root
+## 1. Path conventions
 
-```powershell
-cd K:\Khanhs\Study\Projects\2026\Deepseek_Chatbot\chatbot
-```
+All tool paths are relative to the `chatbot/` directory (the project root). The
+runtime automatically sets the working directory correctly. Prefer relative paths
+(`helper.py`, `docs/agents.md`) over absolute paths.
 
-Working-directory mistakes are the #1 source of `ModuleNotFoundError`.
+## 2. Tool consent model
 
-## 2. File encoding — always UTF-8
+Three tools require explicit user consent (`y/n` prompt) before executing:
 
-When creating/editing files, always use `-Encoding UTF8`:
+| Tool | Why |
+|---|---|
+| `execute_terminal_command` | Arbitrary shell execution |
+| `patch_file` | Mutates source files |
+| `fetch_url` | Makes network requests |
+
+The other three (`read_file_chunk`, `get_project_tree`, `search_web`) run
+immediately and are read-only / non-destructive.
+
+When approving terminal commands: the user's shell is **Windows PowerShell**.
+Use `Remove-Item`, `Get-ChildItem`, `Set-Content`, etc. — not Unix commands.
+
+## 3. File encoding — always UTF-8
+
+When creating/editing files via terminal, always use `-Encoding UTF8`:
 
 ```powershell
 Set-Content -Path some_file.py -Encoding UTF8 -Value '...'
 ```
 
-**Never** use em dashes (`—`), smart quotes, or other non-ASCII characters in Python source files unless you also add `# -*- coding: utf-8 -*-` at the top. Prefer plain ASCII (`--`, `"`, `'`).
+Avoid em dashes, smart quotes, and other non-ASCII characters in source files.
+Prefer plain ASCII: `--`, `"`, `'`.
 
-## 3. Do NOT read or expose `.env`
+## 4. Do NOT read or expose `.env`
 
-The `.env` file contains API keys. Never `cat`/`Get-Content` it, never include it in responses, never commit it.
+The `.env` file contains API keys. Never read it, log it, or include it in
+responses. It is git-ignored.
 
-## 4. Beware of stale `.pyc` caches
+## 5. Stale `.pyc` caches
 
-If imports behave weirdly after code changes, clear the cache:
+If imports misbehave after code changes, clear bytecode caches:
 
 ```powershell
 Remove-Item -Recurse -Force __pycache__ -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force tests\__pycache__ -ErrorAction SilentlyContinue
 ```
 
-## 5. PowerShell ≠ Bash
+## 6. PowerShell quick reference
 
 | Task | PowerShell |
 |---|---|
-| List files | `Get-ChildItem` (not `ls` for scripts) |
+| List files | `Get-ChildItem` |
 | Write file | `Set-Content -Path ... -Encoding UTF8` |
 | Read file | `Get-Content ...` |
 | Remove dir | `Remove-Item -Recurse -Force ...` |
 | Redirect stderr | `2>&1` at end of command |
 | Line continuation | backtick `` ` `` (not `\`) |
+| Environment var | `$env:VAR_NAME` |

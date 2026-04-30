@@ -1,5 +1,13 @@
 ﻿import os
+import sys
 import json
+
+# Ensure the script can be run from any directory by adding the script's own
+# directory to sys.path, so imports of helper and modelTool always resolve.
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+
 from helper import startChat, estimateTokens, thinkingToggle
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -9,9 +17,13 @@ from modelTool import (
     terminal_tool_schema, execute_terminal_command,
     patch_file_schema, patch_file,
     read_file_chunk_schema, read_file_chunk,
+    get_project_tree_schema, get_project_tree,
+    search_web_schema, search_web,
+    fetch_url_schema, fetch_url,
 )
 
-load_dotenv()
+# Load .env from the script's directory so it works regardless of cwd
+load_dotenv(os.path.join(_SCRIPT_DIR, ".env"))
 
 # Get from .env file
 client = OpenAI(
@@ -36,6 +48,9 @@ TOOL_REGISTRY = {
     "execute_terminal_command": (terminal_tool_schema, execute_terminal_command),
     "patch_file":                (patch_file_schema, patch_file),
     "read_file_chunk":           (read_file_chunk_schema, read_file_chunk),
+    "get_project_tree":          (get_project_tree_schema, get_project_tree),
+    "search_web":                (search_web_schema, search_web),
+    "fetch_url":                 (fetch_url_schema, fetch_url),
 }
 
 def printStreamResponse(response):
@@ -117,11 +132,16 @@ def multiTurnLoop(model_name):
 
     while not stop:
         # Optimization: Sliding Context Window
-        # If the total tokens exceed 80% of the limit, remove older messages (keeping the system prompt)
+        # If the total tokens exceed 80% of the limit, remove older messages safely
         token_estimates = estimateTokens(messages, reasoning_history, HYPERPARAMETERS["token_multiplier"])
         while token_estimates["total_tokens"] > (HYPERPARAMETERS["token_limit"] * 0.8) and len(messages) > 3:
-            messages.pop(1) # Remove the oldest user message
-            messages.pop(1) # Remove the corresponding assistant message
+            messages.pop(1) # Remove the oldest message
+            
+            # Keep removing until the next message is a user message.
+            # This prevents orphaned 'tool' messages or 'assistant' tool_calls.
+            while len(messages) > 1 and messages[1].get("role") != "user":
+                messages.pop(1)
+                
             token_estimates = estimateTokens(messages, reasoning_history, HYPERPARAMETERS["token_multiplier"])
         print(f"System:\n-Input Tokens: {token_estimates['input_tokens']}.\n-Output Tokens: {token_estimates['output_tokens']}\n-Total Tokens: {token_estimates['total_tokens']}.")
         
@@ -154,9 +174,9 @@ def multiTurnLoop(model_name):
             reasoning_content, content, tool_calls = printStreamResponse(response)
             
             # Optimization: Standardised Message History
-            # Not passing reasoning_content into history
             assistant_message = {"role": "assistant"}
             if content: assistant_message["content"] = content
+            if reasoning_content: assistant_message["reasoning_content"] = reasoning_content
             if tool_calls: assistant_message["tool_calls"] = tool_calls
             messages.append(assistant_message)
             
@@ -185,6 +205,11 @@ def multiTurnLoop(model_name):
                 break 
 
 if __name__ == "__main__":
+    # Change to the script's directory so all relative tool paths (e.g. ".")
+    # resolve against the chatbot/ project root, regardless of where the
+    # user invoked Python from.
+    os.chdir(_SCRIPT_DIR)
+
     model_name = startChat()
     extra_body = thinkingToggle()
     HYPERPARAMETERS["extra_body"] = extra_body
