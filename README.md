@@ -19,13 +19,12 @@ The chatbot runs in the terminal and supports **streaming responses**, **reasoni
 Deepseek_Chatbot/
 ├── .gitignore
 ├── README.md
-└── chatbot/
-    ├── .env                   # API configuration (git-ignored)
-    ├── mainAPI.py             # Entry point — chat loop, streaming, tool orchestration
-    ├── helper.py              # CLI prompts, model selection, token estimation
-    ├── modelTool.py           # 6 tool definitions and their implementations
-    └── docs/
-        └── agents.md          # Agent guidelines (tool conventions, path rules, etc.)
+├── .env                   # API configuration (git-ignored)
+├── mainAPI.py             # Entry point — chat loop, streaming, tool orchestration
+├── helper.py              # CLI prompts, model selection, token estimation
+├── modelTool.py           # 6 tool definitions and their implementations
+└── docs/
+    └── agents.md          # Agent guidelines (tool conventions, path rules, etc.)
 ```
 
 ## Requirements
@@ -54,9 +53,9 @@ pip install openai python-dotenv tiktoken pathspec duckduckgo-search requests be
 
 ## Setup
 
-1. **Clone the repository** and navigate to the `chatbot/` directory.
+1. **Clone the repository** and navigate to the project root directory.
 
-2. **Create a `.env` file** inside `chatbot/` with the following:
+2. **Create a `.env` file** in the project root with the following:
 
    ```env
    MODEL_API_KEY=your_api_key_here
@@ -72,7 +71,7 @@ pip install openai python-dotenv tiktoken pathspec duckduckgo-search requests be
 Run the chatbot from any directory:
 
 ```powershell
-python chatbot/mainAPI.py
+python mainAPI.py
 ```
 
 ### Startup Prompts
@@ -144,8 +143,8 @@ Each tool is defined as a pair:
 
 ## Agent Guidelines
 
-See [`chatbot/docs/agents.md`](chatbot/docs/agents.md) for detailed agent conventions, including:
-- Path conventions (all paths relative to `chatbot/`)
+See [`docs/agents.md`](docs/agents.md) for detailed agent conventions, including:
+- Path conventions (all paths relative to the project root)
 - Tool consent model
 - File encoding rules (always UTF-8)
 - PowerShell quick reference

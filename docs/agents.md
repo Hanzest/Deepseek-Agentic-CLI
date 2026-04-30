@@ -2,9 +2,10 @@
 
 ## 1. Path conventions
 
-All tool paths are relative to the `chatbot/` directory (the project root). The
-runtime automatically sets the working directory correctly. Prefer relative paths
-(`helper.py`, `docs/agents.md`) over absolute paths.
+All tool paths are relative to the project root (the top-level `Deepseek_Chatbot/`
+directory). The runtime automatically sets the working directory correctly via
+`os.chdir(_SCRIPT_DIR)` in `mainAPI.py`. Prefer relative paths (`helper.py`,
+`docs/agents.md`) over absolute paths.
 
 ## 2. Tool consent model
 
