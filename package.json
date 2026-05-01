@@ -1,0 +1,12 @@
+﻿{
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "openai": "^6.35.0",
+    "tiktoken": "^1.0.20",
+    "ignore": "^7.0.0",
+    "cheerio": "^1.0.0",
+    "turndown": "^7.2.0",
+    "duck-duck-scrape": "^2.2.7"
+  }
+}
+

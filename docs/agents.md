@@ -58,3 +58,7 @@ Remove-Item -Recurse -Force __pycache__ -ErrorAction SilentlyContinue
 | Redirect stderr | `2>&1` at end of command |
 | Line continuation | backtick `` ` `` (not `\`) |
 | Environment var | `$env:VAR_NAME` |
+
+## 7. Implementations style
+
+- Do not write long dash, ---, ===, or ***, emojis, or long hyphens.
