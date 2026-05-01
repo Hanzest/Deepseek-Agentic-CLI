@@ -52,7 +52,8 @@ Remove-Item -Recurse -Force __pycache__ -ErrorAction SilentlyContinue
 | Task | PowerShell |
 |---|---|
 | List files | `Get-ChildItem` |
-| Write file | `Set-Content -Path ... -Encoding UTF8` |
+| Write file (single line) | `Set-Content -Path ... -Encoding UTF8 -Value '...'` |
+| Write file (multi-line) | Use a variable: `$content = @'` newline `...` newline `'@` then `Set-Content -Path ... -Encoding UTF8 -Value $content` (PowerShell has **no heredoc**; do not use `cat > file << EOF`) |
 | Read file | `Get-Content ...` |
 | Remove dir | `Remove-Item -Recurse -Force ...` |
 | Redirect stderr | `2>&1` at end of command |

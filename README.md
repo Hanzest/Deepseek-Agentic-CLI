@@ -20,30 +20,36 @@ Deepseek_Chatbot/
 ├── .gitignore
 ├── README.md
 ├── .env                   # API configuration (git-ignored)
-├── mainAPI.py             # Entry point — chat loop, streaming, tool orchestration
-├── helper.py              # CLI prompts, model selection, token estimation
-├── modelTool.py           # 6 tool definitions and their implementations
+├── mainAPI.js             # Entry point - chat loop, streaming, tool orchestration
+├── helper.js              # CLI prompts, model selection, token estimation
+├── modelTool.js           # 6 tool definitions and their implementations
 └── docs/
     └── agents.md          # Agent guidelines (tool conventions, path rules, etc.)
 ```
 
 ## Requirements
 
-- Python 3.10+
+- Node.js 16+
 - A DeepSeek (or compatible) API key and base URL
 
-### Python Dependencies
+### JavaScript Dependencies
 
 Install with:
 
 ```powershell
-pip install openai python-dotenv tiktoken pathspec duckduckgo-search requests beautifulsoup4 markdownify
+npm install openai dotenv tiktoken pathspec duckduckgo-search requests beautifulsoup4 markdownify
+```
+
+or simply:
+
+```powershell
+npm install
 ```
 
 | Package | Purpose |
 |---|---|
 | `openai` | OpenAI-compatible API client for DeepSeek models |
-| `python-dotenv` | Load `.env` file |
+| `dotenv` | Load `.env` file |
 | `tiktoken` | Accurate token counting |
 | `pathspec` | `.gitignore`-aware directory tree traversal |
 | `duckduckgo-search` | Web search via DuckDuckGo |
@@ -64,14 +70,14 @@ pip install openai python-dotenv tiktoken pathspec duckduckgo-search requests be
 
    > The `.env` file is git-ignored and must never be committed.
 
-3. **Install Python dependencies** (see above).
+3. **Install JavaScript dependencies** (see above).
 
 ## Usage
 
 Run the chatbot from any directory:
 
 ```powershell
-python mainAPI.py
+node mainAPI.js
 ```
 
 ### Startup Prompts
@@ -109,7 +115,7 @@ The model has access to the following tools. Tools that modify the system or mak
 
 ## Configuration
 
-Hyperparameters are defined in `mainAPI.py` under the `HYPERPARAMETERS` dictionary:
+Hyperparameters are defined in `mainAPI.js` under the `HYPERPARAMETERS` dictionary:
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -121,7 +127,7 @@ Hyperparameters are defined in `mainAPI.py` under the `HYPERPARAMETERS` dictiona
 
 ## Code Overview
 
-### `mainAPI.py` — Entry Point & Chat Loop
+### `mainAPI.js` — Entry Point & Chat Loop
 
 - Sets up the OpenAI client from `.env`.
 - Registers all 6 tools in `TOOL_REGISTRY`.
@@ -129,17 +135,17 @@ Hyperparameters are defined in `mainAPI.py` under the `HYPERPARAMETERS` dictiona
 - `printStreamResponse()` — handles streaming output for reasoning content, standard content, and tool calls.
 - `callModel()` — thin wrapper around the OpenAI chat completions API.
 
-### `helper.py` — Utilities
+### `helper.js` — Utilities
 
 - `startChat()` — model selection CLI prompt.
 - `thinkingToggle()` — reasoning content enable/disable prompt.
 - `estimateTokens()` — estimates input/output tokens for a message list, accounting for tool calls, reasoning history, and multimodal content.
 
-### `modelTool.py` — Tool Implementations
+### `modelTool.js` — Tool Implementations
 
 Each tool is defined as a pair:
 1. A **JSON schema** dict (compatible with OpenAI/DeepSeek `tools` parameter).
-2. A **Python handler function** that performs the action and returns a string result.
+2. A **JavaScript handler function** that performs the action and returns a string result.
 
 ## Agent Guidelines
 
