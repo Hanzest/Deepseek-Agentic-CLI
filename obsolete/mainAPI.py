@@ -8,12 +8,12 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 
-from obsolete.helper import startChat, estimateTokens, thinkingToggle
+from helper import startChat, estimateTokens, thinkingToggle
 from openai import OpenAI
 from dotenv import load_dotenv
 
 # Import the tool schemas and execution functions
-from obsolete.modelTool import (
+from modelTool import (
     terminal_tool_schema, execute_terminal_command,
     patch_file_schema, patch_file,
     read_file_chunk_schema, read_file_chunk,
