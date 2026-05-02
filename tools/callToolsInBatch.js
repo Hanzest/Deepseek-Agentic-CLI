@@ -1,9 +1,16 @@
 ﻿// ---------------------------------------------------------------------------
-// Batch tool execution
-// Runs tool calls in two phases:
-//   Phase 1 — Batch summary display + sequential consent collection
-//   Phase 2 — Concurrent execution of approved tools
-// This prevents interleaved console output and stacked consent prompts.
+// Batch tool execution — runs tool call handlers locally (NO model API calls).
+//
+// The orchestrator sends a SINGLE model API request; the model may respond
+// with N tool_calls. This module executes all N tool handlers (consent tools
+// sequentially, read-only tools concurrently), then the orchestrator makes
+// ONE follow-up model API call with all results. This is NOT a per-tool API
+// batching mechanism — it batches local tool execution only.
+//
+// Phases:
+//   Phase 1 — Batch summary display
+//   Phase 2 — Unified execution: consent tools serialized via lock,
+//             read-only tools concurrent via Promise.all
 // ---------------------------------------------------------------------------
 
 import { resetAlertCounter } from "./template.js";
@@ -11,17 +18,18 @@ import { resetAlertCounter } from "./template.js";
 const W = 56; // separator width
 
 /**
- * Parse a tool call object into { name, args }.
+ * Parse a tool call object. Returns { name, args, parseError }.
+ * If JSON parsing fails, parseError is set and args is null.
  */
 function parseToolCall(tc) {
     const name = tc.function.name;
-    let args;
     try {
-        args = JSON.parse(tc.function.arguments);
-    } catch(e) {
-        console.error(`Error parsing arguments for tool '${tc.function.name}':`, e);
+        const args = JSON.parse(tc.function.arguments);
+        return { name, args, parseError: null };
+    } catch (e) {
+        console.error(`Error parsing arguments for tool '${name}':`, e);
+        return { name, args: null, parseError: e.message || String(e) };
     }
-    return { name, args };
 }
 
 /**
@@ -51,7 +59,7 @@ function printBatchSummary(parsed) {
         console.log(
             `\x1b[97m  #${i + 1}\x1b[0m  \x1b[93m${name}\x1b[0m  ${consentTag}`
         );
-        for (const [key, value] of Object.entries(args)) {
+        for (const [key, value] of Object.entries(args || {})) {
             console.log(`\x1b[90m       ${key}:\x1b[0m ${JSON.stringify(truncate(value))}`);
         }
         if (i < parsed.length - 1) {
@@ -86,9 +94,9 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages) {
     if (!tool_calls || tool_calls.length === 0) return 0;
 
     const parsed = tool_calls.map((tc) => {
-        const { name, args } = parseToolCall(tc);
+        const { name, args, parseError } = parseToolCall(tc);
         const [, , needsConsent] = TOOL_REGISTRY[name] || [];
-        return { id: tc.id, name, args, needsConsent: !!needsConsent };
+        return { id: tc.id, name, args, parseError, needsConsent: !!needsConsent };
     });
 
     // ---- Phase 1: Batch summary ----
@@ -96,46 +104,63 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages) {
     printBatchSummary(parsed);
 
     // ---- Phase 2: Execute ----
-    // Consent tools run sequentially (one at a time) to avoid interleaved prompts.
-    // Read-only tools run concurrently for performance.
-    const results = [];
-
-    // 2a. Consent-required tools → sequential
-    for (const p of parsed) {
-        if (!p.needsConsent) continue;
-        if (!TOOL_REGISTRY[p.name]) {
-            results.push({
+    // Build one promise per tool (in original order). Consent tools run sequentially
+    // via an internal async lock; read-only tools run concurrently.
+    // All results are collected in original order — no post-hoc sort needed.
+    let consentLock = Promise.resolve();
+    const resultPromises = parsed.map((p) => {
+        // JSON parse error → skip execution, return structured error
+        if (p.parseError) {
+            return {
                 role: "tool",
                 tool_call_id: p.id,
                 name: p.name,
-                content: `Error: Tool '${p.name}' does not exist in the registry.`
-            });
-            continue; // or return for read-only map
+                content: JSON.stringify({
+                    error: true,
+                    tool: p.name,
+                    message: `Failed to parse arguments: ${p.parseError}`,
+                }),
+            };
         }
-        const [, handler] = TOOL_REGISTRY[p.name];
-        // Each call triggers logAlert + consent prompt + execution (blocking per tool)
-        const content = await handler(p.args);
-        results.push({
-            role: "tool",
-            tool_call_id: p.id,
-            name: p.name,
-            content,
-        });
-    }
 
-    // 2b. Read-only tools → concurrent
-    const readOnlyPromises = parsed
-        .filter((p) => !p.needsConsent)
-        .map(async (p) => {
-            if (!TOOL_REGISTRY[p.name]) {
-                return {
-                    role: "tool",
-                    tool_call_id: p.id,
-                    name: p.name,
-                    content: `Error: Tool '${p.name}' does not exist in the registry.`
-                };
-            }
-            const [, handler] = TOOL_REGISTRY[p.name];
+        // Missing from registry → return structured error
+        if (!TOOL_REGISTRY[p.name]) {
+            return {
+                role: "tool",
+                tool_call_id: p.id,
+                name: p.name,
+                content: JSON.stringify({
+                    error: true,
+                    tool: p.name,
+                    message: `Tool '${p.name}' does not exist in the registry.`,
+                }),
+            };
+        }
+
+        const [, handler] = TOOL_REGISTRY[p.name];
+
+        if (p.needsConsent) {
+            // Chain onto consentLock so consent tools run one at a time
+            const prev = consentLock;
+            let releaseLock;
+            consentLock = new Promise((resolve) => { releaseLock = resolve; });
+            return prev.then(async () => {
+                try {
+                    const content = await handler(p.args);
+                    return {
+                        role: "tool",
+                        tool_call_id: p.id,
+                        name: p.name,
+                        content,
+                    };
+                } finally {
+                    releaseLock();
+                }
+            });
+        }
+
+        // Read-only tool → run immediately (concurrent with other read-only tools)
+        return (async () => {
             const content = await handler(p.args);
             return {
                 role: "tool",
@@ -143,13 +168,10 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages) {
                 name: p.name,
                 content,
             };
-        });
-    const readOnlyResults = await Promise.all(readOnlyPromises);
-    results.push(...readOnlyResults);
+        })();
+    });
 
-    const orderMap = new Map();
-    tool_calls.forEach((tc, idx) => orderMap.set(tc.id, idx));
-    results.sort((a, b) => (orderMap.get(a.tool_call_id) ?? 0) - (orderMap.get(b.tool_call_id) ?? 0));
+    const results = await Promise.all(resultPromises);
     for (const entry of results) {
         messages.push(entry);
     }

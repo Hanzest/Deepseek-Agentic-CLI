@@ -27,12 +27,16 @@ function logAlert(name, args) {
     }
 }
 
+/**
+ * Format a structured error return so the model can programmatically
+ * distinguish errors from successful results.
+ */
 function formatError(name, e) {
     const error_msg = `Error in tool '${name}': ${e.message || e}`;
     console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
     console.log(`\x1b[91m${error_msg}\x1b[0m`);
     console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
-    return error_msg;
+    return JSON.stringify({ error: true, tool: name, message: error_msg });
 }
 
 // ---------------------------------------------------------------------------
@@ -51,7 +55,7 @@ export function createToolHandler(name, handler, needsConsent = false) {
                 console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
                 const denial_msg = "User denied the operation.";
                 console.log(`\x1b[91m${denial_msg}\x1b[0m`);
-                return denial_msg;
+                return JSON.stringify({ error: true, tool: name, message: denial_msg });
             }
         }
 
