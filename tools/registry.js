@@ -22,6 +22,10 @@ import {
     fetch_url_schema,
     fetch_url,
 } from "./fetchUrl.js";
+import {
+    ask_user_preferences_schema,
+    ask_user_preferences,
+} from "./askUserPreferences.js";
 
 // ---------------------------------------------------------------------------
 // Central tool registry: name -> [schema, handler]
@@ -33,4 +37,5 @@ export const TOOL_REGISTRY = {
     get_project_tree: [get_project_tree_schema, get_project_tree],
     search_web: [search_web_schema, search_web],
     fetch_url: [fetch_url_schema, fetch_url],
+    ask_user_preferences: [ask_user_preferences_schema, ask_user_preferences],
 };
