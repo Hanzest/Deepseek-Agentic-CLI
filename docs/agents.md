@@ -9,16 +9,15 @@ directory). The runtime automatically sets the working directory correctly via
 
 ## 2. Tool consent model
 
-Three tools require explicit user consent (`y/n` prompt) before executing:
+Consent is tiered by tool and content:
 
-| Tool | Why |
+| Tool | Consent Rule |
 |---|---|
-| `execute_terminal_command` | Arbitrary shell execution |
-| `patch_file` | Mutates source files |
-| `fetch_url` | Makes network requests |
-
-The other three (`read_file_chunk`, `get_project_tree`, `search_web`) run
-immediately and are read-only / non-destructive.
+| `fetch_url` | Always requires explicit `y/n` consent |
+| `execute_terminal_command` | **Auto-approved** normally; requires `y/n` consent only if the command references `.env` |
+| `patch_file` | **Auto-approved** normally; requires `y/n` consent only if the target file is `.env` |
+| `read_file_chunk` | Runs immediately (read-only); `.env` is **auto-blocked** |
+| `get_project_tree`, `search_web` | Runs immediately (read-only / non-destructive) |
 
 When approving terminal commands: the user's shell is **Windows PowerShell**.
 Use `Remove-Item`, `Get-ChildItem`, `Set-Content`, etc. — not Unix commands.
@@ -34,10 +33,18 @@ Set-Content -Path some_file.py -Encoding UTF8 -Value '...'
 Avoid em dashes, smart quotes, and other non-ASCII characters in source files.
 Prefer plain ASCII: `--`, `"`, `'`.
 
-## 4. Do NOT read or expose `.env`
+## 4. `.env` file security policy
 
-The `.env` file contains API keys. Never read it, log it, or include it in
-responses. It is git-ignored.
+The `.env` file contains API keys and is git-ignored. Access is handled per
+tool as follows:
+
+| Tool | Policy |
+|------|--------|
+| `read_file_chunk` | **Auto-blocked** -- cannot read `.env` at all |
+| `execute_terminal_command` | **Auto-approved** normally; requires explicit `y/n` consent if the command references `.env` |
+| `patch_file` | **Auto-approved** normally; requires explicit `y/n` consent if the target file is `.env` |
+
+Never log `.env` content or include it in responses to the user.
 
 ## 5. Stale `.pyc` caches
 
@@ -63,3 +70,6 @@ Remove-Item -Recurse -Force __pycache__ -ErrorAction SilentlyContinue
 ## 7. Implementations style
 
 - Do not write long dash, ---, ===, or ***, emojis, or long hyphens.
+
+
+

@@ -1,4 +1,4 @@
-# System Architecture - Codebase Structure Overview
+﻿# System Architecture - Codebase Structure Overview
 
 **Date:** 2026  
 **Scope:** All source files under `main.js`, `lib/`, `tools/`  
@@ -139,10 +139,12 @@ cliInput.ask()  --->  orchestrator.multiTurnLoop()
 
 | Vector | Protection |
 |-------|-----------|
-| Config file access | Blocked in `executeTerminal.js`, `patchFile.js`, `readFileChunk.js` by basename check |
+| `.env` file read | **Auto-blocked** in `readFileChunk.js` -- cannot read `.env` under any condition |
+| `.env` in terminal commands | **Warn + consent** in `executeTerminal.js` -- prints warning and asks `y/n` before executing any command referencing `.env` |
+| `.env` file patch/write | **Warn + consent** in `patchFile.js` -- prints warning and asks `y/n` before patching a `.env` file |
 | Dangerous shell patterns | Blocked in `executeTerminalCore` before execution |
-| Destructive operations | `execute_terminal_command`, `patch_file`, `fetch_url` require user consent via `createToolHandler(..., true)` |
-| Read-only operations | `read_file_chunk`, `get_project_tree`, `search_web`, `ask_user_preferences` run without consent |
+| Destructive operations | `fetch_url` requires user consent via `createToolHandler(..., true)`; `execute_terminal_command` and `patch_file` are auto-approved except when `.env` is involved |
+| Read-only operations | `read_file_chunk` (auto-blocked for `.env`), `get_project_tree`, `search_web`, `ask_user_preferences` run without consent |
 
 ---
 
@@ -181,3 +183,4 @@ Zero modification of existing tool logic. Zero risk of breaking existing tools.
 | `duck-duck-scrape` | `tools/searchWeb.js` | Web search via DuckDuckGo |
 
 *End of system architecture document.
+

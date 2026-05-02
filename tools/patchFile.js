@@ -1,6 +1,7 @@
 ﻿import fs from "fs";
 import path from "path";
 import { createToolHandler } from "./template.js";
+import { ask } from "../lib/cliInput.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -41,9 +42,13 @@ export const patch_file_schema = {
 // ---------------------------------------------------------------------------
 async function patchFileCore({ file_path, search_string, replace_string }) {
     if (path.basename(file_path).toLowerCase().includes(".env")) {
-        const error_msg = "Security Error: Modifying .env files is strictly prohibited.";
-        console.log(`\x1b[91m${error_msg}\x1b[0m`);
-        return error_msg;
+        console.log(`\n\x1b[93m[Security Warning] Patch targets '.env' file.\x1b[0m`);
+        const consent = await ask("\x1b[96m  Approve this patch? (y/n): \x1b[0m");
+        if (consent.trim().toLowerCase() !== "y") {
+            const msg = "Operation denied by user due to .env file target.";
+            console.log(`\x1b[91m${msg}\x1b[0m`);
+            return msg;
+        }
     }
 
     let original_content;
@@ -112,5 +117,5 @@ async function patchFileCore({ file_path, search_string, replace_string }) {
 export const patch_file = createToolHandler(
     "patch_file",
     patchFileCore,
-    true
+    false
 );

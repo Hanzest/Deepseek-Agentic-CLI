@@ -1,5 +1,6 @@
 ﻿import { execSync } from "child_process";
 import { createToolHandler } from "./template.js";
+import { ask } from "../lib/cliInput.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -27,14 +28,14 @@ export const execute_terminal_command_schema = {
 // Pure handler logic (no consent, no logging — handled by template)
 // ---------------------------------------------------------------------------
 async function executeTerminalCore({ command }) {
-    if (
-        command.toLowerCase().includes(".env") ||
-        command.toLowerCase().includes("get-content *")
-    ) {
-        const msg =
-            "[Security Alert] Command contains potentially dangerous patterns and will not be executed.";
-        console.log(`\n\x1b[91m${msg}\x1b[0m`);
-        return msg;
+    if (command.toLowerCase().includes(".env")) {
+        console.log(`\n\x1b[93m[Security Warning] Command references '.env' file.\x1b[0m`);
+        const consent = await ask("\x1b[96m  Approve this command? (y/n): \x1b[0m");
+        if (consent.trim().toLowerCase() !== "y") {
+            const msg = "Operation denied by user due to .env reference in command.";
+            console.log(`\x1b[91m${msg}\x1b[0m`);
+            return msg;
+        }
     }
 
     try {
@@ -70,5 +71,5 @@ async function executeTerminalCore({ command }) {
 export const execute_terminal_command = createToolHandler(
     "execute_terminal_command",
     executeTerminalCore,
-    true
+    false
 );
