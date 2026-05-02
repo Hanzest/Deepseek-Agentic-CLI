@@ -30,6 +30,10 @@ import {
 // ---------------------------------------------------------------------------
 // Central tool registry: name -> [schema, handler]
 // ---------------------------------------------------------------------------
+import { callToolsInBatch } from "./callToolsInBatch.js";
+
+export { callToolsInBatch };
+
 export const TOOL_REGISTRY = {
     execute_terminal_command: [execute_terminal_command_schema, execute_terminal_command],
     patch_file: [patch_file_schema, patch_file],
