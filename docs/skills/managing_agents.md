@@ -72,7 +72,7 @@ Provide background the sub-agent needs but cannot discover on its own:
 - Constraints not obvious from the codebase.
 - Preferences or conventions to follow.
 
-Keep it concise. The sub-agent has tools to explore the codebase; don't dump the entire codebase into context. Give it *pointers*, not *pages*.
+**Keep it concise — max ~500 words.** The sub-agent has tools to explore the codebase; don't dump the entire codebase into context. Give it *pointers*, not *pages*. Full file contents in context defeat the purpose of context isolation and waste tokens.
 
 ---
 
@@ -115,6 +115,49 @@ Before calling `delegate_sub_agent`, verify:
 - [ ] `skills` (optional) are specific and relevant.
 - [ ] `context` (optional) gives pointers, not a data dump.
 - [ ] The task is self-contained — the sub-agent can complete it without asking the manager follow-up questions.
+
+---
+
+## 8. Token-Efficient Delegation
+
+### 8.1 Keep Context Lean
+
+The `context` field is for **pointers, not pages**. The sub-agent has its own tools to read files. Provide:
+
+- File paths relevant to the task (not file contents)
+- Constraints not obvious from the codebase (not the codebase itself)
+- Conventions or preferences to follow
+
+**Max recommended:** 500 words. If you need more, reconsider whether the task is self-contained.
+
+### 8.2 Use `budget_iterations` to Cap Costs
+
+Simple tasks (single file write, targeted search) rarely need 20 iterations. Complex tasks (multi-file refactors) may need more. Set `budget_iterations` per task:
+
+| Task Complexity | Recommended Budget |
+|----------------|-------------------|
+| Single-file write/search | 3–5 |
+| Multi-file coordinated change | 8–12 |
+| Full codebase analysis | 15–20 |
+| Unknown/exploratory | 10 (default) |
+
+Lower budgets save tokens by forcing early termination of wandering sub-agents.
+
+### 8.3 Use `self_contained` for Write-Only Tasks
+
+When the deliverable is purely a file write with no verification needed, set `self_contained: true`. This instructs the sub-agent to write and respond — no re-reading, no verification loop. Saves 1–2 iterations per task.
+
+### 8.4 Use `priority` to Guide Effort
+
+| Priority | Effect |
+|----------|--------|
+| `high` | Sub-agent minimizes verification, favors speed over exhaustive checking |
+| `normal` | Standard behavior (default) |
+| `low` | Sub-agent may use fewer iterations, report partial results |
+
+### 8.5 Sub-Agents Batch Too
+
+Sub-agents inherit the batch-first strategy (see [`docs/skills/using_tools.md`](../using_tools.md)). When writing the `deliverable` and `context`, don't micromanage tool usage — the sub-agent's system prompt already instructs batch-first behavior.
 
 ---
 

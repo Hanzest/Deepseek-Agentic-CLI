@@ -61,7 +61,35 @@ export const delegate_sub_agent_schema = {
                     type: "string",
                     description:
                         "Background information, code references, constraints, or relevant " +
-                        "file paths the sub-agent needs to complete its task.",
+                        "file paths the sub-agent needs to complete its task. " +
+                        "Keep it concise — provide file paths and constraint summaries, not " +
+                        "full file contents. The sub-agent has tools to read files. " +
+                        "Max ~500 words recommended.",
+                },
+                priority: {
+                    type: "string",
+                    enum: ["low", "normal", "high"],
+                    description:
+                        "Task urgency. 'high' — minimize verification, favor speed. " +
+                        "'normal' — standard behavior (default). " +
+                        "'low' — may use fewer iterations, report partial results.",
+                },
+                budget_iterations: {
+                    type: "integer",
+                    description:
+                        "Maximum iterations the sub-agent may use. " +
+                        "Override the default (20). Lower values save tokens on simple tasks; " +
+                        "higher values provide headroom for complex tasks. " +
+                        "Recommended: 3-5 for single-file changes, 8-12 for multi-file, " +
+                        "15-20 for full codebase analysis. Defaults to 20.",
+                },
+                self_contained: {
+                    type: "boolean",
+                    description:
+                        "Set to true when the deliverable is purely a file write with no " +
+                        "verification needed. Instructs the sub-agent to write and respond " +
+                        "immediately — no re-reading, no verification loop. Saves 1-2 " +
+                        "iterations per task. Defaults to false.",
                 },
                 output_file: {
                     type: "string",
@@ -162,11 +190,41 @@ function writeFileUnique(artifactsDir, desiredName, content) {
 // ---------------------------------------------------------------------------
 // Internal: build the structured Markdown prompt
 // ---------------------------------------------------------------------------
-function buildMarkdownPrompt({ sub_agent_name, goal, purpose, deliverable, skills, context }) {
+function buildMarkdownPrompt({
+    sub_agent_name,
+    goal,
+    purpose,
+    deliverable,
+    skills,
+    context,
+    priority = "normal",
+    budget_iterations,
+    self_contained = false,
+}) {
     const lines = [];
 
     lines.push(`# Sub-Agent: ${sub_agent_name}`);
     lines.push("");
+
+    // Priority banner for high/low urgency
+    if (priority === "high") {
+        lines.push("> **HIGH PRIORITY** — Minimize verification. Favor speed. Deliver the result as quickly as possible.");
+        lines.push("");
+    } else if (priority === "low") {
+        lines.push("> **LOW PRIORITY** — Standard effort is fine. Partial results are acceptable if the task proves complex.");
+        lines.push("");
+    }
+
+    if (budget_iterations != null) {
+        lines.push(`> **Iteration Budget:** ${budget_iterations} maximum. Plan accordingly.`);
+        lines.push("");
+    }
+
+    if (self_contained) {
+        lines.push("> **SELF-CONTAINED TASK** — Your deliverable is a file write. Once written, respond with the summary immediately. Do NOT re-read or verify the file unless the write tool returned an error.");
+        lines.push("");
+    }
+
     lines.push("## Goal");
     lines.push(goal);
     lines.push("");
@@ -218,6 +276,9 @@ async function delegateSubAgentCore({
     deliverable,
     skills = [],
     context = "",
+    priority = "normal",
+    budget_iterations,
+    self_contained = false,
     output_file = "",
 } = {}) {
     const artifactsDir = path.resolve(__dirname, "..", "artifacts");
@@ -243,6 +304,9 @@ async function delegateSubAgentCore({
         deliverable,
         skills,
         context,
+        priority,
+        budget_iterations,
+        self_contained,
     });
 
     // Write with exclusive-create to avoid TOCTOU race

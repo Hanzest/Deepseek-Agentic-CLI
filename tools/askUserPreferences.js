@@ -9,9 +9,10 @@ export const ask_user_preferences_schema = {
     function: {
         name: "ask_user_preferences",
         description:
-            "Asks the user a series of preference questions. Each question includes " +
-            "a list of numbered choices. The last choice is always a custom-input option: " +
-            "the user types the option number, then manually types their preference. " +
+            "Uses for ambiguity resolution or asking for user preferences. " +
+            "Each question includes a list of numbered choices. The last choice is " +
+            "always a custom-input option: " + "the user types the option number, " +
+            "then manually types their preference. " +
             "All questions are provided at once to save input tokens; the tool loops " +
             "through them and returns a structured summary of all answers.",
         parameters: {
@@ -67,7 +68,7 @@ async function askUserPreferencesCore({ questions }) {
         }
 
         console.log(`\n${questionText}`);
-        const lastIdx = choices.length;
+        const lastIdx = choices.length + 1;
         for (let ci = 0; ci < choices.length; ci++) {
             console.log(`${ci + 1}. ${choices[ci]}`);
         }
