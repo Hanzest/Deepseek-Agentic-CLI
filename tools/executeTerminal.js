@@ -10,9 +10,8 @@ export const execute_terminal_command_schema = {
     function: {
         name: "execute_terminal_command",
         description:
-            "Executes a shell/bash command on the user's terminal. "
-            + "Use this to interact with the system when no other tools can " +
-            "accomplish the task.",
+            "Executes a shell/bash command on the user's terminal (PowerShell on Windows). " +
+            "Returns the command's stdout as a string.",
         parameters: {
             type: "object",
             properties: {

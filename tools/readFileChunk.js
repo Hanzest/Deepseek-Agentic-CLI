@@ -10,9 +10,10 @@ export const read_file_chunk_schema = {
     function: {
         name: "read_file_chunk",
         description:
-            "Reads a range of lines from a file. Use this to inspect specific sections " +
-            "of large files without loading the entire file into context. Returns the " +
-            "requested lines with line numbers prefixed.",
+            "Reads a range of lines from a specific start line to an end line in a file. " +
+            "Use this to inspect specific sections of large files without loading the " +
+            "entire file into context. Returns the requested lines from line X to line Y " +
+            "with line numbers prefixed.",
         parameters: {
             type: "object",
             properties: {
@@ -100,7 +101,7 @@ async function readFileChunkCore({ file_path, start_line, end_line }) {
 
     // Add a summary header
     const summary =
-        `--- ${file_path} : lines ${start_line}-${end_line} of ${total_lines} ---\n` +
+        `--- ${file_path} : read from line ${start_line} to line ${end_line} (of ${total_lines}) ---\n` +
         `${result}\n` +
         `--- end of chunk ---`;
 
