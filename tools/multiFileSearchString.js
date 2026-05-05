@@ -18,7 +18,9 @@ export const multi_file_search_string_schema = {
             properties: {
                 search_string: {
                     type: "string",
-                    description: "The exact string to search for across all matching files.",
+                    description:
+                        "The exact string to search for across all matching files. " +
+                        "When regex is true, this is treated as a regular expression pattern.",
                 },
                 glob_pattern: {
                     type: "string",
@@ -50,6 +52,12 @@ export const multi_file_search_string_schema = {
                     description:
                         "Number of context lines to show before and after each match. " +
                         "Only used if include_context is true. Defaults to 2.",
+                },
+                regex: {
+                    type: "boolean",
+                    description:
+                        "If true, search_string is treated as a regular expression pattern. " +
+                        "Defaults to false.",
                 },
             },
             required: ["search_string"],
@@ -142,12 +150,24 @@ async function multiFileSearchStringCore({
     max_results = 50,
     include_context = true,
     context_lines = 2,
+    regex = false,
 } = {}) {
     root_path = path.resolve(root_path);
     if (!fs.existsSync(root_path)) {
         const e = "Error: Root path not found at '" + root_path + "'.";
         console.log("\x1b[91m" + e + "\x1b[0m");
         return e;
+    }
+
+    let regexPattern = null;
+    if (regex) {
+        try {
+            regexPattern = new RegExp(search_string);
+        } catch (e) {
+            const err = "Error: Invalid regex pattern '" + search_string + "': " + e.message;
+            console.log("\x1b[91m" + err + "\x1b[0m");
+            return err;
+        }
     }
 
     const spec = _load_gitignore_spec(root_path);
@@ -188,7 +208,7 @@ async function multiFileSearchStringCore({
         for (let i = 0; i < lines.length; i++) {
             if (max_results > 0 && results.length >= max_results) break;
             const line = lines[i];
-            if (line.includes(search_string)) {
+            if (regex && regexPattern ? regexPattern.test(line) : line.includes(search_string)) {
                 const match = {
                     file: path.relative(root_path, fp).split(path.sep).join("/"),
                     absolute_path: fp,
@@ -215,6 +235,7 @@ async function multiFileSearchStringCore({
         success: true,
         tool: "multi_file_search_string",
         search_string: search_string,
+        regex: !!regex,
         glob_pattern: glob_pattern,
         root_path: root_path,
         total_matches: results.length,

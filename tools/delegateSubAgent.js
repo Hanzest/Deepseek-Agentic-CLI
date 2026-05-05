@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { createToolHandler } from "./template.js";
 import { runSubAgent } from "../lib/subAgentLoop.js";
 import { createSubAgentTerminal } from "../lib/subAgentTerminal.js";
+import { estimateTokens } from "../lib/tokenizer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -309,6 +310,19 @@ async function delegateSubAgentCore({
         self_contained,
     });
 
+    // -----------------------------------------------------------------------
+    // Token size validation
+    // -----------------------------------------------------------------------
+    const TOKEN_WARNING_THRESHOLD = 8000;
+    const mockMessages = [{ role: "system", content: markdown }];
+    const { total_tokens: promptTokenCount } = estimateTokens(mockMessages);
+
+    if (promptTokenCount > TOKEN_WARNING_THRESHOLD) {
+        console.log(
+            `\x1b[93m[Warning] Prompt size ~${promptTokenCount} tokens exceeds ${TOKEN_WARNING_THRESHOLD} token threshold. Consider splitting this task.\x1b[0m`
+        );
+    }
+
     // Write with exclusive-create to avoid TOCTOU race
     const filePath = writeFileUnique(artifactsDir, desiredName, markdown);
     const fileName = path.basename(filePath);
@@ -389,7 +403,7 @@ async function delegateSubAgentCore({
     console.log(`  Iterations: \x1b[37m${result.iterationCount}\x1b[0m`);
     console.log(`  Status:     \x1b[32mcompleted\x1b[0m`);
 
-    return JSON.stringify({
+    const returnObj = {
         file_path: `artifacts/${fileName}`,
         report_path: `artifacts/${reportName}`,
         sub_agent_name,
@@ -399,7 +413,14 @@ async function delegateSubAgentCore({
         iteration_count: result.iterationCount,
         final_content_preview: result.finalContent.substring(0, 500),
         status: "completed",
-    });
+        prompt_token_count: promptTokenCount,
+    };
+
+    if (promptTokenCount > TOKEN_WARNING_THRESHOLD) {
+        returnObj.warning = `Prompt size (~${promptTokenCount} tokens) exceeds ${TOKEN_WARNING_THRESHOLD} token threshold. Consider splitting this task into smaller sub-tasks or reducing the context field.`;
+    }
+
+    return JSON.stringify(returnObj);
 }
 
 // ---------------------------------------------------------------------------

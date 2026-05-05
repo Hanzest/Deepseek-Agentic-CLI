@@ -1,4 +1,4 @@
-# DeepSeek Chatbot — Multi-Turn CLI with Tool-Use & Sub-Agent Delegation
+﻿# DeepSeek Chatbot — Multi-Turn CLI with Tool-Use & Sub-Agent Delegation
 
 A modular, multi-turn conversational chatbot powered by **DeepSeek models** via an OpenAI-compatible API.  
 The chatbot runs in the terminal and supports **streaming responses**, **reasoning/thinking content**, **sliding context windows**, **10 built-in tool-use capabilities**, and a **sub-agent delegation system** for complex multi-step tasks.
@@ -169,7 +169,7 @@ Hyperparameters are defined in `lib/orchestrator.js` under the `HYPERPARAMETERS`
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `token_limit` | 65535 | Maximum tokens per request |
+| `token_limit` | 256000 | Maximum tokens per request |
 | `token_multiplier` | 1.5 | Fallback multiplier for heuristic token estimation |
 | `stream` | `true` | Enable streaming responses |
 | `reasoning_effort` | `"high"` | Reasoning effort level (when thinking is enabled) |

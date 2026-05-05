@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
@@ -14,7 +14,10 @@ export const patch_file_schema = {
             "Performs a targeted edit on a file by searching for a string and replacing it. " +
             "If the search_string is found exactly once, it is replaced with replace_string. " +
             "If found multiple times, the tool reports the line numbers and asks for a more " +
-            "specific search string. Use this instead of rewriting entire files for small changes.",
+            "specific search string. Use this instead of rewriting entire files for small changes.\n\n" +
+            "Alternatively, provide a line_number to replace that specific line by number. " +
+            "In this mode, search_string is used to validate that the targeted line " +
+            "contains the expected content before replacement.",
         parameters: {
             type: "object",
             properties: {
@@ -25,11 +28,21 @@ export const patch_file_schema = {
                 search_string: {
                     type: "string",
                     description:
-                        "The exact string to search for in the file. Must match exactly once.",
+                        "The exact string to search for in the file. Must match exactly once. " +
+                        "When line_number is provided, this is used for validation: the tool " +
+                        "checks that the targeted line contains search_string before replacing.",
                 },
                 replace_string: {
                     type: "string",
                     description: "The string to replace the search_string with.",
+                },
+                line_number: {
+                    type: "integer",
+                    description:
+                        "Optional line number (1-indexed) to target for replacement. " +
+                        "When provided, the exact line at that position is replaced with " +
+                        "replace_string. The search_string is used to verify the line " +
+                        "contains the expected content before replacement.",
                 },
             },
             required: ["file_path", "search_string", "replace_string"],
@@ -40,7 +53,7 @@ export const patch_file_schema = {
 // ---------------------------------------------------------------------------
 // Pure handler logic
 // ---------------------------------------------------------------------------
-async function patchFileCore({ file_path, search_string, replace_string }) {
+async function patchFileCore({ file_path, search_string, replace_string, line_number }) {
     if (path.basename(file_path).toLowerCase().includes(".env")) {
         console.log(`\n\x1b[93m[Security Warning] Patch targets '.env' file.\x1b[0m`);
         const consent = await ask("\x1b[96m  Approve this patch? (y/n): \x1b[0m");
@@ -64,6 +77,51 @@ async function patchFileCore({ file_path, search_string, replace_string }) {
         console.log(`\x1b[91m${error_msg}\x1b[0m`);
         return error_msg;
     }
+
+    // -----------------------------------------------------------------------
+    // LINE-NUMBER TARGETING BRANCH
+    // -----------------------------------------------------------------------
+    if (line_number != null) {
+        const lines = original_content.split("\n");
+
+        if (line_number < 1 || line_number > lines.length) {
+            const error_msg =
+                `Error: line_number ${line_number} is out of range. ` +
+                `File '${file_path}' has ${lines.length} lines ` +
+                `(valid range: 1-${lines.length}).`;
+            console.log(`\x1b[91m${error_msg}\x1b[0m`);
+            return error_msg;
+        }
+
+        const target_line = lines[line_number - 1];
+
+        if (!target_line.includes(search_string)) {
+            const error_msg =
+                `Error: search_string not found on line ${line_number}. ` +
+                `Line content: "${target_line}"`;
+            console.log(`\x1b[91m${error_msg}\x1b[0m`);
+            return error_msg;
+        }
+
+        lines[line_number - 1] = replace_string;
+        const new_content = lines.join("\n");
+
+        try {
+            fs.writeFileSync(file_path, new_content, "utf-8");
+            const success_msg =
+                `Successfully patched '${file_path}'. Replaced line ${line_number}.`;
+            console.log(`\x1b[92m${success_msg}\x1b[0m`);
+            return success_msg;
+        } catch (e) {
+            const error_msg = `Error writing to file '${file_path}': ${e.message}`;
+            console.log(`\x1b[91m${error_msg}\x1b[0m`);
+            return error_msg;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // EXISTING STRING-SEARCH LOGIC (unchanged)
+    // -----------------------------------------------------------------------
 
     // Count occurrences by splitting
     const occurrences =

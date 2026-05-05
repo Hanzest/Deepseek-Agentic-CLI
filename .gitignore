@@ -7,3 +7,4 @@ node_modules
 dist
 obsolete/*
 artifacts/*
+chat_history/*
