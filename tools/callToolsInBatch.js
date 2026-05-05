@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import { resetAlertCounter } from "./template.js";
+import { MUTATION_BLOCKED_TOOLS } from "../lib/orchestrator.js";
 
 const W = 56; // separator width
 
@@ -79,6 +80,17 @@ function printBatchFooter(count) {
 }
 
 /**
+ * Checks whether a file-mutation tool targets a path inside the artifacts/
+ * folder (safe workspace). If so, the tool is allowed even in Plan Mode.
+ */
+function isArtifactsPath(args) {
+    const filePath = args?.file_path || "";
+    // Normalize to forward slashes for reliable comparison
+    const normalized = filePath.replace(/\\/g, "/");
+    return normalized.startsWith("artifacts/") || normalized.startsWith("artifacts\\") || filePath === "artifacts";
+}
+
+/**
  * Executes tool calls in batch with clear visual separation.
  *
  * Consent-required tools run SEQUENTIALLY (one at a time) so their
@@ -88,9 +100,10 @@ function printBatchFooter(count) {
  * @param {Array} tool_calls - Array of tool call objects from the model response
  * @param {Object} TOOL_REGISTRY - Each entry: [schema, wrappedHandler, needsConsent]
  * @param {Array} messages - Conversation messages array (mutated in-place)
+ * @param {string} [agentMode="agent"] - "plan" blocks mutation/execution tools (artifacts/ exempt)
  * @returns {number} Number of tool calls executed
  */
-export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages) {
+export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agentMode = "agent") {
     if (!tool_calls || tool_calls.length === 0) return 0;
 
     const parsed = tool_calls.map((tc) => {
@@ -138,6 +151,30 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages) {
         }
 
         const [, handler] = TOOL_REGISTRY[p.name];
+
+        // ---- Plan Mode gate: block mutation/execution tools (artifacts/ exempt) ----
+        if (agentMode === "plan" && MUTATION_BLOCKED_TOOLS.has(p.name)) {
+            // Allow writes into artifacts/ folder (safe workspace for plans)
+            if (p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) {
+                // Fall through — allowed
+            } else {
+                const blockedMsg =
+                    "Blocked: File mutation and system execution are disabled in Plan Mode. " +
+                    "Switch to Agent Mode (/agent) to proceed. " +
+                    "(Writes to artifacts/ folder are allowed.)";
+                console.log(`\x1b[91m  [Plan Mode] Blocked '${p.name}'\x1b[0m`);
+                return {
+                    role: "tool",
+                    tool_call_id: p.id,
+                    name: p.name,
+                    content: JSON.stringify({
+                        error: true,
+                        tool: p.name,
+                        message: blockedMsg,
+                    }),
+                };
+            }
+        }
 
         if (p.needsConsent) {
             // Chain onto consentLock so consent tools run one at a time

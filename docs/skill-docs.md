@@ -14,6 +14,7 @@
 | **Batch Tool-Calling Strategy** | [`docs/skills/using_tools.md`](using_tools.md) | How to minimize API round-trips by co-dispatching independent tools, using native batch modes (`fetch_url` `urls[]`), and following the dependency rule. |
 | **System Architecture** | [`docs/system-architecture.md`](system-architecture.md) | Module responsibilities, data flow diagram, security model, OCP impact analysis, dependency map. |
 | **Manager Task Delegation** | [`docs/skills/managing_agents.md`](skills/managing_agents.md) | How to delegate complex sub-tasks efficiently: goal definition, deliverable specification, skill injection, anti-patterns. |
+| **Tool Categories by Capability** | [`docs/tool-categories.md`](tool-categories.md) | All 10 tools grouped by capability domain (codebase inspection, web research, file mutation, system execution, user interaction, agent management) with consent/batching info. |
 
 ---
 
@@ -25,6 +26,7 @@ When you need to understand:
 - **What tools are available and their consent rules** → read `docs/agents.md`.
 - **How to batch tool calls for minimal API round-trips** → read `docs/skills/using_tools.md`.
 - **How the codebase is structured** → read `docs/system-architecture.md`.
+- **What capability categories of tools are available** → read `docs/tool-categories.md`.
 - **How to delegate a complex task to a sub-agent** → read `docs/skills/managing_agents.md`.
 
 ### For Sub-Agents
@@ -32,6 +34,7 @@ When you need to understand:
 Your system prompt already includes the delegation task. However, if you need:
 - **Tool usage conventions** (paths, consent, PowerShell) → read `docs/agents.md`.
 - **Batch tool-calling strategy** (minimize API round-trips) → read `docs/skills/using_tools.md`.
+- **What capability categories of tools are available** → read `docs/tool-categories.md`.
 - **Codebase structure** (module responsibilities, dependencies) → read `docs/system-architecture.md`.
 
 ### For Contributors Adding New Skills
@@ -49,6 +52,7 @@ All documentation follows a layered approach:
 ```
 docs/
   agents.md              ← General: tool conventions, security, shell reference
+  tool-categories.md     ← General: tools grouped by capability domain
   using_tools.md         ← General: batch tool-calling strategy, token economics
   system-architecture.md ← General: module map, data flow, dependencies
   skill-docs.md          ← This file: central index

@@ -145,6 +145,22 @@ cliInput.ask()  --->  orchestrator.multiTurnLoop()
 | Dangerous shell patterns | Blocked in `executeTerminalCore` before execution |
 | Destructive operations | `fetch_url` requires user consent via `createToolHandler(..., true)`; `execute_terminal_command` and `patch_file` are auto-approved except when `.env` is involved |
 | Read-only operations | `read_file_chunk` (auto-blocked for `.env`), `get_project_tree`, `search_web`, `ask_user_preferences` run without consent |
+| Plan Mode bypass | File mutation and system execution are blocked in Plan Mode; `artifacts/` folder writes are exempt (safe workspace for plans) |
+
+---
+
+### 5.1 Plan Mode vs Agent Mode
+
+The orchestrator maintains a `SessionContext.agentMode` state ("plan" or "agent") that gates destructive tools:
+
+| Mode | `patch_file` | `write_or_create_file` | `execute_terminal_command` | Sub-agent inheritance |
+|------|-------------|------------------------|---------------------------|----------------------|
+| **Plan** (default) | Blocked (artifacts/ exempt) | Blocked (artifacts/ exempt) | Blocked | Inherits "plan" |
+| **Agent** | Allowed | Allowed | Allowed | Inherits "agent" |
+
+- Toggle via `/plan` or `/agent` typed directly into the chat.
+- The gate is enforced in `tools/callToolsInBatch.js` — blocked tools return a structured error with no consent prompt and no execution.
+- `SessionContext` is a plain object (not a module-level primitive) so it can be replaced with a per-request context in a multi-tenant future.
 
 ---
 
