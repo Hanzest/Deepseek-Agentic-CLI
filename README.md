@@ -49,7 +49,17 @@ Deepseek_Chatbot/
 │   └── delegateSubAgent.js # Delegate a sub-task to an isolated sub-agent in a new terminal
 └── docs/
     ├── agents.md           # Agent guidelines (path conventions, consent model, encoding rules)
-    └── system-architecture.md # Detailed architecture documentation
+    ├── tool-categories.md  # Tools grouped by capability domain
+    ├── skills/
+    │   ├── managing_agents.md  # Delegation patterns and best practices
+    │   └── using_tools.md      # Batch-first tool-calling strategy
+    └── this_repo/
+        ├── README.md           # Index of codebase-specific docs
+        ├── system-architecture.md  # Full architecture documentation
+        ├── modules-lib.md      # Per-module reference for lib/
+        ├── modules-tools.md    # Per-file reference for tools/
+        ├── data-flow.md        # Execution path diagrams
+        └── agent-onboarding.md # Quick-start navigation for agents
 ```
 
 ## Requirements
@@ -249,4 +259,4 @@ See [`docs/agents.md`](docs/agents.md) for detailed agent conventions, including
 - PowerShell quick reference
 - `.env` security policy
 
-See [`docs/system-architecture.md`](docs/system-architecture.md) for the full architecture documentation, including data flow diagrams, security model, OCP impact, and testability.
+See [`docs/this_repo/system-architecture.md`](docs/this_repo/system-architecture.md) for the full architecture documentation. For deeper dives, see [`docs/this_repo/`](docs/this_repo/) — modules reference, tool reference, data flow diagrams, and agent onboarding guide.

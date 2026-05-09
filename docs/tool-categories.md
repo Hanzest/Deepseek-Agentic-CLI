@@ -100,4 +100,4 @@ Delegate complex sub-tasks to isolated sub-agents. **Manager-only** — sub-agen
 
 ---
 
-*Part of the tool documentation suite. See also `docs/skill-docs.md` for the skills index.*
+*Part of the tool documentation suite. See also [`docs/README.md`](README.md) for the skills index.*

@@ -161,4 +161,4 @@ Sub-agents inherit the batch-first strategy (see [`docs/skills/using_tools.md`](
 
 ---
 
-*Part of the skills documentation suite. See also `docs/skill-docs.md` for the skills index.*
+*Part of the skills documentation suite. See also [`docs/README.md`](../README.md) for the skills index.*

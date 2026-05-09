@@ -169,4 +169,4 @@ Before dispatching any tool call, ask:
 
 ---
 
-*Part of the skills documentation suite. See also `docs/skill-docs.md` for the skills index.*
+*Part of the skills documentation suite. See also [`docs/README.md`](../README.md) for the skills index.*

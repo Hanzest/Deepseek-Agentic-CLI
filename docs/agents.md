@@ -4,7 +4,7 @@
 
 All tool paths are relative to the project root (the top-level `Deepseek_Chatbot/`
 directory). The runtime automatically sets the working directory correctly via
-`os.chdir(_SCRIPT_DIR)` in `mainAPI.py`. Prefer relative paths (`helper.py`,
+`process.chdir()` in `lib/orchestrator.js`. Prefer relative paths (`helper.js`,
 `docs/agents.md`) over absolute paths.
 
 ## 2. Tool consent model
@@ -27,7 +27,7 @@ Use `Remove-Item`, `Get-ChildItem`, `Set-Content`, etc. — not Unix commands.
 When creating/editing files via terminal, always use `-Encoding UTF8`:
 
 ```powershell
-Set-Content -Path some_file.py -Encoding UTF8 -Value '...'
+Set-Content -Path some_file.js -Encoding UTF8 -Value '...'
 ```
 
 Avoid em dashes, smart quotes, and other non-ASCII characters in source files.
@@ -46,13 +46,15 @@ tool as follows:
 
 Never log `.env` content or include it in responses to the user.
 
-## 5. Stale `.pyc` caches
+## 5. Stale caches
 
-If imports misbehave after code changes, clear bytecode caches:
+If imports misbehave after code changes, restart the Node.js process. No bytecode caching exists in this JS codebase.
 
-```powershell
-Remove-Item -Recurse -Force __pycache__ -ErrorAction SilentlyContinue
-```
+
+
+
+
+
 
 ## 6. PowerShell quick reference
 
@@ -83,6 +85,5 @@ The system starts in **Plan Mode** by default. The user can toggle modes at any 
 Sub-agents inherit the current mode from the manager. A sub-agent spawned in Plan Mode cannot bypass the gate.
 
 The mode state lives in `lib/orchestrator.js` as `SessionContext.agentMode` (an object property, not a bare primitive).
-
 
 
