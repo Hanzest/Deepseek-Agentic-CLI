@@ -98,14 +98,14 @@ async function readFileChunkCore({ file_path, start_line, end_line }) {
     }
 
     const result = output_lines.join("\n");
-
+    console.log(`--- ${file_path} : read from line ${start_line} to line ${end_line} (of ${total_lines}) ---`)
     // Add a summary header
     const summary =
         `--- ${file_path} : read from line ${start_line} to line ${end_line} (of ${total_lines}) ---\n` +
         `${result}\n` +
         `--- end of chunk ---`;
 
-    console.log(`\x1b[92m[File Chunk]:\x1b[0m\n${summary}`);
+    // console.log(`\x1b[92m[File Chunk]:\x1b[0m\n${summary}`);
     return summary;
 }
 
