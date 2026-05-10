@@ -39,9 +39,6 @@ import {
     multi_file_search_string,
 } from "./multiFileSearchString.js";
 
-// ---------------------------------------------------------------------------
-// Central tool registry
-// ---------------------------------------------------------------------------
 import { callToolsInBatch } from "./callToolsInBatch.js";
 
 export { callToolsInBatch };

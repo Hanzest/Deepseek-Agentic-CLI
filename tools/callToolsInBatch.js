@@ -35,9 +35,6 @@ function parseToolCall(tc) {
     }
 }
 
-/**
- * Truncate long string values for display.
- */
 function truncate(v) {
     if (typeof v === "string" && v.length > 200) {
         return v.substring(0, 200) + "...";
@@ -45,9 +42,6 @@ function truncate(v) {
     return v;
 }
 
-/**
- * Print the pre-execution batch summary header.
- */
 function printBatchSummary(parsed) {
     const count = parsed.length;
     console.log(colorize(`\n${'═'.repeat(W)}`, C.border));
@@ -72,9 +66,6 @@ function printBatchSummary(parsed) {
     console.log(colorize(`${'═'.repeat(W)}`, C.border) + "\n");
 }
 
-/**
- * Print the post-execution batch summary footer.
- */
 function printBatchFooter(count, timings) {
     console.log(colorize(`${'─'.repeat(W)}`, C.border));
     if (timings && timings.length > 0) {
@@ -127,10 +118,8 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
     resetAlertCounter();
     printBatchSummary(parsed);
 
-    // ---- Item 8: Progress indicator ----
     const executableCount = parsed.filter(p => !p.parseError && TOOL_REGISTRY[p.name]).length;
     console.log(colorize(`  Executing ${executableCount} tool(s) concurrently...`, C.system));
-    // Timing collector
     const timings = [];
 
     // ---- Phase 2: Execute ----
@@ -139,7 +128,6 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
     // All results are collected in original order — no post-hoc sort needed.
     let consentLock = Promise.resolve();
     const resultPromises = parsed.map((p, index) => {
-        // JSON parse error → skip execution, return structured error
         if (p.parseError) {
             return {
                 role: "tool",
@@ -153,7 +141,6 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             };
         }
 
-        // Missing from registry → return structured error
         if (!TOOL_REGISTRY[p.name]) {
             return {
                 role: "tool",
@@ -173,8 +160,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         if (agentMode === "plan" && MUTATION_BLOCKED_TOOLS.has(p.name)) {
             // Allow writes into artifacts/ folder (safe workspace for plans)
             if (p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) {
-                // Fall through — allowed
-            } else {
+                } else {
                 const blockedMsg =
                     "Blocked: File mutation and system execution are disabled in Plan Mode. " +
                     "Switch to Agent Mode (/agent) to proceed. " +
@@ -193,7 +179,6 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             }
         }
 
-        // Wrapper that captures timing
         const timedHandler = async () => {
             const start = performance.now();
             const result = await handler(p.args);
@@ -239,7 +224,6 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         messages.push(entry);
     }
 
-    // Sort timings by original order
     timings.sort((a, b) => a.index - b.index);
 
     printBatchFooter(tool_calls.length, timings);

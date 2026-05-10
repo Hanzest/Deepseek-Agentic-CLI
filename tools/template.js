@@ -1,14 +1,8 @@
 import { ask } from "../lib/cliInput.js";
 import { C, colorize } from "../lib/colors.js";
 
-// ---------------------------------------------------------------------------
-// Shared console helpers
-// ---------------------------------------------------------------------------
 let _alertCounter = 0;
 
-/**
- * Reset the alert counter (called at the start of a batch).
- */
 export function resetAlertCounter() {
     _alertCounter = 0;
 }
@@ -17,7 +11,6 @@ function logAlert(name, args) {
     _alertCounter++;
     const safeArgs = { ...args };
     const num = _alertCounter;
-    // Horizontal rule + numbered alert header
     console.log(colorize(`\n${'─'.repeat(56)}`, C.border));
     console.log(colorize(`[#${num}] [Tool Execution Alert] ${name} requested:`, C.alert));
     for (const [key, value] of Object.entries(safeArgs)) {
