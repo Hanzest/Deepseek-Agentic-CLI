@@ -50,12 +50,6 @@ Never log `.env` content or include it in responses to the user.
 
 If imports misbehave after code changes, restart the Node.js process. No bytecode caching exists in this JS codebase.
 
-
-
-
-
-
-
 ## 6. PowerShell quick reference
 
 | Task | PowerShell |

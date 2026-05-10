@@ -1,4 +1,5 @@
-﻿import { ask } from "../lib/cliInput.js";
+import { ask } from "../lib/cliInput.js";
+import { C, colorize } from "../lib/colors.js";
 
 // ---------------------------------------------------------------------------
 // Shared console helpers
@@ -17,13 +18,13 @@ function logAlert(name, args) {
     const safeArgs = { ...args };
     const num = _alertCounter;
     // Horizontal rule + numbered alert header
-    console.log(`\n\x1b[90m${'─'.repeat(56)}\x1b[0m`);
-    console.log(`\x1b[93m[#${num}] [Tool Execution Alert] ${name} requested:\x1b[0m`);
+    console.log(colorize(`\n${'─'.repeat(56)}`, C.border));
+    console.log(colorize(`[#${num}] [Tool Execution Alert] ${name} requested:`, C.alert));
     for (const [key, value] of Object.entries(safeArgs)) {
         const display = typeof value === "string" && value.length > 200
             ? value.substring(0, 200) + "..."
             : value;
-        console.log(`\x1b[90m  ${key}:\x1b[0m ${JSON.stringify(display)}`);
+        console.log(colorize(`  ${key}:`, C.dim) + ` ${JSON.stringify(display)}`);
     }
 }
 
@@ -33,9 +34,9 @@ function logAlert(name, args) {
  */
 function formatError(name, e) {
     const error_msg = `Error in tool '${name}': ${e.message || e}`;
-    console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
-    console.log(`\x1b[91m${error_msg}\x1b[0m`);
-    console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
+    console.log(colorize(`${'─'.repeat(56)}`, C.border));
+    console.log(colorize(error_msg, C.error));
+    console.log(colorize(`${'─'.repeat(56)}`, C.border));
     return JSON.stringify({ error: true, tool: name, message: error_msg });
 }
 
@@ -48,13 +49,13 @@ export function createToolHandler(name, handler, needsConsent = false) {
             logAlert(name, args);
             console.log(""); // blank line before consent prompt
             const consent = await ask(
-                "\x1b[96m  Do you approve this operation? (y/n): \x1b[0m"
+                colorize("  Do you approve this operation? (y/n): ", C.consent)
             );
             const consent_clean = consent.trim().toLowerCase();
             if (consent_clean !== "y") {
-                console.log(`\x1b[90m${'─'.repeat(56)}\x1b[0m`);
+                console.log(colorize(`${'─'.repeat(56)}`, C.border));
                 const denial_msg = "User denied the operation.";
-                console.log(`\x1b[91m${denial_msg}\x1b[0m`);
+                console.log(colorize(denial_msg, C.error));
                 return JSON.stringify({ error: true, tool: name, message: denial_msg });
             }
         }

@@ -13,7 +13,7 @@
 | **Tool Usage & Conventions** | [`docs/agents.md`](agents.md) | Path conventions, tool consent model, `.env` security policy, PowerShell quick reference, file encoding rules. |
 | **Batch Tool-Calling Strategy** | [`docs/skills/using_tools.md`](using_tools.md) | How to minimize API round-trips by co-dispatching independent tools, using native batch modes (`fetch_url` `urls[]`), and following the dependency rule. |
 | **System Architecture** | [`docs/this_repo/system-architecture.md`](this_repo/system-architecture.md) | Module responsibilities, data flow diagram, security model, OCP impact analysis, dependency map. |
-| **Lib Modules Reference** | [`docs/this_repo/modules-lib.md`](this_repo/modules-lib.md) | Per-module reference for all 7 `lib/` files: roles, exports, line counts, dependencies. |
+| **Lib Modules Reference** | [`docs/this_repo/modules-lib.md`](this_repo/modules-lib.md) | Per-module reference for all 8 `lib/` files: roles, exports, line counts, dependencies. |
 | **Tools Reference** | [`docs/this_repo/modules-tools.md`](this_repo/modules-tools.md) | Per-file reference for all 12 `tools/` files: schemas, consent, mutation, batching. |
 | **Data Flow Diagrams** | [`docs/this_repo/data-flow.md`](this_repo/data-flow.md) | Execution paths: main loop, batch tool execution, sub-agent lifecycle, context sliding. |
 | **Agent Onboarding** | [`docs/this_repo/agent-onboarding.md`](this_repo/agent-onboarding.md) | Quick-start navigation guide for agents new to this codebase. |
@@ -62,7 +62,7 @@ docs/
   this_repo/             ← Codebase-specific: architecture, modules, tools, data flow, onboarding
     README.md              ← Index of all this_repo/ documents
     system-architecture.md ← Full architecture: module map, data flow, dependencies, security model
-    modules-lib.md         ← Per-module reference for lib/ (7 modules)
+    modules-lib.md         ← Per-module reference for lib/ (8 modules)
     modules-tools.md       ← Per-file reference for tools/ (12 files)
     data-flow.md           ← Execution path diagrams (main loop, batch, sub-agent, context sliding)
     agent-onboarding.md    ← Quick-start navigation for agents

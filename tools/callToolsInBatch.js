@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Batch tool execution — runs tool call handlers locally (NO model API calls).
 //
 // The orchestrator sends a SINGLE model API request; the model may respond
@@ -11,10 +11,12 @@
 //   Phase 1 — Batch summary display
 //   Phase 2 — Unified execution: consent tools serialized via lock,
 //             read-only tools concurrent via Promise.all
+//   Phase 3 — Progress indicators with per-tool timing (Item 8)
 // ---------------------------------------------------------------------------
 
 import { resetAlertCounter } from "./template.js";
 import { MUTATION_BLOCKED_TOOLS } from "../lib/orchestrator.js";
+import { C, colorize } from "../lib/colors.js";
 
 const W = 56; // separator width
 
@@ -28,7 +30,7 @@ function parseToolCall(tc) {
         const args = JSON.parse(tc.function.arguments);
         return { name, args, parseError: null };
     } catch (e) {
-        console.error(`Error parsing arguments for tool '${name}':`, e);
+        console.error(colorize(`Error parsing arguments for tool '${name}':`, C.error), e);
         return { name, args: null, parseError: e.message || String(e) };
     }
 }
@@ -48,35 +50,44 @@ function truncate(v) {
  */
 function printBatchSummary(parsed) {
     const count = parsed.length;
-    console.log(`\n\x1b[90m${'═'.repeat(W)}\x1b[0m`);
-    console.log(`\x1b[1;97m  Batch Tool Execution — ${count} tool(s)\x1b[0m`);
-    console.log(`\x1b[90m${'═'.repeat(W)}\x1b[0m`);
+    console.log(colorize(`\n${'═'.repeat(W)}`, C.border));
+    console.log(colorize(`  Batch Tool Execution — ${count} tool(s)`, C.heading));
+    console.log(colorize(`${'═'.repeat(W)}`, C.border));
 
     for (let i = 0; i < parsed.length; i++) {
         const { name, args, needsConsent } = parsed[i];
         const consentTag = needsConsent
-            ? `\x1b[33m[consent required]\x1b[0m`
-            : `\x1b[32m[read-only]\x1b[0m`;
+            ? colorize("[consent required]", C.alert)
+            : colorize("[read-only]", C.success);
         console.log(
-            `\x1b[97m  #${i + 1}\x1b[0m  \x1b[93m${name}\x1b[0m  ${consentTag}`
+            `${colorize(`  #${i + 1}`, C.heading)}  ${colorize(name, C.tool)}  ${consentTag}`
         );
         for (const [key, value] of Object.entries(args || {})) {
-            console.log(`\x1b[90m       ${key}:\x1b[0m ${JSON.stringify(truncate(value))}`);
+            console.log(`${colorize(`       ${key}:`, C.dim)} ${JSON.stringify(truncate(value))}`);
         }
         if (i < parsed.length - 1) {
-            console.log(`\x1b[90m  ${'·'.repeat(W - 4)}\x1b[0m`);
+            console.log(colorize(`  ${'·'.repeat(W - 4)}`, C.border));
         }
     }
-    console.log(`\x1b[90m${'═'.repeat(W)}\x1b[0m\n`);
+    console.log(colorize(`${'═'.repeat(W)}`, C.border) + "\n");
 }
 
 /**
  * Print the post-execution batch summary footer.
  */
-function printBatchFooter(count) {
-    console.log(`\x1b[90m${'─'.repeat(W)}\x1b[0m`);
-    console.log(`\x1b[32m  All ${count} tool(s) executed.\x1b[0m`);
-    console.log(`\x1b[90m${'─'.repeat(W)}\x1b[0m\n`);
+function printBatchFooter(count, timings) {
+    console.log(colorize(`${'─'.repeat(W)}`, C.border));
+    if (timings && timings.length > 0) {
+        for (const t of timings) {
+            const ms = t.ms < 1 ? `${(t.ms * 1000).toFixed(0)}μs` :
+                       t.ms < 1000 ? `${t.ms.toFixed(1)}ms` :
+                       `${(t.ms / 1000).toFixed(1)}s`;
+            console.log(colorize(`  [done] ${t.name} (${ms})`, C.success));
+        }
+        console.log(colorize(`${'─'.repeat(W)}`, C.border));
+    }
+    console.log(colorize(`  All ${count} tool(s) executed.`, C.success));
+    console.log(colorize(`${'─'.repeat(W)}`, C.border) + "\n");
 }
 
 /**
@@ -116,12 +127,18 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
     resetAlertCounter();
     printBatchSummary(parsed);
 
+    // ---- Item 8: Progress indicator ----
+    const executableCount = parsed.filter(p => !p.parseError && TOOL_REGISTRY[p.name]).length;
+    console.log(colorize(`  Executing ${executableCount} tool(s) concurrently...`, C.system));
+    // Timing collector
+    const timings = [];
+
     // ---- Phase 2: Execute ----
     // Build one promise per tool (in original order). Consent tools run sequentially
     // via an internal async lock; read-only tools run concurrently.
     // All results are collected in original order — no post-hoc sort needed.
     let consentLock = Promise.resolve();
-    const resultPromises = parsed.map((p) => {
+    const resultPromises = parsed.map((p, index) => {
         // JSON parse error → skip execution, return structured error
         if (p.parseError) {
             return {
@@ -162,7 +179,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                     "Blocked: File mutation and system execution are disabled in Plan Mode. " +
                     "Switch to Agent Mode (/agent) to proceed. " +
                     "(Writes to artifacts/ folder are allowed.)";
-                console.log(`\x1b[91m  [Plan Mode] Blocked '${p.name}'\x1b[0m`);
+                console.log(colorize(`  [Plan Mode] Blocked '${p.name}'`, C.error));
                 return {
                     role: "tool",
                     tool_call_id: p.id,
@@ -176,6 +193,15 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             }
         }
 
+        // Wrapper that captures timing
+        const timedHandler = async () => {
+            const start = performance.now();
+            const result = await handler(p.args);
+            const ms = performance.now() - start;
+            timings.push({ name: p.name, ms, index });
+            return result;
+        };
+
         if (p.needsConsent) {
             // Chain onto consentLock so consent tools run one at a time
             const prev = consentLock;
@@ -183,7 +209,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             consentLock = new Promise((resolve) => { releaseLock = resolve; });
             return prev.then(async () => {
                 try {
-                    const content = await handler(p.args);
+                    const content = await timedHandler();
                     return {
                         role: "tool",
                         tool_call_id: p.id,
@@ -198,7 +224,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
 
         // Read-only tool → run immediately (concurrent with other read-only tools)
         return (async () => {
-            const content = await handler(p.args);
+            const content = await timedHandler();
             return {
                 role: "tool",
                 tool_call_id: p.id,
@@ -213,7 +239,10 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         messages.push(entry);
     }
 
-    printBatchFooter(tool_calls.length);
+    // Sort timings by original order
+    timings.sort((a, b) => a.index - b.index);
+
+    printBatchFooter(tool_calls.length, timings);
 
     return tool_calls.length;
 }

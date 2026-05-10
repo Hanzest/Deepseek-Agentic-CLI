@@ -17,6 +17,7 @@ export const write_or_create_file_schema = {
         name: "write_or_create_file",
         description:
             "Writes content to a file, creating it if it doesn't exist. " +
+            "If content is small, use patchFile tool instead. " +
             "Optionally creates parent directories. Can overwrite, append, " +
             "or replace a specific line range. When both start_line and " +
             "end_line are provided, only that line range is overwritten " +
