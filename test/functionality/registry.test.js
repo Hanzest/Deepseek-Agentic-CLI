@@ -35,10 +35,13 @@ describe("registry — Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Tool schemas have required fields defined
   // -----------------------------------------------------------------------
-  it("every tool schema declares required parameters", () => {
+  it("every tool schema declares required parameters (or uses oneOf)", () => {
     for (const [name, entry] of Object.entries(MANAGER_TOOLS)) {
-      const required = entry[0].function.parameters.required;
-      expect(Array.isArray(required)).toBe(true);
+      const params = entry[0].function.parameters;
+      const required = params.required;
+      const hasOneOf = Array.isArray(params.oneOf);
+      // Some schemas like fetch_url use oneOf instead of a top-level required array
+      expect(Array.isArray(required) || hasOneOf).toBe(true);
     }
   });
 });

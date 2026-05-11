@@ -62,7 +62,7 @@ describe("readFileChunk — Functionality / Happy Paths", () => {
     });
     expect(result).toBeTypeOf("string");
     // Check header shows clamping
-    expect(result).toContain("read from line 1 to line 10");
+    expect(result).toContain("read from line 1 to line 11");
     // Check a subset of lines
     expect(result).toContain("Line 1:");
     expect(result).toContain("Line 10:");
@@ -149,6 +149,6 @@ describe("readFileChunk — Functionality / Happy Paths", () => {
     expect(result).toContain("---");
     expect(result).toContain("sample.txt");
     expect(result).toContain("read from line 1 to line 3");
-    expect(result).toContain("of 10");
+    expect(result).toContain("of 11");
   });
 });

@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("../../lib/cliInput.js", () => ({
+  ask: vi.fn().mockResolvedValue("y"),
+}));
+
 import { fetch_url, fetch_url_schema } from "../../tools/fetchUrl.js";
 
 // ---------------------------------------------------------------------------
@@ -80,9 +85,9 @@ describe("fetchUrl functionality — real network calls", () => {
       expect(parsed).toHaveProperty("truncated");
       expect(typeof parsed.truncated).toBe("boolean");
 
-      expect(parsed).toHaveProperty("fetch_timestamp") ||
-        expect(parsed).toHaveProperty("fetched_at");
-      const ts = parsed.fetched_at || parsed.fetch_timestamp;
+      // The tool returns "fetched_at" (not "fetch_timestamp")
+      expect(parsed).toHaveProperty("fetched_at");
+      const ts = parsed.fetched_at;
       expect(typeof ts).toBe("string");
       expect(ts.length).toBeGreaterThan(0);
 

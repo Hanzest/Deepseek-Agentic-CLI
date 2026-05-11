@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fetch_url, fetch_url_schema } from "../../tools/fetchUrl.js";
+
+vi.mock("../../lib/cliInput.js", () => ({
+  ask: vi.fn().mockResolvedValue("y"),
+}));
 
 // ---------------------------------------------------------------------------
 // Reliability / Edge Case tests for fetchUrl
@@ -72,7 +76,7 @@ describe("fetchUrl reliability — input edge cases", () => {
       expect(parsed).toBeTruthy();
       // If no error, it means the response arrived within 1s (unlikely but possible)
       if (parsed.error === true) {
-        expect(parsed.message.toLowerCase()).toMatch(/timeout|abort/i);
+        expect(parsed.message.toLowerCase()).toMatch(/timed out|timeout|abort/i);
       }
     },
   );

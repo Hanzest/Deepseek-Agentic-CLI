@@ -15,7 +15,7 @@ const MOCK_REGISTRY = {
   ],
   write_x: [
     { type: "function", function: { name: "write_x", description: "", parameters: { type: "object", properties: {}, required: [] } } },
-    async () => "written_x",
+    async () => JSON.stringify({ success: true }),
     true,
   ],
 };
@@ -77,7 +77,7 @@ describe("callToolsInBatch — Functionality / Happy Paths", () => {
     expect(messages[0].tool_call_id).toBe("c1");
     expect(messages[0].content).toBe("result_a");
     expect(messages[1].tool_call_id).toBe("c2");
-    expect(messages[1].content).toBe("written_x");
+    expect(messages[1].content).toBe('{"success":true}');
     expect(messages[2].tool_call_id).toBe("c3");
     expect(messages[2].content).toBe("result_b");
   });
@@ -90,9 +90,9 @@ describe("callToolsInBatch — Functionality / Happy Paths", () => {
     const call = makeToolCall("c1", "write_x");
     const count = await callToolsInBatch([call], MOCK_REGISTRY, messages, "agent");
     expect(count).toBe(1);
-    expect(messages[0].content).toBe("written_x");
-    // Not blocked
+    // Not blocked — content should be valid JSON from the handler
     const parsed = JSON.parse(messages[0].content);
+    expect(parsed.success).toBe(true);
     expect(parsed.error).toBeFalsy?.(); // optional check
   });
 

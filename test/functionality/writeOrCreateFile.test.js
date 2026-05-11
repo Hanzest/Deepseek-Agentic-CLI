@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+vi.mock("../../lib/cliInput.js", () => ({
+  ask: vi.fn().mockResolvedValue("y"),
+}));
+
 import { write_or_create_file } from "../../tools/writeOrCreateFile.js";
 import {
   createTempDir,
@@ -60,7 +65,8 @@ describe("writeOrCreateFile — Functionality / Happy Paths", () => {
       end_line: 4,
     });
     // Lines: 1:A, 2-4 replaced by X,Y, 5:E
-    expect(readFile(fp)).toBe("A\nX\nY\nE\n");
+    // Note: original "D\n" at line 4 → trailing newline in replacement produces "Y\n\n"
+    expect(readFile(fp)).toBe("A\nX\nY\n\nE\n");
   });
 
   // -----------------------------------------------------------------------

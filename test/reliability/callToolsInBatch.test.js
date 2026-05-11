@@ -8,8 +8,8 @@ const MOCK_REGISTRY = {
     async (args) => `echo: ${args.msg}`,
     false, // read-only
   ],
-  safe_write: [
-    { type: "function", function: { name: "safe_write", description: "Writes data", parameters: { type: "object", properties: { data: { type: "string" } }, required: ["data"] } } },
+  write_or_create_file: [
+    { type: "function", function: { name: "write_or_create_file", description: "Writes data", parameters: { type: "object", properties: { data: { type: "string" } }, required: ["data"] } } },
     async (args) => `wrote: ${args.data}`,
     true, // needs consent
   ],
@@ -74,7 +74,7 @@ describe("callToolsInBatch — Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   it("blocks mutation tools in plan mode", async () => {
     const messages = [];
-    const call = makeToolCall("call_1", "safe_write", { data: "test" });
+    const call = makeToolCall("call_1", "write_or_create_file", { data: "test" });
     const count = await callToolsInBatch([call], MOCK_REGISTRY, messages, "plan");
     expect(count).toBe(1);
     const parsed = JSON.parse(messages[0].content);

@@ -35,15 +35,15 @@ describe("askUserPreferences — Functionality / Happy Paths", () => {
     expect(typeof result).toBe("string");
   });
 
-  it("should return structured JSON result", async () => {
+  it("should return structured text result with Q/A pairs", async () => {
     ask.mockResolvedValueOnce("1");
     const result = await ask_user_preferences({
       questions: [{ question_text: "Test?", choices: ["Yes", "No"] }],
     });
-    const parsed = JSON.parse(result);
-    expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed.length).toBe(1);
-    expect(parsed[0]).toHaveProperty("question");
-    expect(parsed[0]).toHaveProperty("answer");
+    expect(typeof result).toBe("string");
+    // Output format: "[User Preferences]\nQ: Test?\nA: Yes\n"
+    expect(result).toContain("[User Preferences]");
+    expect(result).toContain("Q: Test?");
+    expect(result).toContain("A: Yes");
   });
 });

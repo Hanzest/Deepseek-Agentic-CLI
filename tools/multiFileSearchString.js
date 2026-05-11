@@ -131,6 +131,9 @@ function _glob_to_regex(gp) {
     let s = gp.replace(/[.+^{}()|[\]\\]/g, "\\$&");
     s = s.replace(/\*\*/g, "___DS___").replace(/\*/g, "___S___").replace(/\?/g, "___Q___");
     s = s.replace(/___DS___/g, ".*").replace(/___S___/g, "[^/]*").replace(/___Q___/g, ".");
+    // Allow **/ prefix to be optional so root-level files also match
+    // e.g. "**/*.txt" regex becomes "^(.*/)?[^/]*\.txt$" matching both "a.txt" and "sub/a.txt"
+    s = s.replace(/^\.\*\//, "(.*/)?");
     return new RegExp("^" + s + "$");
 }
 

@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { execute_terminal_command } from "../../tools/executeTerminal.js";
+
+vi.mock("../../lib/cliInput.js", () => ({
+  ask: vi.fn().mockResolvedValue("y"),
+}));
 
 describe("executeTerminal — Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
