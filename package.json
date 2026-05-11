@@ -12,6 +12,23 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.3.0",
-    "globals": "^17.6.0"
+    "globals": "^17.6.0",
+    "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:reliability": "vitest run --dir test/reliability",
+    "test:functionality": "vitest run --dir test/functionality",
+    "test:unit": "vitest run --grep-invert '@network'",
+    "test:network": "vitest run --grep '@network'",
+    "test:watch": "vitest"
+  },
+  "vitest": {
+    "setupFiles": [
+      "./test/setup.js"
+    ],
+    "test": {
+      "globals": false
+    }
   }
 }

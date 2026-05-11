@@ -1,0 +1,10 @@
+Line 1: Hello World
+Line 2: This is a test fixture.
+Line 3: Vitest is awesome.
+Line 4: Testing is important.
+Line 5: Keep your code clean.
+Line 6: This is line six.
+Line 7: Almost at the end.
+Line 8: Two more lines left.
+Line 9: One more to go.
+Line 10: End of sample file.

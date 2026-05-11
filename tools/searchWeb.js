@@ -11,7 +11,8 @@ export const search_web_schema = {
             "Searches the web using DuckDuckGo and returns a list of results " +
             "(title, URL, and snippet). Use this to find up-to-date documentation, " +
             "GitHub issues, or StackOverflow answers when the model's training data " +
-            "may be outdated.",
+            "may be outdated. Results include URLs — extract them and pass to " +
+            "fetch_url({ urls: [...] }) in the next turn for full-content retrieval.",
         parameters: {
             type: "object",
             properties: {

@@ -14,7 +14,9 @@ export const patch_file_schema = {
             "Performs a targeted edit on a file by searching for a string and replacing it. " +
             "If the search_string is found exactly once, it is replaced with replace_string. " +
             "If found multiple times, the tool reports the line numbers and asks for a more " +
-            "specific search string. Use this instead of rewriting entire files for small changes.\n\n" +
+            "specific search string. **Always prefer this over write_or_create_file for edits " +
+            "affecting ≤~20 lines** — it saves tokens by transmitting only the diff. " +
+            "Use write_or_create_file only for new files, complete rewrites, or large-scale changes.\n\n" +
             "Alternatively, provide a line_number to replace that specific line by number. " +
             "In this mode, search_string is used to validate that the targeted line " +
             "contains the expected content before replacement.",

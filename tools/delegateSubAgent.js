@@ -91,7 +91,8 @@ export const delegate_sub_agent_schema = {
                         "Set to true when the deliverable is purely a file write with no " +
                         "verification needed. Instructs the sub-agent to write and respond " +
                         "immediately — no re-reading, no verification loop. Saves 1-2 " +
-                        "iterations per task. Defaults to false.",
+                        "iterations per task. **Use this for all write-only delegations.** " +
+                        "Defaults to false.",
                 },
                 output_file: {
                     type: "string",

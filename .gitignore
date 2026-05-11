@@ -9,3 +9,4 @@ obsolete/*
 artifacts/*
 chat_history/*
 this_repo
+test/tmp/

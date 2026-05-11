@@ -14,7 +14,10 @@ export const get_project_tree_schema = {
             "Walks the project directory structure, ignoring files and folders " +
             "listed in .gitignore. Returns a clean hierarchical map of the actual " +
             "source code. Use this to navigate the project without noisy terminal " +
-            "outputs from node_modules, .git, venv, etc.",
+            "outputs from node_modules, .git, venv, etc. " +
+            "Use this instead of execute_terminal_command for filesystem exploration " +
+            "(dir/ls/tree) — it is read-only, respects .gitignore, and never requires " +
+            "user consent.",
         parameters: {
             type: "object",
             properties: {

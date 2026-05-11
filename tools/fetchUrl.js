@@ -12,9 +12,10 @@ export const fetch_url_schema = {
             "Uses Cheerio to strip scripts, styles, and non-content elements, returning " +
             "structured JSON with the meaningful text content converted via Turndown. " +
             "Use this to read up-to-date documentation, articles, or web pages without " +
-            "burning tokens on raw HTML. Supports batch-fetching multiple URLs concurrently " +
-            "in a single tool call, with per-URL metadata (title, content length, " +
-            "truncation info, fetch timestamp) for better source attribution.",
+            "burning tokens on raw HTML. **Always use the urls[] array form for multiple " +
+            "pages** — never call this tool once per URL. When you have search_web results, " +
+            "extract the URLs and pass them all at once via urls[]. Supports per-URL metadata " +
+            "(title, content length, truncation info, fetch timestamp) for source attribution.",
         parameters: {
             type: "object",
             properties: {
