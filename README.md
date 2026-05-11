@@ -24,8 +24,6 @@ Deepseek_Chatbot/
 ├── main.js                 # Entry point (7 lines: imports runChat, invokes it)
 ├── package.json
 ├── README.md
-├── artifacts/              # Generated markdown files (plans, sub-agent prompts)
-│   └── ...                 # Created at runtime by tools
 ├── lib/
 │   ├── orchestrator.js     # Chat loop, model invocation, sliding context, tool orchestration
 │   ├── tokenizer.js        # Pure token estimation (tiktoken + heuristic fallback)
@@ -50,16 +48,9 @@ Deepseek_Chatbot/
 └── docs/
     ├── agents.md           # Agent guidelines (path conventions, consent model, encoding rules)
     ├── tool-categories.md  # Tools grouped by capability domain
-    ├── skills/
-    │   ├── managing_agents.md  # Delegation patterns and best practices
-    │   └── using_tools.md      # Batch-first tool-calling strategy
-    └── this_repo/
-        ├── README.md           # Index of codebase-specific docs
-        ├── system-architecture.md  # Full architecture documentation
-        ├── modules-lib.md      # Per-module reference for lib/
-        ├── modules-tools.md    # Per-file reference for tools/
-        ├── data-flow.md        # Execution path diagrams
-        └── agent-onboarding.md # Quick-start navigation for agents
+    └── skills/
+        ├── managing_agents.md  # Delegation patterns and best practices
+        └── using_tools.md      # Batch-first tool-calling strategy
 ```
 
 ## Requirements
@@ -78,7 +69,7 @@ npm install
 | Package | Purpose |
 |---------|---------|
 | `openai` | OpenAI-compatible API client for DeepSeek models |
-| `dotenv` | Load `.env` file |
+| `dotenv` | Load environment variables |
 | `tiktoken` | Accurate token counting |
 | `ignore` | `.gitignore`-aware directory traversal |
 | `cheerio` | HTML parsing for URL content extraction |
@@ -158,7 +149,7 @@ Three tool registries control which tools are available to which agent:
 
 When the model encounters a complex multi-step task (e.g., refactoring a module, writing documentation, auditing code), it can use the `delegate_sub_agent` tool to:
 
-1. Generate a structured Markdown prompt file in `artifacts/` with the sub-agent's goal, purpose, deliverables, skills, and context.
+1. Generate a structured Markdown prompt file with the sub-agent's goal, purpose, deliverables, skills, and context.
 2. Spawn an **independent PowerShell terminal window** via `subAgentTerminal.js`.
 3. Run a **separate model loop** (`subAgentLoop.js`) in that window with its own context, using `SUBAGENT_TOOLS` (9 tools, all consent-free).
 4. The sub-agent operates autonomously, writing results back to the project files.
@@ -168,7 +159,6 @@ This provides **true context isolation** — the sub-agent's token budget, messa
 
 ### Security
 
-- The `.env` file is **protected** at the tool level — read, write, and execution tools all refuse to touch `.env` files.
 - Dangerous command patterns (e.g. `Get-Content *`) are blocked before execution.
 - All destructive/network operations prompt the user for approval before proceeding.
 - Sub-agents operate in independent terminal windows; all their tool calls are still logged to stdout via `callToolsInBatch`.
@@ -196,7 +186,7 @@ Sub-agents use a separate `HYPERPARAMETERS` block in `lib/subAgentLoop.js` with 
 
 ### `lib/orchestrator.js` (~319 lines) — Application Orchestration
 
-- Sets up OpenAI client from `.env`, loads `HYPERPARAMETERS`.
+- Sets up OpenAI client and loads `HYPERPARAMETERS`.
 - `runChat()` — top-level entry: calls model selection + thinking toggle, then starts the loop.
 - `multiTurnLoop()` — conversation orchestrator with sliding context window, inner tool-execution loop, and per-iteration telemetry.
 - `callModel()` — thin wrapper over `OpenAI.chat.completions.create()`.
@@ -222,7 +212,7 @@ Sub-agents use a separate `HYPERPARAMETERS` block in `lib/subAgentLoop.js` with 
 
 - Mirrors the main orchestrator loop but uses `SUBAGENT_TOOLS` (9 tools, all consent-free).
 - Reasoning is disabled by default — sub-agents are autonomous workers.
-- Reads the delegated task prompt from `artifacts/` and runs until the task is complete.
+- Reads the delegated task prompt and runs until the task is complete.
 
 ### `lib/subAgentTerminal.js` (~120 lines) — Independent Terminal Manager
 
@@ -257,6 +247,5 @@ See [`docs/agents.md`](docs/agents.md) for detailed agent conventions, including
 - Tool consent model
 - File encoding rules (always UTF-8)
 - PowerShell quick reference
-- `.env` security policy
 
-See [`docs/this_repo/system-architecture.md`](docs/this_repo/system-architecture.md) for the full architecture documentation. For deeper dives, see [`docs/this_repo/`](docs/this_repo/) — modules reference, tool reference, data flow diagrams, and agent onboarding guide.
+See [`docs/agents.md`](docs/agents.md) and [`docs/tool-categories.md`](docs/tool-categories.md) for further documentation.
