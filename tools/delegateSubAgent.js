@@ -5,7 +5,7 @@ import { createToolHandler } from "./template.js";
 import { runSubAgent } from "../lib/subAgentLoop.js";
 import { createSubAgentTerminal } from "../lib/subAgentTerminal.js";
 import { estimateTokens } from "../lib/tokenizer.js";
-import { SessionContext } from "../lib/orchestrator.js";
+import { SessionContext, getActiveModelConfig } from "../lib/orchestrator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -351,7 +351,8 @@ async function delegateSubAgentCore({
             log: (msg) => terminal.write(String(msg)),
         };
 
-        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode);
+        const modelConfig = getActiveModelConfig() || {};
+        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;
         console.log(`\n\x1b[91m${errMsg}\x1b[0m`);

@@ -83,8 +83,8 @@ npm install
 2. **Create a `.env` file** in the project root with the following:
 
    ```env
-   MODEL_API_KEY=your_api_key_here
-   MODEL_BASE_URL=https://api.deepseek.com/v1
+   DEEPSEEK_API_KEY=your_api_key_here
+   DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
    ```
 
    > The `.env` file is git-ignored and must never be committed.
