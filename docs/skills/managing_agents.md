@@ -13,8 +13,8 @@ Delegate when a task is:
 |---|---|
 | **Complex multi-step** | Context isolation prevents the manager's conversation from ballooning |
 | **Self-contained** | The sub-task has clear inputs and a single output deliverable |
-| **Specialized** | The sub-task requires focused domain knowledge (e.g., SQL tuning, React patterns) |
 | **Parallelizable** | Multiple sub-agents can run concurrently on independent sub-tasks |
+| **Simple task** | if it does not require deep reasoning or knowledge |
 
 Do NOT delegate for trivial single-tool actions (e.g., reading a file, searching the web). Just call the tool directly.
 
@@ -50,21 +50,7 @@ Every call to `delegate_sub_agent` must nail these four required fields:
 
 ---
 
-## 3. Optional but Powerful: `skills`
-
-The `skills` array narrows the sub-agent's expertise in its system prompt. Each tag injects a specialization line. Use them to increase accuracy:
-
-- Be specific: `"React 18 Server Components"` not `"React"`.
-- Limit to 3–5 tags; too many dilutes focus.
-- Match skills to the deliverable, not the domain.
-
-Examples:
-- For a database task: `["SQL optimization", "PostgreSQL indexing", "query plan analysis"]`
-- For a UI task: `["accessibility auditing", "CSS layout", "design-system consistency"]`
-
----
-
-## 4. Optional: `context`
+## 3. Optional: `context`
 
 Provide background the sub-agent needs but cannot discover on its own:
 
@@ -76,7 +62,7 @@ Provide background the sub-agent needs but cannot discover on its own:
 
 ---
 
-## 5. Anti-patterns to Avoid
+## 4. Anti-patterns to Avoid
 
 | Anti-pattern | Why it fails |
 |---|---|
@@ -88,7 +74,7 @@ Provide background the sub-agent needs but cannot discover on its own:
 
 ---
 
-## 6. The Manager's Mental Model
+## 5. The Manager's Mental Model
 
 ```
 Manager's job:              Sub-agent's job:
@@ -104,7 +90,7 @@ The manager needs only **conceptual understanding** of the sub-task — enough t
 
 ---
 
-## 7. Quick Checklist
+## 6. Quick Checklist
 
 Before calling `delegate_sub_agent`, verify:
 
@@ -118,9 +104,9 @@ Before calling `delegate_sub_agent`, verify:
 
 ---
 
-## 8. Token-Efficient Delegation
+## 7. Token-Efficient Delegation
 
-### 8.1 Keep Context Lean
+### 7.1 Keep Context Lean
 
 The `context` field is for **pointers, not pages**. The sub-agent has its own tools to read files. Provide:
 
@@ -130,7 +116,7 @@ The `context` field is for **pointers, not pages**. The sub-agent has its own to
 
 **Max recommended:** 500 words. If you need more, reconsider whether the task is self-contained.
 
-### 8.2 Use `budget_iterations` to Cap Costs
+### 7.2 Use `budget_iterations` to Cap Costs
 
 Simple tasks (single file write, targeted search) rarely need 20 iterations. Complex tasks (multi-file refactors) may need more. Set `budget_iterations` per task:
 
@@ -143,11 +129,11 @@ Simple tasks (single file write, targeted search) rarely need 20 iterations. Com
 
 Lower budgets save tokens by forcing early termination of wandering sub-agents.
 
-### 8.3 Use `self_contained` for Write-Only Tasks
+### 7.3 Use `self_contained` for Write-Only Tasks
 
 When the deliverable is purely a file write with no verification needed, set `self_contained: true`. This instructs the sub-agent to write and respond — no re-reading, no verification loop. Saves 1–2 iterations per task.
 
-### 8.4 Use `priority` to Guide Effort
+### 7.4 Use `priority` to Guide Effort
 
 | Priority | Effect |
 |----------|--------|
@@ -155,7 +141,7 @@ When the deliverable is purely a file write with no verification needed, set `se
 | `normal` | Standard behavior (default) |
 | `low` | Sub-agent may use fewer iterations, report partial results |
 
-### 8.5 Sub-Agents Batch Too
+### 7.5 Sub-Agents Batch Too
 
 Sub-agents inherit the batch-first strategy (see [`docs/skills/using_tools.md`](../using_tools.md)). When writing the `deliverable` and `context`, don't micromanage tool usage — the sub-agent's system prompt already instructs batch-first behavior.
 
