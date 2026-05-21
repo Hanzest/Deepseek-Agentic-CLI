@@ -1,6 +1,7 @@
 ﻿import fs from "fs";
 import path from "path";
 import { createToolHandler } from "./template.js";
+import { readFileUtf8Normalized } from "../lib/fileReader.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -50,7 +51,7 @@ async function readFileChunkCore({ file_path, start_line, end_line }) {
 
     let all_lines;
     try {
-        const file_content = fs.readFileSync(file_path, "utf-8");
+        const file_content = readFileUtf8Normalized(file_path);
         all_lines = file_content.split("\n");
     } catch (e) {
         if (e.code === "ENOENT") {
@@ -91,7 +92,7 @@ async function readFileChunkCore({ file_path, start_line, end_line }) {
     const output_lines = [];
     for (let i = 0; i < chunk_lines.length; i++) {
         const line_num = start_line + i;
-        const line_content = chunk_lines[i].replace(/\r?\n?$/, "");
+        const line_content = chunk_lines[i];
         output_lines.push(
             `${String(line_num).padStart(6)}| ${line_content}`
         );

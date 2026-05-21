@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import ignore from "ignore";
 import { createToolHandler } from "./template.js";
+import { readFileUtf8Normalized } from "../lib/fileReader.js";
 
 export const multi_file_search_string_schema = {
     type: "function",
@@ -72,7 +73,7 @@ export const multi_file_search_string_schema = {
 function _load_gitignore_spec(root_path) {
     const p = path.join(root_path, ".gitignore");
     if (!fs.existsSync(p)) return null;
-    try { return ignore().add(fs.readFileSync(p, "utf-8")); } catch { return null; }
+    try { return ignore().add(readFileUtf8Normalized(p)); } catch { return null; }
 }
 
 function _is_ignored(rel_path, is_dir, spec) {
@@ -207,7 +208,7 @@ async function multiFileSearchStringCore({
         }
 
         let lines;
-        try { lines = fs.readFileSync(fp, "utf-8").split("\n"); } catch { continue; }
+        try { lines = readFileUtf8Normalized(fp).split("\n"); } catch { continue; }
         for (let i = 0; i < lines.length; i++) {
             if (max_results > 0 && results.length >= max_results) break;
             const line = lines[i];

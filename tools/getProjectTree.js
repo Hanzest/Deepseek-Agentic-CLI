@@ -2,6 +2,7 @@
 import path from "path";
 import ignore from "ignore";
 import { createToolHandler } from "./template.js";
+import { readFileUtf8Normalized } from "../lib/fileReader.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -47,7 +48,7 @@ function _load_gitignore_spec(root_path) {
         return null;
     }
     try {
-        const gitignore_content = fs.readFileSync(gitignore_path, "utf-8");
+        const gitignore_content = readFileUtf8Normalized(gitignore_path);
         return ignore().add(gitignore_content);
     } catch {
         return null;

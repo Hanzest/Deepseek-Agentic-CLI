@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
+import { readFileUtf8Normalized } from "../lib/fileReader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -134,7 +135,7 @@ async function writeOrCreateFileCore({
         // Read existing file
         let existing;
         try {
-            existing = fs.readFileSync(resolved_path, { encoding: "utf-8" });
+            existing = readFileUtf8Normalized(resolved_path);
         } catch (e) {
             if (e.code === "ENOENT") {
                 const error_msg =

@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
+import { readFileUtf8Normalized } from "../lib/fileReader.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -68,7 +69,7 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
 
     let original_content;
     try {
-        original_content = fs.readFileSync(file_path, "utf-8");
+        original_content = readFileUtf8Normalized(file_path);
     } catch (e) {
         if (e.code === "ENOENT") {
             const error_msg = `Error: File not found at '${file_path}'.`;
@@ -105,13 +106,20 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
             return error_msg;
         }
 
-        lines[line_number - 1] = replace_string;
+        // When replace_string is empty, splice the line out entirely
+        // instead of leaving a blank line.
+        if (replace_string === "") {
+            lines.splice(line_number - 1, 1);
+        } else {
+            lines[line_number - 1] = replace_string;
+        }
         const new_content = lines.join("\n");
 
         try {
             fs.writeFileSync(file_path, new_content, "utf-8");
+            const action = replace_string === "" ? "Deleted line" : "Replaced line";
             const success_msg =
-                `Successfully patched '${file_path}'. Replaced line ${line_number}.`;
+                `Successfully patched '${file_path}'. ${action} ${line_number}.`;
             console.log(`\x1b[92m${success_msg}\x1b[0m`);
             return success_msg;
         } catch (e) {
@@ -122,7 +130,7 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
     }
 
     // -----------------------------------------------------------------------
-    // EXISTING STRING-SEARCH LOGIC (unchanged)
+    // STRING-SEARCH BRANCH
     // -----------------------------------------------------------------------
 
     // Count occurrences by splitting
@@ -130,9 +138,16 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
         original_content.split(search_string).length - 1;
 
     if (occurrences === 0) {
+        // Include a snippet of file content to help diagnose mismatches
+        // (e.g. invisible characters, line-ending differences).
+        const snippet =
+            original_content.length > 200
+                ? original_content.substring(0, 200) + "..."
+                : original_content;
         const error_msg =
             `Error: search_string not found in '${file_path}'. ` +
-            `No changes were made. Verify the search string and try again.`;
+            `No changes were made. Verify the search string and try again.\n` +
+            `File starts with: "${snippet}"`;
         console.log(`\x1b[91m${error_msg}\x1b[0m`);
         return error_msg;
     }

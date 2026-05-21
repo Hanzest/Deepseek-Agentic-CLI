@@ -27,7 +27,12 @@ const W = 56; // separator width
 function parseToolCall(tc) {
     const name = tc.function.name;
     try {
-        const args = JSON.parse(tc.function.arguments);
+        let rawArgs = tc.function.arguments.trim();
+        // Strip markdown code fences Gemini may hallucinate
+        rawArgs = rawArgs.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```\s*$/, '');
+        // Strip zero-width/invisible characters that trip JSON.parse
+        rawArgs = rawArgs.replace(/[\u200B-\u200D\uFEFF]/g, '');
+        const args = JSON.parse(rawArgs);
         return { name, args, parseError: null };
     } catch (e) {
         console.error(colorize(`Error parsing arguments for tool '${name}':`, C.error), e);
@@ -132,7 +137,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-                name: p.name,
+
                 content: JSON.stringify({
                     error: true,
                     tool: p.name,
@@ -145,7 +150,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-                name: p.name,
+
                 content: JSON.stringify({
                     error: true,
                     tool: p.name,
@@ -169,7 +174,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                 return {
                     role: "tool",
                     tool_call_id: p.id,
-                    name: p.name,
+
                     content: JSON.stringify({
                         error: true,
                         tool: p.name,
@@ -198,7 +203,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                     return {
                         role: "tool",
                         tool_call_id: p.id,
-                        name: p.name,
+
                         content,
                     };
                 } finally {
@@ -213,7 +218,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-                name: p.name,
+
                 content,
             };
         })();
