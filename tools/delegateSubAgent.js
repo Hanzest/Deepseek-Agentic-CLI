@@ -5,8 +5,9 @@ import { createToolHandler } from "./template.js";
 import { runSubAgent } from "../lib/subAgentLoop.js";
 import { createSubAgentTerminal } from "../lib/subAgentTerminal.js";
 import { estimateTokens } from "../lib/tokenizer.js";
-import { SessionContext, getActiveModelConfig } from "../lib/orchestrator.js";
+import { SessionContext, getActiveModelConfig, PRICING } from "../lib/orchestrator.js";
 import { ROLE_SYSTEM_PROMPT, getRoleEntry } from "./roleSystemPrompts.js";
+import { ensureActiveDir, timestampedFilename } from "../lib/artifactManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +21,7 @@ export const delegate_sub_agent_schema = {
         name: "delegate_sub_agent",
         description:
             "Delegates a complex sub-task to a specialized sub-agent by generating a " +
-            "structured Markdown prompt file in the artifacts/ directory. The main agent " +
+            "structured Markdown prompt file in the artifacts/active/ directory. The main agent " +
             "feeds this prompt into a fresh conversation to achieve true context isolation, " +
             "parallelization, and specialization. Use this to break down complex multi-step " +
             "tasks into independent, focused sub-tasks.",
@@ -68,8 +69,8 @@ export const delegate_sub_agent_schema = {
                         "Maximum iterations the sub-agent may use. " +
                         "Override the default (20). Lower values save tokens on simple tasks; " +
                         "higher values provide headroom for complex tasks. " +
-                        "Recommended: 3-5 for single-file changes, 8-12 for multi-file, " +
-                        "15-20 for full codebase analysis. Defaults to 20.",
+                        "Recommended: 5-10 for single-file changes, 15-20 for multi-file, " +
+                        "20-25 for full codebase analysis. Defaults to 20.",
                 },
                 self_contained: {
                     type: "boolean",
@@ -83,7 +84,7 @@ export const delegate_sub_agent_schema = {
                 output_file: {
                     type: "string",
                     description:
-                        "Custom filename relative to artifacts/. Defaults to " +
+                        "Custom filename relative to artifacts/active/. Defaults to " +
                         "'subagent-{sub_agent_name}.md'. Only alphanumeric, dash, dot, " +
                         "and underscore characters are permitted. Must end with .md.",
                 },
@@ -247,7 +248,6 @@ function buildMarkdownPrompt({
 
 // ---------------------------------------------------------------------------
 // Pure handler logic (no consent — safe workspace writes only)
-// ---------------------------------------------------------------------------
 async function delegateSubAgentCore({
     sub_agent_name,
     definition_of_done,
@@ -258,20 +258,17 @@ async function delegateSubAgentCore({
     self_contained = false,
     output_file = "",
 } = {}) {
-    const artifactsDir = path.resolve(__dirname, "..", "artifacts");
+    const artifactsDir = ensureActiveDir();
 
-    // Ensure artifacts directory exists
-    if (!fs.existsSync(artifactsDir)) {
-        fs.mkdirSync(artifactsDir, { recursive: true });
-    }
-
-    // Determine filename: use sanitized custom name or default
+    // Determine filename: use sanitized custom name or default, with timestamp
     let desiredName;
     if (output_file) {
         const sanitized = sanitizeOutputFile(output_file, artifactsDir);
-        desiredName = sanitized || `subagent-${sanitizeFilename(sub_agent_name)}.md`;
+        desiredName = sanitized
+            ? timestampedFilename(sanitized)
+            : timestampedFilename(`subagent-${sanitizeFilename(sub_agent_name)}.md`);
     } else {
-        desiredName = `subagent-${sanitizeFilename(sub_agent_name)}.md`;
+        desiredName = timestampedFilename(`subagent-${sanitizeFilename(sub_agent_name)}.md`);
     }
 
     const markdown = buildMarkdownPrompt({
@@ -304,7 +301,7 @@ async function delegateSubAgentCore({
     console.log(`\x1b[1;97m[Sub-Agent Delegate]\x1b[0m`);
     console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
     console.log(`  DoD:       \x1b[37m${definition_of_done}\x1b[0m`);
-    console.log(`  Prompt:     \x1b[90martifacts/${fileName}\x1b[0m`);
+    console.log(`  Prompt:     \x1b[90martifacts/active/${fileName}\x1b[0m`);
     console.log(`  Role:       \x1b[37m${role}\x1b[0m`);
     console.log(`  Status:     \x1b[32mcreated\x1b[0m`);
 
@@ -315,6 +312,7 @@ async function delegateSubAgentCore({
 
     let terminal;
     let result;
+    let modelConfig;
     try {
         terminal = createSubAgentTerminal(sub_agent_name);
 
@@ -323,7 +321,7 @@ async function delegateSubAgentCore({
             log: (msg) => terminal.write(String(msg)),
         };
 
-        const modelConfig = getActiveModelConfig() || {};
+        modelConfig = getActiveModelConfig() || {};
         result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;
@@ -344,9 +342,9 @@ async function delegateSubAgentCore({
     }
 
     // -----------------------------------------------------------------------
-    // Write the sub-agent report
+    // Write the sub-agent report (timestamped)
     // -----------------------------------------------------------------------
-    const reportName = `${sanitizeFilename(sub_agent_name)}-report.md`;
+    const reportName = timestampedFilename(`${sanitizeFilename(sub_agent_name)}-report.md`);
     const reportPath = path.join(artifactsDir, reportName);
 
     const reportLines = [
@@ -375,13 +373,39 @@ async function delegateSubAgentCore({
 
     console.log(`\n\x1b[1;97m[Sub-Agent Complete]\x1b[0m`);
     console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
-    console.log(`  Report:     \x1b[90martifacts/${reportName}\x1b[0m`);
+    console.log(`  Report:     \x1b[90martifacts/active/${reportName}\x1b[0m`);
     console.log(`  Iterations: \x1b[37m${result.iterationCount}\x1b[0m`);
     console.log(`  Status:     \x1b[32mcompleted\x1b[0m`);
 
+    // -------------------------------------------------------------------
+    // Push audit record into SessionContext for the /audit command
+    // -------------------------------------------------------------------
+    const modelName = modelConfig.model_name || "deepseek-v4-flash";
+    const rates = PRICING[modelName] || PRICING["deepseek-v4-flash"];
+    const accInput = result.accumulatedInputTokens || 0;
+    const perCallInput = result.inputTokens || 0;
+    const accOutput = result.accumulatedOutputTokens || 0;
+    const msgCount = result.messages ? result.messages.length : 0;
+    const estCost = (perCallInput / 1_000_000) * rates.cache_miss
+        + (accInput / 1_000_000) * rates.input
+        + (accOutput / 1_000_000) * rates.output;
+
+    if (!SessionContext.currentTurnSubAgents) {
+        SessionContext.currentTurnSubAgents = [];
+    }
+    SessionContext.currentTurnSubAgents.push({
+        name: sub_agent_name,
+        type: role,
+        messages: msgCount,
+        inputTokens: perCallInput,
+        outputTokens: accOutput,
+        accumulatedInputTokens: accInput,
+        estimatedCost: estCost,
+    });
+
     const returnObj = {
-        file_path: `artifacts/${fileName}`,
-        report_path: `artifacts/${reportName}`,
+        file_path: `artifacts/active/${fileName}`,
+        report_path: `artifacts/active/${reportName}`,
         sub_agent_name,
         definition_of_done,
         role,
@@ -399,7 +423,7 @@ async function delegateSubAgentCore({
 }
 
 // ---------------------------------------------------------------------------
-// Wrapped handler (no consent — artifacts/ is a safe workspace)
+// Wrapped handler (no consent — artifacts/active/ is a safe workspace)
 // ---------------------------------------------------------------------------
 export const delegate_sub_agent = createToolHandler(
     "delegate_sub_agent",

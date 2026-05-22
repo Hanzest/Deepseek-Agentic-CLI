@@ -49,8 +49,21 @@ Deepseek_Chatbot/
     ├── agents.md           # Agent guidelines (path conventions, consent model, encoding rules)
     ├── tool-categories.md  # Tools grouped by capability domain
     └── skills/
-        ├── managing_agents.md  # Delegation patterns and best practices
-        └── using_tools.md      # Batch-first tool-calling strategy
+        ├── AGENTS.md              # Format rules & directory index
+        ├── shared/
+        │   └── tool-usage-conventions.md  # Universal tool rules (all agents)
+        ├── orchestrator/
+        │   └── AGENTS.md          # Manager: delegation strategy
+        ├── requirement_analyzer/
+        │   └── AGENTS.md          # Sub-agent role
+        ├── execution/
+        │   └── AGENTS.md          # Sub-agent role
+        ├── inspection/
+        │   └── AGENTS.md          # Sub-agent role
+        ├── unit_review/
+        │   └── AGENTS.md          # Sub-agent role
+        └── integration_review/
+            └── AGENTS.md          # Sub-agent role
 ```
 
 ## Requirements

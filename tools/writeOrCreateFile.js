@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
 import { readFileUtf8Normalized } from "../lib/fileReader.js";
+import { isPlanFile, archiveActiveToHistory, extractTaskName, timestampedFilename, ACTIVE_DIR } from "../lib/artifactManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,9 +113,36 @@ async function writeOrCreateFileCore({
         }
     }
 
+    // ---- Artifact archive hook: if creating a new plan file in active/, archive first ----
+    const activePath = path.resolve(PROJECT_ROOT, ACTIVE_DIR) + path.sep;
+    const isInActive = resolved_path.startsWith(activePath);
+    const fileExists = fs.existsSync(resolved_path);
+    const isNewPlan = isInActive && !fileExists && isPlanFile(resolved_path);
+
+    if (isNewPlan) {
+        const taskName = extractTaskName(resolved_path);
+        const archivedTo = archiveActiveToHistory(taskName);
+        if (archivedTo) {
+            console.log(
+                '\x1b[90mArchived previous active session to: ' + archivedTo + '\x1b[0m'
+            );
+        }
+    }
+
+    // ---- Timestamp prefix for new files written to artifacts/active/ ----
+    let actual_path = resolved_path;
+    if (isInActive && !fileExists && mode !== "append") {
+        const dir = path.dirname(resolved_path);
+        const base = path.basename(resolved_path);
+        // Only timestamp if the basename does not already have a timestamp prefix
+        if (!/^\d{4}-\d{2}-\d{2}_\d{2}\.\d{2}\.\d{2}_/.test(base)) {
+            actual_path = path.join(dir, timestampedFilename(base));
+        }
+    }
+
     // ---- Create parent directories ----
     if (create_parents) {
-        const dir = path.dirname(resolved_path);
+        const dir = path.dirname(actual_path);
         if (!fs.existsSync(dir)) {
             try {
                 fs.mkdirSync(dir, { recursive: true });
@@ -135,17 +163,17 @@ async function writeOrCreateFileCore({
         // Read existing file
         let existing;
         try {
-            existing = readFileUtf8Normalized(resolved_path);
+            existing = readFileUtf8Normalized(actual_path);
         } catch (e) {
             if (e.code === "ENOENT") {
                 const error_msg =
                     "Error: Cannot perform line-range overwrite on '" +
-                    resolved_path + "' because the file does not exist.";
+                    actual_path + "' because the file does not exist.";
                 console.log('\x1b[91m' + error_msg + '\x1b[0m');
                 return error_msg;
             }
             const error_msg =
-                "Error reading '" + resolved_path + "': " + e.message;
+                "Error reading '" + actual_path + "': " + e.message;
             console.log('\x1b[91m' + error_msg + '\x1b[0m');
             return error_msg;
         }
@@ -170,7 +198,7 @@ async function writeOrCreateFileCore({
             const error_msg =
                 "Error: end_line (" + end_line +
                 ") exceeds file length (" + lines.length +
-                " lines) in '" + resolved_path + "'.";
+                " lines) in '" + actual_path + "'.";
             console.log('\x1b[91m' + error_msg + '\x1b[0m');
             return error_msg;
         }
@@ -181,17 +209,17 @@ async function writeOrCreateFileCore({
         const newContent = lines.join("\n");
 
         try {
-            fs.writeFileSync(resolved_path, newContent, { encoding: "utf-8", flag: "w" });
+            fs.writeFileSync(actual_path, newContent, { encoding: "utf-8", flag: "w" });
             const size = Buffer.byteLength(newContent, "utf-8");
             console.log(
                 '\x1b[32mLine-range overwritten ' +
-                "'" + resolved_path + "' (lines " + start_line +
+                "'" + actual_path + "' (lines " + start_line +
                 "-" + end_line + ", " + size + " bytes)\x1b[0m"
             );
             return JSON.stringify({
                 success: true,
                 tool: "write_or_create_file",
-                file_path: resolved_path,
+                file_path: actual_path,
                 bytes_written: size,
                 mode: "line_range",
                 start_line,
@@ -199,7 +227,7 @@ async function writeOrCreateFileCore({
             });
         } catch (e) {
             const error_msg =
-                "Error writing to '" + resolved_path + "': " + e.message;
+                "Error writing to '" + actual_path + "': " + e.message;
             console.log('\x1b[91m' + error_msg + '\x1b[0m');
             return error_msg;
         }
@@ -208,22 +236,22 @@ async function writeOrCreateFileCore({
     // ---- Write or append ----
     try {
         const flag = mode === "append" ? "a" : "w";
-        fs.writeFileSync(resolved_path, content, { encoding: "utf-8", flag });
+        fs.writeFileSync(actual_path, content, { encoding: "utf-8", flag });
         const action = mode === "append" ? "Appended to" : "Written";
         const size = Buffer.byteLength(content, "utf-8");
         console.log(
-            '\x1b[32m' + action + " '" + resolved_path + "' (" + size + " bytes)\x1b[0m"
+            '\x1b[32m' + action + " '" + actual_path + "' (" + size + " bytes)\x1b[0m"
         );
         return JSON.stringify({
             success: true,
             tool: "write_or_create_file",
-            file_path: resolved_path,
+            file_path: actual_path,
             bytes_written: size,
             mode,
         });
     } catch (e) {
         const error_msg =
-            "Error writing to '" + resolved_path + "': " + e.message;
+            "Error writing to '" + actual_path + "': " + e.message;
         console.log('\x1b[91m' + error_msg + '\x1b[0m');
         return error_msg;
     }

@@ -24,9 +24,9 @@ export const ROLE_SYSTEM_PROMPT = [
   {
     role: "requirement_analyzer",
     description:
-      "Break down high-level objectives into verifiable, atomic requirements. Identify ambiguities, missing edge cases, and conflicting constraints. You do NOT implement — you clarify, decompose, and specify.",
+      "Break down high-level objectives into verifiable, atomic requirements. Identify ambiguities, missing edge cases, and conflicting constraints. Forecast resource needs (sub-agent count, iteration budgets, parallelization opportunities) and recommend whether the orchestrator should delegate to a multi-agent pipeline or handle verification directly. You do NOT implement — you clarify, decompose, specify, and resource-plan.",
     output_constraints:
-      "Output structured requirement lists with unique IDs, acceptance criteria, and priority classifications (P0–P3). Use markdown tables where appropriate. Every requirement must be independently testable.",
+      "Output structured requirement lists with unique IDs, acceptance criteria, and priority classifications (P0–P3). Include a Resource Plan section with: recommended sub-agent count, per-agent iteration budgets, parallelization strategy, and estimated complexity tier (Low/Medium/High). Use markdown tables where appropriate. Every requirement must be independently testable.",
     include_goal_deliverable: true,
   },
   {

@@ -96,7 +96,7 @@ Delegate complex sub-tasks to isolated sub-agents. **Manager-only** — sub-agen
 3. **Discovery:** Read this document to understand what other capability categories are available.
 4. **Implementation phase:** Use File Mutation + System Execution as needed.
 5. **Ambiguity resolution:** Use `ask_user_preferences` before guessing.
-6. **Complex sub-tasks:** Delegate via `delegate_sub_agent` (see `docs/skills/managing_agents.md`).
+6. **Complex sub-tasks:** Delegate via `delegate_sub_agent` (see `docs/skills/orchestrator/AGENTS.md`).
 
 ---
 

@@ -11,13 +11,14 @@
 | Skill | Document | Summary |
 |---|---|---|
 | **Tool Usage & Conventions** | [`docs/agents.md`](agents.md) | Path conventions, tool consent model, `.env` security policy, PowerShell quick reference, file encoding rules. |
-| **Batch Tool-Calling Strategy** | [`docs/skills/using_tools.md`](using_tools.md) | How to minimize API round-trips by co-dispatching independent tools, using native batch modes (`fetch_url` `urls[]`), and following the dependency rule. |
+| **Tool Usage Conventions (Shared)** | [`docs/skills/shared/tool-usage-conventions.md`](skills/shared/tool-usage-conventions.md) | Consolidated universal tool rules for all agents: batch-first strategy, consent model, encoding, PowerShell, mode system. |
 | **System Architecture** | [`docs/this_repo/system-architecture.md`](this_repo/system-architecture.md) | Module responsibilities, data flow diagram, security model, OCP impact analysis, dependency map. |
 | **Lib Modules Reference** | [`docs/this_repo/modules-lib.md`](this_repo/modules-lib.md) | Per-module reference for all 8 `lib/` files: roles, exports, line counts, dependencies. |
 | **Tools Reference** | [`docs/this_repo/modules-tools.md`](this_repo/modules-tools.md) | Per-file reference for all 12 `tools/` files: schemas, consent, mutation, batching. |
 | **Data Flow Diagrams** | [`docs/this_repo/data-flow.md`](this_repo/data-flow.md) | Execution paths: main loop, batch tool execution, sub-agent lifecycle, context sliding. |
 | **Agent Onboarding** | [`docs/this_repo/agent-onboarding.md`](this_repo/agent-onboarding.md) | Quick-start navigation guide for agents new to this codebase. |
-| **Manager Task Delegation** | [`docs/skills/managing_agents.md`](skills/managing_agents.md) | How to delegate complex sub-tasks efficiently: goal definition, deliverable specification, skill injection, anti-patterns. |
+| **Skills Directory Format** | [`docs/skills/AGENTS.md`](skills/AGENTS.md) | Format rules for all documents in `docs/skills/`: shared docs, role AGENTS.md structure, how agents read the directory. |
+| **Manager Task Delegation** | [`docs/skills/orchestrator/AGENTS.md`](skills/orchestrator/AGENTS.md) | How to delegate complex sub-tasks efficiently: goal definition, role selection, deliverable specification, anti-patterns. |
 | **Tool Categories by Capability** | [`docs/tool-categories.md`](tool-categories.md) | All 10 tools grouped by capability domain (codebase inspection, web research, file mutation, system execution, user interaction, agent management) with consent/batching info. |
 
 ---
@@ -28,24 +29,26 @@
 
 When you need to understand:
 - **What tools are available and their consent rules** → read `docs/agents.md`.
-- **How to batch tool calls for minimal API round-trips** → read `docs/skills/using_tools.md`.
+- **How to use tools efficiently (batch-first, consent, PowerShell)** → read `docs/skills/shared/tool-usage-conventions.md`.
 - **How the codebase is structured** → read `docs/this_repo/system-architecture.md`.
 - **What capability categories of tools are available** → read `docs/tool-categories.md`.
-- **How to delegate a complex task to a sub-agent** → read `docs/skills/managing_agents.md`.
+- **How to delegate a complex task to a sub-agent** → read `docs/skills/orchestrator/AGENTS.md`.
+- **What each sub-agent role does** → read `docs/skills/{role}/AGENTS.md` for the target role.
 
 ### For Sub-Agents
 
-Your system prompt already includes the delegation task. However, if you need:
-- **Tool usage conventions** (paths, consent, PowerShell) → read `docs/agents.md`.
-- **Batch tool-calling strategy** (minimize API round-trips) → read `docs/skills/using_tools.md`.
+Your system prompt already includes your role. Read:
+- **Universal tool rules** → `docs/skills/shared/tool-usage-conventions.md`.
+- **Your role-specific rules** → `docs/skills/{your-role}/AGENTS.md`.
 - **What capability categories of tools are available** → read `docs/tool-categories.md`.
 - **Codebase structure** (module responsibilities, dependencies) → read `docs/this_repo/system-architecture.md`.
 
 ### For Contributors Adding New Skills
 
-1. Write the skill document following the existing format (clear sections, tables where appropriate, concise language).
-2. Place it in `docs/skills/` if it is a specialized capability guide, or in `docs/` if it is a general reference.
-3. Add an entry to the **Skill Index** table above.
+1. If the skill is a **universal tool rule**, add it to `docs/skills/shared/tool-usage-conventions.md`.
+2. If the skill is **role-specific**, add a section to the role's `docs/skills/{role}/AGENTS.md`.
+3. If the skill is a **new role**, create `docs/skills/{role}/AGENTS.md` following the format in `docs/skills/AGENTS.md`.
+4. If the skill is a **general reference**, place it in `docs/` and add an entry to the **Skill Index** table above.
 
 ---
 
@@ -57,7 +60,6 @@ All documentation follows a layered approach:
 docs/
   agents.md              ← General: tool conventions, security, shell reference
   tool-categories.md     ← General: tools grouped by capability domain
-  using_tools.md         ← General: batch tool-calling strategy, token economics
   README.md              ← This file: central index
   this_repo/             ← Codebase-specific: architecture, modules, tools, data flow, onboarding
     README.md              ← Index of all this_repo/ documents
@@ -67,11 +69,26 @@ docs/
     data-flow.md           ← Execution path diagrams (main loop, batch, sub-agent, context sliding)
     agent-onboarding.md    ← Quick-start navigation for agents
   skills/
-    managing_agents.md    ← Specialized: delegation patterns and best practices
+    AGENTS.md              ← Format rules & directory index
+    shared/
+      tool-usage-conventions.md  ← Universal tool rules (all agents)
+    orchestrator/
+      AGENTS.md            ← Manager: delegation strategy
+    requirement_analyzer/
+      AGENTS.md            ← Sub-agent role
+    execution/
+      AGENTS.md            ← Sub-agent role
+    inspection/
+      AGENTS.md            ← Sub-agent role
+    unit_review/
+      AGENTS.md            ← Sub-agent role
+    integration_review/
+      AGENTS.md            ← Sub-agent role
 ```
 
 - **General docs** (`agents.md`, `this_repo`) apply to all agents regardless of role.
-- **Skill docs** (`skills/*.md`) are role-specific capability guides that assume familiarity with the general docs.
+- **Shared skills** (`skills/shared/`) apply to all agents — universal tool rules.
+- **Role skills** (`skills/{role}/AGENTS.md`) are role-specific and assume familiarity with shared docs.
 
 ---
 
