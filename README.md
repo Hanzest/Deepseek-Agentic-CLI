@@ -32,7 +32,7 @@ Deepseek_Chatbot/
 │   ├── subAgentLoop.js     # Independent model loop for sub-agents (uses SUBAGENT_TOOLS)
 │   └── subAgentTerminal.js # Spawn and manage dedicated terminal windows for sub-agents
 ├── tools/
-│   ├── registry.js         # Central tool map — exports WORKER_TOOLS, SUBAGENT_TOOLS, MANAGER_TOOLS
+│   ├── registry.js         # Central tool map — exports WORKER_TOOLS, SUBAGENT_TOOLS, ORCHESTRATOR_TOOLS
 │   ├── template.js         # createToolHandler() factory — DRY log + consent + try/catch wrapper
 │   ├── callToolsInBatch.js # Batch execution engine (consent tools serial, read-only concurrent)
 │   ├── executeTerminal.js  # Shell command execution
@@ -143,7 +143,7 @@ Three tool registries control which tools are available to which agent:
 |----------|----------|---------|
 | `WORKER_TOOLS` | 9 tools (all except `delegate_sub_agent`), with consent flags | Sub-agents (prevent infinite delegation chains) |
 | `SUBAGENT_TOOLS` | Same 9 tools as `WORKER_TOOLS`, but all consent flags set to `false` | Sub-agent loops (autonomous, no per-tool prompts) |
-| `MANAGER_TOOLS` | All 10 tools = `WORKER_TOOLS` + `delegate_sub_agent` | Main orchestrator / manager agent |
+| `ORCHESTRATOR_TOOLS` | 5 tools (read_file_chunk, get_project_tree, multi_file_search_string + delegate_sub_agent, ask_user_preferences) | Main orchestrator |
 
 ### Sub-Agent Delegation System
 
@@ -190,7 +190,7 @@ Sub-agents use a separate `HYPERPARAMETERS` block in `lib/subAgentLoop.js` with 
 - `runChat()` — top-level entry: calls model selection + thinking toggle, then starts the loop.
 - `multiTurnLoop()` — conversation orchestrator with sliding context window, inner tool-execution loop, and per-iteration telemetry.
 - `callModel()` — thin wrapper over `OpenAI.chat.completions.create()`.
-- Uses `MANAGER_TOOLS` from `tools/registry.js`.
+- Uses `ORCHESTRATOR_TOOLS` from `tools/registry.js`.
 
 ### `lib/tokenizer.js` (~161 lines) — Token Estimation
 
@@ -223,7 +223,7 @@ Sub-agents use a separate `HYPERPARAMETERS` block in `lib/subAgentLoop.js` with 
 ### `tools/registry.js` (~87 lines) — Central Tool Map
 
 - Imports all 10 tool schemas and handlers.
-- Exports three registries: `WORKER_TOOLS`, `SUBAGENT_TOOLS`, `MANAGER_TOOLS`.
+- Exports three registries: `WORKER_TOOLS`, `SUBAGENT_TOOLS`, `ORCHESTRATOR_TOOLS`.
 - Exports `callToolsInBatch` for batch execution.
 
 ### `tools/template.js` (~69 lines) — DRY Boilerplate Factory

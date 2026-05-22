@@ -75,9 +75,15 @@ export const SUBAGENT_TOOLS = {
     multi_file_search_string: [multi_file_search_string_schema, multi_file_search_string, false],
 };
 
-// MANAGER_TOOLS — full tool set including delegation.
+// ORCHESTRATOR_TOOLS — read-only codebase inspection tools + delegation.
 // Main agent / orchestrator uses this set.
-export const MANAGER_TOOLS = {
-    ...WORKER_TOOLS,
+export const ORCHESTRATOR_TOOLS = {
+    read_file_chunk: [read_file_chunk_schema, read_file_chunk, false],
+    get_project_tree: [get_project_tree_schema, get_project_tree, false],
+    multi_file_search_string: [multi_file_search_string_schema, multi_file_search_string, false],
+    ask_user_preferences: [ask_user_preferences_schema, ask_user_preferences, false],
     delegate_sub_agent: [delegate_sub_agent_schema, delegate_sub_agent, false],
+    execute_terminal_command: [execute_terminal_command_schema, execute_terminal_command, true],
+    patch_file: [patch_file_schema, patch_file, false],
+    write_or_create_file: [write_or_create_file_schema, write_or_create_file, false],
 };

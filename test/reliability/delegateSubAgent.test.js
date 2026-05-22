@@ -30,12 +30,12 @@ describe("delegateSubAgent — Reliability / Schema Validation", () => {
     expect(delegate_sub_agent_schema.function.parameters.required).toContain("sub_agent_name");
   });
 
-  it("requires goal", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("goal");
+  it("requires definition_of_done", () => {
+    expect(delegate_sub_agent_schema.function.parameters.required).toContain("definition_of_done");
   });
 
-  it("requires purpose", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("purpose");
+  it("requires role", () => {
+    expect(delegate_sub_agent_schema.function.parameters.required).toContain("role");
   });
 
   it("requires deliverable", () => {
@@ -51,12 +51,12 @@ describe("delegateSubAgent — Reliability / Schema Validation", () => {
     expect(props.sub_agent_name.type).toBe("string");
   });
 
-  it("goal is type string", () => {
-    expect(props.goal.type).toBe("string");
+  it("definition_of_done is type string", () => {
+    expect(props.definition_of_done.type).toBe("string");
   });
 
-  it("purpose is type string", () => {
-    expect(props.purpose.type).toBe("string");
+  it("role is type string", () => {
+    expect(props.role.type).toBe("string");
   });
 
   it("deliverable is type string", () => {
@@ -65,11 +65,6 @@ describe("delegateSubAgent — Reliability / Schema Validation", () => {
 
   it("context is type string", () => {
     expect(props.context.type).toBe("string");
-  });
-
-  it("skills is type array of strings", () => {
-    expect(props.skills.type).toBe("array");
-    expect(props.skills.items.type).toBe("string");
   });
 
   it("self_contained is type boolean", () => {
@@ -83,8 +78,8 @@ describe("delegateSubAgent — Reliability / Schema Validation", () => {
   // -----------------------------------------------------------------------
   // Enum values
   // -----------------------------------------------------------------------
-  it("priority has correct enum values", () => {
-    expect(props.priority.enum).toEqual(["low", "normal", "high"]);
+  it("role has correct enum values", () => {
+    expect(props.role.enum).toEqual(["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"]);
   });
 
   // -----------------------------------------------------------------------

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   WORKER_TOOLS,
   SUBAGENT_TOOLS,
-  MANAGER_TOOLS,
+  ORCHESTRATOR_TOOLS,
 } from "../../tools/registry.js";
 
 // Expected tool names (excluding delegate_sub_agent which is manager-only)
@@ -58,7 +58,7 @@ describe("registry — Reliability / Edge Cases", () => {
   // No undefined handlers
   // -----------------------------------------------------------------------
   it("all handlers across all registries are functions", () => {
-    const all = { ...WORKER_TOOLS, ...SUBAGENT_TOOLS, ...MANAGER_TOOLS };
+    const all = { ...WORKER_TOOLS, ...SUBAGENT_TOOLS, ...ORCHESTRATOR_TOOLS };
     for (const [name, entry] of Object.entries(all)) {
       expect(typeof entry[1]).toBe("function");
     }

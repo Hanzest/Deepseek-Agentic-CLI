@@ -11,20 +11,18 @@ describe("delegateSubAgent — Functionality / Schema Validation", () => {
     const props = delegate_sub_agent_schema.function.parameters.properties;
     const names = Object.keys(props);
     expect(names).toContain("sub_agent_name");
-    expect(names).toContain("goal");
-    expect(names).toContain("purpose");
+    expect(names).toContain("definition_of_done");
     expect(names).toContain("deliverable");
-    expect(names).toContain("skills");
+    expect(names).toContain("role");
     expect(names).toContain("context");
-    expect(names).toContain("priority");
     expect(names).toContain("budget_iterations");
     expect(names).toContain("self_contained");
     expect(names).toContain("output_file");
   });
 
-  it("has exactly 10 parameter properties", () => {
+  it("has exactly 8 parameter properties", () => {
     const props = delegate_sub_agent_schema.function.parameters.properties;
-    expect(Object.keys(props).length).toBe(10);
+    expect(Object.keys(props).length).toBe(8);
   });
 
   it("has exactly 4 required fields", () => {

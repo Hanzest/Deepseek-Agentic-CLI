@@ -66,7 +66,7 @@ Delegate complex sub-tasks to isolated sub-agents. **Manager-only** — sub-agen
 
 | Tool | Quick Purpose |
 |------|--------------|
-| `delegate_sub_agent` | Spawn a sub-agent with a goal, deliverable, and skills |
+| `delegate_sub_agent` | Spawn a sub-agent with a definition_of_done, deliverable, and role |
 
 ---
 

@@ -6,6 +6,7 @@ import { runSubAgent } from "../lib/subAgentLoop.js";
 import { createSubAgentTerminal } from "../lib/subAgentTerminal.js";
 import { estimateTokens } from "../lib/tokenizer.js";
 import { SessionContext, getActiveModelConfig } from "../lib/orchestrator.js";
+import { ROLE_SYSTEM_PROMPT, getRoleEntry } from "./roleSystemPrompts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,17 +34,11 @@ export const delegate_sub_agent_schema = {
                         "stem (e.g., 'auth-module-builder', 'database-schema-designer'). " +
                         "Keep it short and kebab-case.",
                 },
-                goal: {
+                definition_of_done: {
                     type: "string",
                     description:
-                        "The specific, concrete goal for the sub-agent in one clear sentence. " +
+                        "The specific, concrete definition_of_done for the sub-agent in one clear sentence. " +
                         "Must be verifiable — the sub-agent should know exactly when it is done.",
-                },
-                purpose: {
-                    type: "string",
-                    description:
-                        "Why this sub-agent is needed. Explain the context-isolation benefit, " +
-                        "the specialization angle, or the parallelization strategy.",
                 },
                 deliverable: {
                     type: "string",
@@ -51,30 +46,21 @@ export const delegate_sub_agent_schema = {
                         "Clear, unambiguous description of the expected output. Include format, " +
                         "location (e.g., which file to write), and acceptance criteria.",
                 },
-                skills: {
-                    type: "array",
-                    items: { type: "string" },
+                role: {
+                    type: "string",
+                    enum: ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"],
                     description:
-                        "Specialization tags or skill descriptions to inject into the sub-agent's " +
-                        "system prompt. Examples: ['React 18 expert', 'SQL optimization', " +
-                        "'accessibility auditing']. These increase accuracy by narrowing expertise.",
+                        "The sub-agent's role, which determines its system prompt. " +
+                        "Each role has a pre-defined description and output constraints " +
+                        "in ROLE_SYSTEM_PROMPT. Choose the role that best matches the task.",
                 },
                 context: {
                     type: "string",
                     description:
-                        "Background information, code references, constraints, or relevant " +
-                        "file paths the sub-agent needs to complete its task. " +
-                        "Keep it concise — provide file paths and constraint summaries, not " +
-                        "full file contents. The sub-agent has tools to read files. " +
-                        "Max ~500 words recommended.",
-                },
-                priority: {
-                    type: "string",
-                    enum: ["low", "normal", "high"],
-                    description:
-                        "Task urgency. 'high' — minimize verification, favor speed. " +
-                        "'normal' — standard behavior (default). " +
-                        "'low' — may use fewer iterations, report partial results.",
+                        "Background information, code references (method names), " +
+                        "constraints, or relevant file paths the sub-agent needs to complete its task. " +
+                        "**Keep it concise**: no full file contents, no line numbers" +
+                        "The sub-agent has tools to read files. Max ~500 words recommended."
                 },
                 budget_iterations: {
                     type: "integer",
@@ -102,7 +88,7 @@ export const delegate_sub_agent_schema = {
                         "and underscore characters are permitted. Must end with .md.",
                 },
             },
-            required: ["sub_agent_name", "goal", "purpose", "deliverable"],
+            required: ["sub_agent_name", "definition_of_done", "deliverable", "role"],
         },
     },
 };
@@ -195,28 +181,22 @@ function writeFileUnique(artifactsDir, desiredName, content) {
 // ---------------------------------------------------------------------------
 function buildMarkdownPrompt({
     sub_agent_name,
-    goal,
-    purpose,
+    definition_of_done,
     deliverable,
-    skills,
+    role,
     context,
-    priority = "normal",
     budget_iterations,
     self_contained = false,
 }) {
     const lines = [];
 
+    const roleEntry = getRoleEntry(role);
+    if (!roleEntry) {
+        throw new Error(`Unknown role: ${role}. Must be one of: ${ROLE_SYSTEM_PROMPT.map(r => r.role).join(", ")}`);
+    }
+
     lines.push(`# Sub-Agent: ${sub_agent_name}`);
     lines.push("");
-
-    // Priority banner for high/low urgency
-    if (priority === "high") {
-        lines.push("> **HIGH PRIORITY** — Minimize verification. Favor speed. Deliver the result as quickly as possible.");
-        lines.push("");
-    } else if (priority === "low") {
-        lines.push("> **LOW PRIORITY** — Standard effort is fine. Partial results are acceptable if the task proves complex.");
-        lines.push("");
-    }
 
     if (budget_iterations != null) {
         lines.push(`> **Iteration Budget:** ${budget_iterations} maximum. Plan accordingly.`);
@@ -228,22 +208,12 @@ function buildMarkdownPrompt({
         lines.push("");
     }
 
-    lines.push("## Goal");
-    lines.push(goal);
+    lines.push(`## Role: ${roleEntry.role}`);
+    lines.push(roleEntry.description);
     lines.push("");
-    lines.push("## Purpose");
-    lines.push(purpose);
+    lines.push("### Output Constraints");
+    lines.push(roleEntry.output_constraints);
     lines.push("");
-
-    if (skills && skills.length > 0) {
-        lines.push("## Skills / Specialization");
-        lines.push("You are a specialist with deep expertise in the following areas:");
-        lines.push("");
-        for (const skill of skills) {
-            lines.push(`- **${skill}**`);
-        }
-        lines.push("");
-    }
 
     if (context) {
         lines.push("## Context");
@@ -251,16 +221,22 @@ function buildMarkdownPrompt({
         lines.push("");
     }
 
-    lines.push("## Deliverable");
-    lines.push(deliverable);
-    lines.push("");
+    if (roleEntry.include_goal_deliverable) {
+        lines.push("## Definition of Done");
+        lines.push(definition_of_done);
+        lines.push("");
+        lines.push("## Deliverable");
+        lines.push(deliverable);
+        lines.push("");
+    }
+
     lines.push("---");
     lines.push("");
     lines.push("## Instructions");
     lines.push("");
     lines.push("1. Read this entire prompt carefully before starting.");
     lines.push("2. Plan your approach before writing any code or making changes.");
-    lines.push("3. Produce exactly the deliverable described above.");
+    lines.push("3. Produce exactly the deliverable described above (if applicable).");
     lines.push("4. When done, clearly state that the deliverable is complete.");
     lines.push("");
     lines.push("---");
@@ -274,12 +250,10 @@ function buildMarkdownPrompt({
 // ---------------------------------------------------------------------------
 async function delegateSubAgentCore({
     sub_agent_name,
-    goal,
-    purpose,
+    definition_of_done,
     deliverable,
-    skills = [],
+    role,
     context = "",
-    priority = "normal",
     budget_iterations,
     self_contained = false,
     output_file = "",
@@ -302,12 +276,10 @@ async function delegateSubAgentCore({
 
     const markdown = buildMarkdownPrompt({
         sub_agent_name,
-        goal,
-        purpose,
+        definition_of_done,
         deliverable,
-        skills,
+        role,
         context,
-        priority,
         budget_iterations,
         self_contained,
     });
@@ -331,9 +303,9 @@ async function delegateSubAgentCore({
 
     console.log(`\x1b[1;97m[Sub-Agent Delegate]\x1b[0m`);
     console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
-    console.log(`  Goal:       \x1b[37m${goal}\x1b[0m`);
+    console.log(`  DoD:       \x1b[37m${definition_of_done}\x1b[0m`);
     console.log(`  Prompt:     \x1b[90martifacts/${fileName}\x1b[0m`);
-    console.log(`  Skills:     ${skills.length > 0 ? skills.join(", ") : "\x1b[90m(none)\x1b[0m"}`);
+    console.log(`  Role:       \x1b[37m${role}\x1b[0m`);
     console.log(`  Status:     \x1b[32mcreated\x1b[0m`);
 
     // -----------------------------------------------------------------------
@@ -360,7 +332,8 @@ async function delegateSubAgentCore({
             error: true,
             tool: "delegate_sub_agent",
             sub_agent_name,
-            goal,
+            definition_of_done,
+            role,
             status: "failed",
             message: errMsg,
         });
@@ -410,9 +383,8 @@ async function delegateSubAgentCore({
         file_path: `artifacts/${fileName}`,
         report_path: `artifacts/${reportName}`,
         sub_agent_name,
-        goal,
-        purpose,
-        skills,
+        definition_of_done,
+        role,
         iteration_count: result.iterationCount,
         final_content_preview: result.finalContent.substring(0, 500),
         status: "completed",
