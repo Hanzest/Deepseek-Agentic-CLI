@@ -2,10 +2,9 @@
 
 ## 1. Path conventions
 
-All tool paths are relative to the project root (the top-level `Deepseek_Chatbot/`
-directory). The runtime automatically sets the working directory correctly via
-`process.chdir()` in `lib/orchestrator.js`. Prefer relative paths (`helper.js`,
-`docs/agents.md`) over absolute paths.
+All tool paths are relative to the project root by default (the runtime sets the
+working directory via `process.chdir()` in `lib/orchestrator.js`). Absolute paths
+and paths outside the project root are also supported for all tools.
 
 ## 2. Tool consent model
 

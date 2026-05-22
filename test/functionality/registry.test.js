@@ -1,20 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
-  WORKER_TOOLS,
-  SUBAGENT_TOOLS,
+  ALL_TOOLS,
   ORCHESTRATOR_TOOLS,
+  buildSubagentTools,
 } from "../../tools/registry.js";
 
 describe("registry — Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Counts
   // -----------------------------------------------------------------------
-  it("WORKER_TOOLS has exactly 9 tools", () => {
-    expect(Object.keys(WORKER_TOOLS).length).toBe(9);
-  });
-
-  it("SUBAGENT_TOOLS has exactly 9 tools", () => {
-    expect(Object.keys(SUBAGENT_TOOLS).length).toBe(9);
+  it("ALL_TOOLS has exactly 9 tools", () => {
+    expect(Object.keys(ALL_TOOLS).length).toBe(9);
   });
 
   it("ORCHESTRATOR_TOOLS has exactly 8 tools (4 read-only + 3-write + 1 sub-agent delegation)", () => {
@@ -40,8 +36,50 @@ describe("registry — Functionality / Happy Paths", () => {
       const params = entry[0].function.parameters;
       const required = params.required;
       const hasOneOf = Array.isArray(params.oneOf);
-      // Some schemas like fetch_url use oneOf instead of a top-level required array
       expect(Array.isArray(required) || hasOneOf).toBe(true);
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // buildSubagentTools — role-based tool resolution
+  // -----------------------------------------------------------------------
+  it("buildSubagentTools('execution') returns all 9 tools", () => {
+    const tools = buildSubagentTools("execution");
+    expect(Object.keys(tools).length).toBe(9);
+  });
+
+  it("buildSubagentTools('inspection') returns 7 tools (read + ask_user + write)", () => {
+    const tools = buildSubagentTools("inspection");
+    expect(Object.keys(tools).length).toBe(7);
+  });
+
+  it("buildSubagentTools('requirement_analyzer') returns 7 tools", () => {
+    const tools = buildSubagentTools("requirement_analyzer");
+    expect(Object.keys(tools).length).toBe(7);
+  });
+
+  it("buildSubagentTools('unit_review') returns 7 tools", () => {
+    const tools = buildSubagentTools("unit_review");
+    expect(Object.keys(tools).length).toBe(7);
+  });
+
+  it("buildSubagentTools('integration_review') returns all 9 tools", () => {
+    const tools = buildSubagentTools("integration_review");
+    expect(Object.keys(tools).length).toBe(9);
+  });
+
+  it("buildSubagentTools throws for an unknown role", () => {
+    expect(() => buildSubagentTools("nonexistent")).toThrow(/Unknown role/);
+  });
+
+  it("buildSubagentTools result entries are [schema, handler, false]", () => {
+    const tools = buildSubagentTools("execution");
+    for (const [name, entry] of Object.entries(tools)) {
+      expect(Array.isArray(entry)).toBe(true);
+      expect(entry.length).toBe(3);
+      expect(typeof entry[0]).toBe("object");   // schema
+      expect(typeof entry[1]).toBe("function"); // handler
+      expect(entry[2]).toBe(false);             // needsConsent
     }
   });
 });

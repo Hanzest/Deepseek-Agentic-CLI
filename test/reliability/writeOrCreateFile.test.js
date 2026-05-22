@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { tmpdir } from "os";
+import { join } from "path";
+import { existsSync, rmSync, readFileSync } from "fs";
 
 // Mock consent — writeOrCreateFileCore internally calls ask() for .env targets
 vi.mock("../../lib/cliInput.js", () => ({
@@ -80,5 +83,21 @@ describe("writeOrCreateFile — Reliability / Edge Cases", () => {
       content: "",
     });
     expect(readFile(fp)).toBe("");
+  });
+
+  // -----------------------------------------------------------------------
+  // Write outside project directory — system temp
+  // -----------------------------------------------------------------------
+  it("should write a file outside the project directory (system temp)", async () => {
+    const fp = join(tmpdir(), "writeOrCreateFile-ext-test.txt");
+    try {
+      const result = await write_or_create_file({
+        file_path: fp,
+        content: "external write test",
+      });
+      expect(readFileSync(fp, "utf-8")).toBe("external write test");
+    } finally {
+      if (existsSync(fp)) rmSync(fp);
+    }
   });
 });

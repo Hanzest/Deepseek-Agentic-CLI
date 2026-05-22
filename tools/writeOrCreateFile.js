@@ -89,14 +89,6 @@ async function writeOrCreateFileCore({
 }) {
     const resolved_path = path.resolve(file_path);
 
-    // ---- Security: block writes outside the project root ----
-    const normalizedRoot = path.resolve(PROJECT_ROOT) + path.sep;
-    if (!resolved_path.startsWith(normalizedRoot)) {
-        const msg = "Security: Refusing to write outside the project directory. Path resolves to '" + resolved_path + "' which is outside '" + PROJECT_ROOT + "'.";
-        console.log('\x1b[91m' + msg + '\x1b[0m');
-        return msg;
-    }
-
     // ---- Security: block .env files (exact basename check) ----
     const basename = path.basename(resolved_path);
     if (basename === ".env" || basename.startsWith(".env.") || basename.startsWith(".env-")) {

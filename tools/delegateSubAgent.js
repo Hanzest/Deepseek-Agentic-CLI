@@ -7,6 +7,7 @@ import { createSubAgentTerminal } from "../lib/subAgentTerminal.js";
 import { estimateTokens } from "../lib/tokenizer.js";
 import { SessionContext, getActiveModelConfig, PRICING } from "../lib/orchestrator.js";
 import { ROLE_SYSTEM_PROMPT, getRoleEntry } from "./roleSystemPrompts.js";
+import { buildSubagentTools } from "./registry.js";
 import { ensureActiveDir, timestampedFilename } from "../lib/artifactManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -281,6 +282,9 @@ async function delegateSubAgentCore({
         self_contained,
     });
 
+    // Resolve the sub-agent's tool map from its role definition
+    const toolsMap = buildSubagentTools(role);
+
     // -----------------------------------------------------------------------
     // Token size validation
     // -----------------------------------------------------------------------
@@ -322,7 +326,7 @@ async function delegateSubAgentCore({
         };
 
         modelConfig = getActiveModelConfig() || {};
-        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig);
+        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig, toolsMap);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;
         console.log(`\n\x1b[91m${errMsg}\x1b[0m`);

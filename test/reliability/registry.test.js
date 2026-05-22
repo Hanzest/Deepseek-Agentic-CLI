@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  WORKER_TOOLS,
-  SUBAGENT_TOOLS,
+  ALL_TOOLS,
   ORCHESTRATOR_TOOLS,
+  buildSubagentTools,
 } from "../../tools/registry.js";
 
-// Expected tool names (excluding delegate_sub_agent which is manager-only)
-const WORKER_TOOL_NAMES = [
+// Expected tool names for the master catalog (all 9 worker tools)
+const ALL_TOOL_NAMES = [
   "execute_terminal_command",
   "patch_file",
   "read_file_chunk",
@@ -20,46 +20,33 @@ const WORKER_TOOL_NAMES = [
 
 describe("registry — Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
-  // WORKER_TOOLS structure
+  // ALL_TOOLS structure
   // -----------------------------------------------------------------------
-  it("WORKER_TOOLS contains all expected tool names", () => {
-    for (const name of WORKER_TOOL_NAMES) {
-      expect(WORKER_TOOLS).toHaveProperty(name);
+  it("ALL_TOOLS contains all expected tool names", () => {
+    for (const name of ALL_TOOL_NAMES) {
+      expect(ALL_TOOLS).toHaveProperty(name);
     }
-    expect(WORKER_TOOLS).not.toHaveProperty("delegate_sub_agent");
+    expect(ALL_TOOLS).not.toHaveProperty("delegate_sub_agent");
   });
 
-  it("each WORKER_TOOLS entry is a 3-element array [schema, handler, needsConsent]", () => {
-    for (const [name, entry] of Object.entries(WORKER_TOOLS)) {
+  it("each ALL_TOOLS entry is a 2-element array [schema, handler]", () => {
+    for (const [name, entry] of Object.entries(ALL_TOOLS)) {
       expect(Array.isArray(entry)).toBe(true);
-      expect(entry.length).toBe(3);
-      expect(typeof entry[0]).toBe("object"); // schema
+      expect(entry.length).toBe(2);
+      expect(typeof entry[0]).toBe("object");   // schema
       expect(typeof entry[1]).toBe("function"); // handler
-      expect(typeof entry[2]).toBe("boolean"); // needsConsent
     }
-  });
-
-  it("WORKER_TOOLS consent flags are correct", () => {
-    // Consent-required tools
-    expect(WORKER_TOOLS.execute_terminal_command[2]).toBe(true);
-    expect(WORKER_TOOLS.patch_file[2]).toBe(true);
-    expect(WORKER_TOOLS.fetch_url[2]).toBe(true);
-    expect(WORKER_TOOLS.write_or_create_file[2]).toBe(true);
-
-    // Read-only tools
-    expect(WORKER_TOOLS.read_file_chunk[2]).toBe(false);
-    expect(WORKER_TOOLS.get_project_tree[2]).toBe(false);
-    expect(WORKER_TOOLS.search_web[2]).toBe(false);
-    expect(WORKER_TOOLS.ask_user_preferences[2]).toBe(false);
-    expect(WORKER_TOOLS.multi_file_search_string[2]).toBe(false);
   });
 
   // -----------------------------------------------------------------------
   // No undefined handlers
   // -----------------------------------------------------------------------
-  it("all handlers across all registries are functions", () => {
-    const all = { ...WORKER_TOOLS, ...SUBAGENT_TOOLS, ...ORCHESTRATOR_TOOLS };
+  it("all handlers across ALL_TOOLS and ORCHESTRATOR_TOOLS are functions", () => {
+    const all = { ...ALL_TOOLS };
     for (const [name, entry] of Object.entries(all)) {
+      expect(typeof entry[1]).toBe("function");
+    }
+    for (const [name, entry] of Object.entries(ORCHESTRATOR_TOOLS)) {
       expect(typeof entry[1]).toBe("function");
     }
   });
@@ -67,12 +54,41 @@ describe("registry — Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Schema validity
   // -----------------------------------------------------------------------
-  it("all schemas have type 'function' and function.name", () => {
-    for (const [name, entry] of Object.entries(WORKER_TOOLS)) {
+  it("all ALL_TOOLS schemas have type 'function' and function.name", () => {
+    for (const [name, entry] of Object.entries(ALL_TOOLS)) {
       const schema = entry[0];
       expect(schema.type).toBe("function");
       expect(schema.function.name).toBe(name);
       expect(schema.function).toHaveProperty("parameters");
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // buildSubagentTools — all needsConsent flags are false
+  // -----------------------------------------------------------------------
+  it("buildSubagentTools always produces needsConsent=false for every role", () => {
+    const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
+    for (const role of roles) {
+      const tools = buildSubagentTools(role);
+      for (const [name, entry] of Object.entries(tools)) {
+        expect(entry[2]).toBe(false);
+      }
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // buildSubagentTools — each role's tools are a subset of ALL_TOOLS
+  // -----------------------------------------------------------------------
+  it("buildSubagentTools result tools are always subsets of ALL_TOOLS", () => {
+    const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
+    for (const role of roles) {
+      const tools = buildSubagentTools(role);
+      for (const [name, entry] of Object.entries(tools)) {
+        expect(ALL_TOOLS).toHaveProperty(name);
+        // Schema identity check — same object reference
+        expect(entry[0]).toBe(ALL_TOOLS[name][0]);
+        expect(entry[1]).toBe(ALL_TOOLS[name][1]);
+      }
     }
   });
 });

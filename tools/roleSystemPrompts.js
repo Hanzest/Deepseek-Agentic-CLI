@@ -3,9 +3,9 @@
  *
  * Defines the system-level roles available for agentic workflows. Each role
  * encapsulates a dedicated AI persona with specific responsibilities, output
- * constraints, and rendering rules. The ROLE_SYSTEM_PROMPT array serves as the
- * canonical registry, while VALID_ROLES and getRoleEntry() provide convenient
- * lookup mechanisms for consumers (e.g., orchestrator, sub-agent loops).
+ * constraints, allowed tools, and rendering rules. The ROLE_SYSTEM_PROMPT array
+ * serves as the canonical registry, while VALID_ROLES and getRoleEntry() provide
+ * convenient lookup mechanisms for consumers (e.g., orchestrator, sub-agent loops).
  *
  * @module tools/roleSystemPrompts
  */
@@ -13,12 +13,14 @@
 /**
  * Canonical role definitions used throughout the agentic system.
  * Each entry specifies:
- *   - role:           Unique identifier string for the role.
- *   - description:    What the role does (2–3 sentences).
- *   - output_constraints: Formatting and behavioural guidelines for the role's output.
+ *   - role:                    Unique identifier string for the role.
+ *   - description:             What the role does (2–3 sentences).
+ *   - output_constraints:      Formatting and behavioural guidelines for the role's output.
  *   - include_goal_deliverable: Whether the rendered prompt should include
  *                               Goal and Deliverable sections.
- * @type {Array<{role: string, description: string, output_constraints: string, include_goal_deliverable: boolean}>}
+ *   - tools:                   Array of tool-name strings this role is allowed to use.
+ *                              Resolved at runtime via buildSubagentTools() in registry.js.
+ * @type {Array<{role: string, description: string, output_constraints: string, include_goal_deliverable: boolean, tools: string[]}>}
  */
 export const ROLE_SYSTEM_PROMPT = [
   {
@@ -28,6 +30,15 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Output structured requirement lists with unique IDs, acceptance criteria, and priority classifications (P0–P3). Include a Resource Plan section with: recommended sub-agent count, per-agent iteration budgets, parallelization strategy, and estimated complexity tier (Low/Medium/High). Use markdown tables where appropriate. Every requirement must be independently testable.",
     include_goal_deliverable: true,
+    tools: [
+      "read_file_chunk",
+      "get_project_tree",
+      "multi_file_search_string",
+      "search_web",
+      "fetch_url",
+      "ask_user_preferences",
+      "write_or_create_file",
+    ],
   },
   {
     role: "execution",
@@ -36,6 +47,17 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Write clean, production-quality code. Follow existing project conventions and patterns. Every file mutation must be traceable to the deliverable. Use patch_file for small edits (≤20 lines), write_or_create_file for new files or large rewrites.",
     include_goal_deliverable: true,
+    tools: [
+      "execute_terminal_command",
+      "patch_file",
+      "read_file_chunk",
+      "get_project_tree",
+      "search_web",
+      "fetch_url",
+      "ask_user_preferences",
+      "write_or_create_file",
+      "multi_file_search_string",
+    ],
   },
   {
     role: "inspection",
@@ -44,6 +66,15 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Output findings as structured reports with file references, severity ratings (Critical/High/Medium/Low), and actionable recommendations. Group related findings. Do NOT modify any files.",
     include_goal_deliverable: true,
+    tools: [
+      "read_file_chunk",
+      "get_project_tree",
+      "multi_file_search_string",
+      "search_web",
+      "fetch_url",
+      "ask_user_preferences",
+      "write_or_create_file",
+    ],
   },
   {
     role: "unit_review",
@@ -52,6 +83,15 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Output review comments with file paths, line references, severity (Blocker/Major/Minor/Nit), and concrete suggested fixes. Follow conventional code-review format. Include a summary with overall verdict.",
     include_goal_deliverable: true,
+    tools: [
+      "read_file_chunk",
+      "get_project_tree",
+      "multi_file_search_string",
+      "search_web",
+      "fetch_url",
+      "ask_user_preferences",
+      "write_or_create_file",
+    ],
   },
   {
     role: "integration_review",
@@ -60,6 +100,17 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Output integration analysis with component interaction descriptions, contract violations, coupling hotspots, and suggested refactors. Use textual diagrams (ASCII) where helpful. Do NOT modify any files.",
     include_goal_deliverable: false,
+    tools: [
+      "execute_terminal_command",
+      "patch_file",
+      "read_file_chunk",
+      "get_project_tree",
+      "search_web",
+      "fetch_url",
+      "ask_user_preferences",
+      "write_or_create_file",
+      "multi_file_search_string",
+    ],
   },
 ];
 
@@ -74,7 +125,7 @@ export const VALID_ROLES = ROLE_SYSTEM_PROMPT.map((entry) => entry.role);
  * Looks up a role entry by its unique role identifier.
  *
  * @param {string} role - The role identifier to search for.
- * @returns {{role: string, description: string, output_constraints: string, include_goal_deliverable: boolean} | undefined}
+ * @returns {{role: string, description: string, output_constraints: string, include_goal_deliverable: boolean, tools: string[]} | undefined}
  *          The matching role entry, or `undefined` if not found.
  */
 export function getRoleEntry(role) {

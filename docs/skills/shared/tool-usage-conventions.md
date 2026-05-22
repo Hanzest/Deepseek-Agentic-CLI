@@ -17,7 +17,7 @@ Consolidated rules for all agents (manager and sub-agents).
 | 7 | Sequence tools where one **validates** another's output |
 | 8 | Use `patch_file` for targeted edits of ~20 lines or fewer |
 | 9 | Use `write_or_create_file` for new files, complete rewrites, or large-scale changes |
-| 10 | All tool paths must be **relative to project root** |
+| 10 | All tool paths default to **project-root-relative**; absolute and external paths are supported |
 | 11 | Always use `-Encoding UTF8` with `Set-Content` in PowerShell |
 | 12 | Use plain ASCII in source files: `--`, `"`, `'` — no em dashes, smart quotes, or non-ASCII |
 
@@ -85,7 +85,7 @@ Tools that target different files cannot interfere with each other — they can 
 
 ### Path Conventions (Must Do #10)
 
-All tool paths are relative to the project root. The runtime sets the working directory via `process.chdir()` in `lib/orchestrator.js`. Relative paths keep tool calls portable and concise.
+All tool paths default to project-root-relative. The runtime sets the working directory via `process.chdir()` in `lib/orchestrator.js`. Absolute and external paths are also supported for all tools.
 
 ### Encoding and Style (Must Do #11, #12, Must Not #6)
 

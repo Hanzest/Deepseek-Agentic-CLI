@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { tmpdir } from "os";
+import { join } from "path";
+import { existsSync, rmSync, readFileSync } from "fs";
 
 vi.mock("../../lib/cliInput.js", () => ({
   ask: vi.fn().mockResolvedValue("y"),
@@ -80,5 +83,21 @@ describe("writeOrCreateFile — Functionality / Happy Paths", () => {
       create_parents: true,
     });
     expect(readFile(fp)).toBe("nested content");
+  });
+
+  // -----------------------------------------------------------------------
+  // Write outside project directory
+  // -----------------------------------------------------------------------
+  it("should write a file outside the project directory (system temp)", async () => {
+    const fp = join(tmpdir(), "writeOrCreateFile-ext-test.txt");
+    try {
+      const result = await write_or_create_file({
+        file_path: fp,
+        content: "external write test",
+      });
+      expect(readFileSync(fp, "utf-8")).toBe("external write test");
+    } finally {
+      if (existsSync(fp)) rmSync(fp);
+    }
   });
 });
