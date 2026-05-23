@@ -3,6 +3,7 @@ import path from "path";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
 import { readFileUtf8Normalized } from "../lib/fileReader.js";
+import { C, colorize } from "../lib/colors.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -58,11 +59,12 @@ export const patch_file_schema = {
 // ---------------------------------------------------------------------------
 async function patchFileCore({ file_path, search_string, replace_string, line_number }) {
     if (path.basename(file_path).toLowerCase().includes(".env")) {
-        console.log(`\n\x1b[93m[Security Warning] Patch targets '.env' file.\x1b[0m`);
-        const consent = await ask("\x1b[96m  Approve this patch? (y/n): \x1b[0m");
-        if (consent.trim().toLowerCase() !== "y") {
+        console.log(colorize(`\n[Security Warning] Patch targets '.env' file.`, C.warning));
+        await new Promise(resolve => setTimeout(resolve, 0)); // flush stdout
+        const consent = await ask(colorize("  Approve this patch? (y/n): ", C.consent));
+        if (consent.trim().toLowerCase() !== "y" && consent.trim().toLowerCase() !== "yes") {
             const msg = "Operation denied by user due to .env file target.";
-            console.log(`\x1b[91m${msg}\x1b[0m`);
+            console.log(colorize(msg, C.error));
             return msg;
         }
     }

@@ -1,6 +1,7 @@
 ﻿import { execSync } from "child_process";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
+import { C, colorize } from "../lib/colors.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -32,11 +33,12 @@ export const execute_terminal_command_schema = {
 // ---------------------------------------------------------------------------
 async function executeTerminalCore({ command }) {
     if (command.toLowerCase().includes(".env")) {
-        console.log(`\n\x1b[93m[Security Warning] Command references '.env' file.\x1b[0m`);
-        const consent = await ask("\x1b[96m  Approve this command? (y/n): \x1b[0m");
-        if (consent.trim().toLowerCase() !== "y") {
+        console.log(colorize(`\n[Security Warning] Command references '.env' file.`, C.warning));
+        await new Promise(resolve => setTimeout(resolve, 0)); // flush stdout
+        const consent = await ask(colorize("  Approve this command? (y/n): ", C.consent));
+        if (consent.trim().toLowerCase() !== "y" && consent.trim().toLowerCase() !== "yes") {
             const msg = "Operation denied by user due to .env reference in command.";
-            console.log(`\x1b[91m${msg}\x1b[0m`);
+            console.log(colorize(msg, C.error));
             return msg;
         }
     }

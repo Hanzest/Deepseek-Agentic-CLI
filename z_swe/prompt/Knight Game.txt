@@ -1,0 +1,31 @@
+## Turn 1: The foundation logic of the game
+
+Create an infinite round game in Knight Game so that every round, the player has to fight a monster.
+The player can: Attack (use weapon in hands to attack, if no weapon, use bare hands), Calm (heal Stamina).
+The player has the following stats when fighting:
+HP, Armor, Stamina, Mana. By default, HP = 10, Armor = 0, Stamina = 100, Mana = 10.
+After every round, the player can: buy new armor or weapon
+(there are 4 piece of armors of the same tier: helmet, chestplate, leggings, and boots,
+only when user buy all 4 armor, the shop will renew with the next tier both armor and weapon),
+upgrade their stats (upgrade on level up 5 skill points, getting XP via win against the monster, specifically include:
+strength (+ base damage), dexterity (+ critical chance (x2 damage), increase hit chance),
+agility (increase dodge chance), intelligence (+ Mana, increase Stamina and Mana heal when Calm action),
+defense (+ Health)), proceed next round. All monsters stats are based on the skill points,
+for every round, monster have +2 more skill points. On level % 10 == 2, monster has full strength,
+== 4 has full dexterity, == 6 has full agility, == 8 has full defense, == 10 has full Intelligence.
+The mana can be used by both Human and Monster as follows:
+1. Lightning Stunt enemy for 1 turn, cost 80% of max mana, damage = 20% of mana used.
+2. Contaminate Poison enemy for the rest of turn, cost 80% of max mana, damage = 2% of mana used every human turn.
+3. Weakness curse enemy for the next turn, cost 35% of max mana, enemy gets all stats debuffed by 35% each.
+Ensure DRY and SOLID principles. You should use plain JavaScript, no framework. This should be CLI game.
+The folder to be implemented is Knight Game inside z_swe folder.
+
+## Turn 2: Balanced the game and infinite scaling game
+
+Update the Knight Game in z_swe folder to: the tiering must used number to show the level of
+the tier for scaling up to infinite, rather than fixed tiering. Pricing strategy and
+gold acquire should increase linearly, with monster will drop gold based on the current level.
+Update game mechanisms for user to trade gold for skill points (base: 5 gold = 1 skill point,
+x1.5 price every purchase, infinitely, round to integer). Player based HP should be 20 at the start.
+Ensure multiplier of every linearly or exponentially or anything increased must be left as parameters
+inside an array at the top nof the file for better tuning.

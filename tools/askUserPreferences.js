@@ -1,5 +1,6 @@
 ﻿import { ask } from "../lib/cliInput.js";
 import { createToolHandler } from "./template.js";
+import { C, colorize } from "../lib/colors.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -74,16 +75,20 @@ async function askUserPreferencesCore({ questions }) {
         }
         console.log(`${lastIdx}. (Type your own custom preference)`);
 
-        const choice = await ask("Enter your choice (number): ");
-        const choiceNum = parseInt(choice.trim(), 10);
-
         let answer;
-        if (choiceNum === lastIdx) {
-            answer = await ask("Enter your custom preference: ");
-        } else if (choiceNum >= 1 && choiceNum <= choices.length) {
-            answer = choices[choiceNum - 1];
-        } else {
-            answer = choice.trim();
+        while (true) {
+            const choice = await ask("Enter your choice (number): ");
+            const choiceNum = parseInt(choice.trim(), 10);
+
+            if (choiceNum === lastIdx) {
+                answer = await ask("Enter your custom preference: ");
+                break;
+            } else if (choiceNum >= 1 && choiceNum <= choices.length) {
+                answer = choices[choiceNum - 1];
+                break;
+            } else {
+                console.log(colorize(`Invalid choice. Please enter a number between 1 and ${lastIdx}.`, C.warning));
+            }
         }
 
         results.push({ question: questionText, answer });

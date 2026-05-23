@@ -325,7 +325,11 @@ async function delegateSubAgentCore({
             log: (msg) => terminal.write(String(msg)),
         };
 
+        const roleEntry = getRoleEntry(role);
         modelConfig = getActiveModelConfig() || {};
+        if (roleEntry && roleEntry.model) {
+            modelConfig = { ...modelConfig, model_name: roleEntry.model };
+        }
         result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig, toolsMap);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;

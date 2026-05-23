@@ -5,6 +5,7 @@ import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
 import { readFileUtf8Normalized } from "../lib/fileReader.js";
 import { isPlanFile, archiveActiveToHistory, extractTaskName, timestampedFilename, ACTIVE_DIR } from "../lib/artifactManager.js";
+import { C, colorize } from "../lib/colors.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,14 +94,15 @@ async function writeOrCreateFileCore({
     const basename = path.basename(resolved_path);
     if (basename === ".env" || basename.startsWith(".env.") || basename.startsWith(".env-")) {
         console.log(
-            '\n\x1b[93m[Security Warning] Write targets .env file.\x1b[0m'
+            colorize('\n[Security Warning] Write targets .env file.', C.warning)
         );
+        await new Promise(resolve => setTimeout(resolve, 0)); // flush stdout
         const consent = await ask(
-            "\x1b[96m  Approve writing to this file? (y/n): \x1b[0m"
+            colorize("  Approve writing to this file? (y/n): ", C.consent)
         );
-        if (consent.trim().toLowerCase() !== "y") {
+        if (consent.trim().toLowerCase() !== "y" && consent.trim().toLowerCase() !== "yes") {
             const msg = "Operation denied by user due to .env file target.";
-            console.log('\x1b[91m' + msg + '\x1b[0m');
+            console.log(colorize(msg, C.error));
             return msg;
         }
     }
@@ -255,5 +257,5 @@ async function writeOrCreateFileCore({
 export const write_or_create_file = createToolHandler(
     "write_or_create_file",
     writeOrCreateFileCore,
-    true // needsConsent - filesystem mutation
+    false // needsConsent - filesystem mutation
 );

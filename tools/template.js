@@ -41,11 +41,12 @@ export function createToolHandler(name, handler, needsConsent = false) {
         if (needsConsent) {
             logAlert(name, args);
             console.log(""); // blank line before consent prompt
+            await new Promise(resolve => setTimeout(resolve, 0)); // flush stdout
             const consent = await ask(
                 colorize("  Do you approve this operation? (y/n): ", C.consent)
             );
             const consent_clean = consent.trim().toLowerCase();
-            if (consent_clean !== "y") {
+            if (consent_clean !== "y" && consent_clean !== "yes") {
                 console.log(colorize(`${'─'.repeat(56)}`, C.border));
                 const denial_msg = "User denied the operation.";
                 console.log(colorize(denial_msg, C.error));

@@ -47,6 +47,7 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Write clean, production-quality code. Follow existing project conventions and patterns. Every file mutation must be traceable to the deliverable. Use patch_file for small edits (≤20 lines), write_or_create_file for new files or large rewrites.",
     include_goal_deliverable: true,
+    model: "deepseek-v4-flash",
     tools: [
       "execute_terminal_command",
       "patch_file",
@@ -66,6 +67,7 @@ export const ROLE_SYSTEM_PROMPT = [
     output_constraints:
       "Output findings as structured reports with file references, severity ratings (Critical/High/Medium/Low), and actionable recommendations. Group related findings. Do NOT modify any files.",
     include_goal_deliverable: true,
+    model: "deepseek-v4-flash",
     tools: [
       "read_file_chunk",
       "get_project_tree",
