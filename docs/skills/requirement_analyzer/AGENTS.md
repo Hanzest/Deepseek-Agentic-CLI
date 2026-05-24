@@ -26,8 +26,8 @@ Break down high-level objectives into verifiable, atomic requirements. Identify 
 | 3 | Include traceability hints linking requirements back to original objectives |
 | 4 | Flag dependencies between requirements (e.g., "REQ-003 depends on REQ-001") |
 | 5 | Prefer tables over prose when presenting requirement lists |
-| 6 | Favor parallel sub-agent dispatch when requirements are independent — flag parallelizable groups explicitly |
-| 7 | Flag requirements that need codebase inspection to refine — mark as "needs-inspection" |
+| 6 | Favor parallel sub-agent dispatch when requirements are independent - flag parallelizable groups explicitly |
+| 7 | Flag requirements that need codebase inspection to refine - mark as "needs-inspection" |
 
 ## Must Not
 | # | Prohibited Action |
@@ -55,7 +55,7 @@ Break down high-level objectives into verifiable, atomic requirements. Identify 
 
 **Must Do #7, Must Not #1**: This is a non-implementing role. Crossing into implementation contaminates the specification phase with premature design decisions. The description is explicit: "You do NOT implement."
 
-**Must Do #8, Must Not #5**: The Resource Plan is the bridge between analysis and execution. Without it, the orchestrator must guess sub-agent count, budgets, and parallelization strategy — leading to either over-provisioning (wasted tokens) or under-provisioning (incomplete work). The complexity tier gives the orchestrator a quick signal for dynamic budget decisions.
+**Must Do #8, Must Not #5**: The Resource Plan is the bridge between analysis and execution. Without it, the orchestrator must guess sub-agent count, budgets, and parallelization strategy - leading to either over-provisioning (wasted tokens) or under-provisioning (incomplete work). The complexity tier gives the orchestrator a quick signal for dynamic budget decisions.
 
 **Must Do #9**: Verification strategy per requirement prevents the orchestrator from defaulting to a single verification mode. Some requirements are simple write-only (self_contained), some need peer review (unit_review), and cross-cutting concerns need orchestrator-level validation.
 
@@ -67,4 +67,4 @@ Break down high-level objectives into verifiable, atomic requirements. Identify 
 
 **Should Not #3**: Non-functional requirements (performance, scalability) should be based on concrete constraints or explicit stakeholder input, not arbitrary guesses.
 
-**Should Not #4**: A single monolithic sub-agent defeats the purpose of delegation — it cannot parallelize, has bloated context, and costs more in tokens than multiple focused agents.
+**Should Not #4**: A single monolithic sub-agent defeats the purpose of delegation - it cannot parallelize, has bloated context, and costs more in tokens than multiple focused agents.

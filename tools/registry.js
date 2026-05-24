@@ -45,24 +45,24 @@ import { getRoleEntry } from "./roleSystemPrompts.js";
 export { callToolsInBatch };
 
 // ---------------------------------------------------------------------------
-// ALL_TOOLS — master catalog of every tool as [schema, handler] pairs.
+// ALL_TOOLS - master catalog of every tool as [schema, handler] pairs.
 // No consent flags here; consumers (orchestrator, sub-agents) apply their
 // own consent semantics.
 // ---------------------------------------------------------------------------
 export const ALL_TOOLS = {
     execute_terminal_command: [execute_terminal_command_schema, execute_terminal_command],
-    patch_file:             [patch_file_schema,             patch_file],
-    read_file_chunk:        [read_file_chunk_schema,        read_file_chunk],
-    get_project_tree:       [get_project_tree_schema,       get_project_tree],
-    search_web:             [search_web_schema,             search_web],
-    fetch_url:              [fetch_url_schema,              fetch_url],
-    ask_user_preferences:   [ask_user_preferences_schema,   ask_user_preferences],
-    write_or_create_file:   [write_or_create_file_schema,   write_or_create_file],
+    patch_file: [patch_file_schema, patch_file],
+    read_file_chunk: [read_file_chunk_schema, read_file_chunk],
+    get_project_tree: [get_project_tree_schema, get_project_tree],
+    search_web: [search_web_schema, search_web],
+    fetch_url: [fetch_url_schema, fetch_url],
+    ask_user_preferences: [ask_user_preferences_schema, ask_user_preferences],
+    write_or_create_file: [write_or_create_file_schema, write_or_create_file],
     multi_file_search_string: [multi_file_search_string_schema, multi_file_search_string],
 };
 
 // ---------------------------------------------------------------------------
-// ORCHESTRATOR_TOOLS — read-only codebase inspection tools + delegation.
+// ORCHESTRATOR_TOOLS - read-only codebase inspection tools + delegation.
 // Main agent / orchestrator uses this set.
 // ---------------------------------------------------------------------------
 export const ORCHESTRATOR_TOOLS = {
@@ -83,7 +83,7 @@ export const ORCHESTRATOR_TOOLS = {
 // The role's `tools` array lists allowed tool names; this function filters
 // ALL_TOOLS to only those names and wraps each entry as [schema, handler, false].
 //
-// Rationale: sub-agents are trusted delegates — all needsConsent flags are false.
+// Rationale: sub-agents are trusted delegates - all needsConsent flags are false.
 //
 // @param {string} role - Role identifier (e.g., "execution", "inspection").
 // @returns {object} Tool map shaped like the old SUBAGENT_TOOLS:

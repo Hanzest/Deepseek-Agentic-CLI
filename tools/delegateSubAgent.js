@@ -40,7 +40,7 @@ export const delegate_sub_agent_schema = {
                     type: "string",
                     description:
                         "The specific, concrete definition_of_done for the sub-agent in one clear sentence. " +
-                        "Must be verifiable — the sub-agent should know exactly when it is done.",
+                        "Must be verifiable - the sub-agent should know exactly when it is done.",
                 },
                 deliverable: {
                     type: "string",
@@ -78,7 +78,7 @@ export const delegate_sub_agent_schema = {
                     description:
                         "Set to true when the deliverable is purely a file write with no " +
                         "verification needed. Instructs the sub-agent to write and respond " +
-                        "immediately — no re-reading, no verification loop. Saves 1-2 " +
+                        "immediately - no re-reading, no verification loop. Saves 1-2 " +
                         "iterations per task. **Use this for all write-only delegations.** " +
                         "Defaults to false.",
                 },
@@ -138,7 +138,7 @@ function sanitizeOutputFile(raw, artifactsDir) {
     const resolved = path.resolve(artifactsDir, cleaned);
     const normalizedArtifacts = path.resolve(artifactsDir) + path.sep;
     if (!resolved.startsWith(normalizedArtifacts)) {
-        return null; // path traversal detected — fall back to default
+        return null; // path traversal detected - fall back to default
     }
 
     return cleaned;
@@ -162,7 +162,7 @@ function writeFileUnique(artifactsDir, desiredName, content) {
     while (true) {
         try {
             fs.writeFileSync(candidate, content, { encoding: "utf-8", flag: "wx" });
-            return candidate; // success — file did not exist before
+            return candidate; // success - file did not exist before
         } catch (e) {
             if (e.code === "EEXIST") {
                 candidate = path.join(artifactsDir, `${base}-${counter}${ext}`);
@@ -206,7 +206,7 @@ function buildMarkdownPrompt({
     }
 
     if (self_contained) {
-        lines.push("> **SELF-CONTAINED TASK** — Your deliverable is a file write. Once written, respond with the summary immediately. Do NOT re-read or verify the file unless the write tool returned an error.");
+        lines.push("> **SELF-CONTAINED TASK** - Your deliverable is a file write. Once written, respond with the summary immediately. Do NOT re-read or verify the file unless the write tool returned an error.");
         lines.push("");
     }
 
@@ -248,7 +248,7 @@ function buildMarkdownPrompt({
 }
 
 // ---------------------------------------------------------------------------
-// Pure handler logic (no consent — safe workspace writes only)
+// Pure handler logic (no consent - safe workspace writes only)
 async function delegateSubAgentCore({
     sub_agent_name,
     definition_of_done,
@@ -431,7 +431,7 @@ async function delegateSubAgentCore({
 }
 
 // ---------------------------------------------------------------------------
-// Wrapped handler (no consent — artifacts/active/ is a safe workspace)
+// Wrapped handler (no consent - artifacts/active/ is a safe workspace)
 // ---------------------------------------------------------------------------
 export const delegate_sub_agent = createToolHandler(
     "delegate_sub_agent",

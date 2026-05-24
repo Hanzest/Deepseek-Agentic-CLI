@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { get_project_tree } from "../../tools/getProjectTree.js";
 import { fixturePath } from "../helpers.js";
 
-describe("getProjectTree — Functionality / Happy Paths", () => {
+describe("getProjectTree - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
-  // Default root_path ('.') — returns tree of current project
+  // Default root_path ('.') - returns tree of current project
   // -----------------------------------------------------------------------
   it("should return a project tree with the default root_path ('.')", async () => {
     const result = await get_project_tree({});

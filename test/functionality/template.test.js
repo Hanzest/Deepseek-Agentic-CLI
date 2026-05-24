@@ -11,7 +11,7 @@ async function echoHandler(args) {
   return `echo: ${args.message || "no message"}`;
 }
 
-describe("template — Functionality / Happy Paths", () => {
+describe("template - Functionality / Happy Paths", () => {
   beforeEach(() => {
     resetAlertCounter();
     ask.mockResolvedValue("y");

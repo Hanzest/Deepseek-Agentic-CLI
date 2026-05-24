@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { multi_file_search_string } from "../../tools/multiFileSearchString.js";
 import { fixturePath } from "../helpers.js";
 
-describe("multiFileSearchString — Reliability / Edge Cases", () => {
+describe("multiFileSearchString - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Search string not found anywhere
   // -----------------------------------------------------------------------
@@ -38,7 +38,7 @@ describe("multiFileSearchString — Reliability / Edge Cases", () => {
   // .env files excluded (always ignored)
   // -----------------------------------------------------------------------
   it("should not return results from .env files even if they match", async () => {
-    // The tool always ignores .env — test by searching for a pattern that
+    // The tool always ignores .env - test by searching for a pattern that
     // would match in the project if .env files existed. The searchable
     // fixtures don't have .env files, so just confirm .env is always ignored.
     const result = await multi_file_search_string({

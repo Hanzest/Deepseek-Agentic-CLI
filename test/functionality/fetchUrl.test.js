@@ -10,7 +10,7 @@ import { fetch_url, fetch_url_schema } from "../../tools/fetchUrl.js";
 // Functionality / Happy Path tests for fetchUrl  (all @network)
 // ---------------------------------------------------------------------------
 
-describe("fetchUrl functionality — real network calls", () => {
+describe("fetchUrl functionality - real network calls", () => {
   it(
     "@network fetch a known stable URL returns markdown content",
     { timeout: 30_000 },

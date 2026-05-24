@@ -5,7 +5,7 @@ import {
   buildSubagentTools,
 } from "../../tools/registry.js";
 
-describe("registry — Functionality / Happy Paths", () => {
+describe("registry - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Counts
   // -----------------------------------------------------------------------
@@ -41,7 +41,7 @@ describe("registry — Functionality / Happy Paths", () => {
   });
 
   // -----------------------------------------------------------------------
-  // buildSubagentTools — role-based tool resolution
+  // buildSubagentTools - role-based tool resolution
   // -----------------------------------------------------------------------
   it("buildSubagentTools('execution') returns all 9 tools", () => {
     const tools = buildSubagentTools("execution");

@@ -5,7 +5,7 @@ vi.mock("../../lib/cliInput.js", () => ({
   ask: vi.fn().mockResolvedValue("y"),
 }));
 
-describe("executeTerminal — Reliability / Edge Cases", () => {
+describe("executeTerminal - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Invalid command
   // -----------------------------------------------------------------------
@@ -19,7 +19,7 @@ describe("executeTerminal — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Command with .env reference — security check (mocked consent)
+  // Command with .env reference - security check (mocked consent)
   // -----------------------------------------------------------------------
   it("should handle command referencing .env with mocked consent", async () => {
     const result = await execute_terminal_command({

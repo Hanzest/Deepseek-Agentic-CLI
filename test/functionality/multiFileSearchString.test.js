@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { multi_file_search_string } from "../../tools/multiFileSearchString.js";
 import { fixturePath } from "../helpers.js";
 
-describe("multiFileSearchString — Functionality / Happy Paths", () => {
+describe("multiFileSearchString - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Search for "apple" in searchable fixtures
   // -----------------------------------------------------------------------
@@ -23,7 +23,7 @@ describe("multiFileSearchString — Functionality / Happy Paths", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Regex search for "cherry|apple" — finds multiple matches
+  // Regex search for "cherry|apple" - finds multiple matches
   // -----------------------------------------------------------------------
   it("should find matches for regex pattern 'cherry|apple' across multiple files", async () => {
     const result = await multi_file_search_string({
@@ -148,7 +148,7 @@ describe("multiFileSearchString — Functionality / Happy Paths", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Search for "dragonfruit" — only in b.txt
+  // Search for "dragonfruit" - only in b.txt
   // -----------------------------------------------------------------------
   it("should find 'dragonfruit' in b.txt and sub/c.txt", async () => {
     const result = await multi_file_search_string({
@@ -179,7 +179,7 @@ describe("multiFileSearchString — Functionality / Happy Paths", () => {
       parsed = JSON.parse(result);
     } catch {
       // Tool may return a plain-text error string if no files match
-      // That's acceptable — the test verifies the tool runs without crashing
+      // That's acceptable - the test verifies the tool runs without crashing
       expect(result).toBeTypeOf("string");
       return;
     }
@@ -190,7 +190,7 @@ describe("multiFileSearchString — Functionality / Happy Paths", () => {
   });
 
   // -----------------------------------------------------------------------
-  // max_results = 0 (unlimited) — returns all matches
+  // max_results = 0 (unlimited) - returns all matches
   // -----------------------------------------------------------------------
   it("should return all matches when max_results is 0 (unlimited)", async () => {
     const result = await multi_file_search_string({

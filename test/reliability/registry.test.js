@@ -18,7 +18,7 @@ const ALL_TOOL_NAMES = [
   "multi_file_search_string",
 ];
 
-describe("registry — Reliability / Edge Cases", () => {
+describe("registry - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // ALL_TOOLS structure
   // -----------------------------------------------------------------------
@@ -64,7 +64,7 @@ describe("registry — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // buildSubagentTools — all needsConsent flags are false
+  // buildSubagentTools - all needsConsent flags are false
   // -----------------------------------------------------------------------
   it("buildSubagentTools always produces needsConsent=false for every role", () => {
     const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
@@ -77,7 +77,7 @@ describe("registry — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // buildSubagentTools — each role's tools are a subset of ALL_TOOLS
+  // buildSubagentTools - each role's tools are a subset of ALL_TOOLS
   // -----------------------------------------------------------------------
   it("buildSubagentTools result tools are always subsets of ALL_TOOLS", () => {
     const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
@@ -85,7 +85,7 @@ describe("registry — Reliability / Edge Cases", () => {
       const tools = buildSubagentTools(role);
       for (const [name, entry] of Object.entries(tools)) {
         expect(ALL_TOOLS).toHaveProperty(name);
-        // Schema identity check — same object reference
+        // Schema identity check - same object reference
         expect(entry[0]).toBe(ALL_TOOLS[name][0]);
         expect(entry[1]).toBe(ALL_TOOLS[name][1]);
       }

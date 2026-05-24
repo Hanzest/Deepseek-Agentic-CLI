@@ -82,7 +82,7 @@ describe("patchFile - functionality (happy paths)", () => {
   // -----------------------------------------------------------------------
   // File content integrity preserved (only targeted line changed)
   // -----------------------------------------------------------------------
-  it("should preserve content integrity — only the targeted line changes", async () => {
+  it("should preserve content integrity - only the targeted line changes", async () => {
     const fp = createTempFile(
       `${TEST_SUITE}/integrity.txt`,
       "First line\nSecond line\nThird line\nFourth line\nFifth line\n"

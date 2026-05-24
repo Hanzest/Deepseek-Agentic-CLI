@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------------
-// Batch tool execution — runs tool call handlers locally (NO model API calls).
+// Batch tool execution - runs tool call handlers locally (NO model API calls).
 //
 // The orchestrator sends a SINGLE model API request; the model may respond
 // with N tool_calls. This module executes all N tool handlers (consent tools
 // sequentially, read-only tools concurrently), then the orchestrator makes
 // ONE follow-up model API call with all results. This is NOT a per-tool API
-// batching mechanism — it batches local tool execution only.
+// batching mechanism - it batches local tool execution only.
 //
 // Phases:
-//   Phase 1 — Batch summary display
-//   Phase 2 — Unified execution: consent tools serialized via lock,
+//   Phase 1 - Batch summary display
+//   Phase 2 - Unified execution: consent tools serialized via lock,
 //             read-only tools concurrent via Promise.all
-//   Phase 3 — Progress indicators with per-tool timing (Item 8)
+//   Phase 3 - Progress indicators with per-tool timing (Item 8)
 // ---------------------------------------------------------------------------
 
 import { resetAlertCounter } from "./template.js";
@@ -50,7 +50,7 @@ function truncate(v) {
 function printBatchSummary(parsed) {
     const count = parsed.length;
     console.log(colorize(`\n${'═'.repeat(W)}`, C.border));
-    console.log(colorize(`  Batch Tool Execution — ${count} tool(s)`, C.heading));
+    console.log(colorize(`  Batch Tool Execution - ${count} tool(s)`, C.heading));
     console.log(colorize(`${'═'.repeat(W)}`, C.border));
 
     for (let i = 0; i < parsed.length; i++) {
@@ -76,8 +76,8 @@ function printBatchFooter(count, timings) {
     if (timings && timings.length > 0) {
         for (const t of timings) {
             const ms = t.ms < 1 ? `${(t.ms * 1000).toFixed(0)}μs` :
-                       t.ms < 1000 ? `${t.ms.toFixed(1)}ms` :
-                       `${(t.ms / 1000).toFixed(1)}s`;
+                t.ms < 1000 ? `${t.ms.toFixed(1)}ms` :
+                    `${(t.ms / 1000).toFixed(1)}s`;
             console.log(colorize(`  [done] ${t.name} (${ms})`, C.success));
         }
         console.log(colorize(`${'─'.repeat(W)}`, C.border));
@@ -130,7 +130,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
     // ---- Phase 2: Execute ----
     // Build one promise per tool (in original order). Consent tools run sequentially
     // via an internal async lock; read-only tools run concurrently.
-    // All results are collected in original order — no post-hoc sort needed.
+    // All results are collected in original order - no post-hoc sort needed.
     let consentLock = Promise.resolve();
     const resultPromises = parsed.map((p, index) => {
         if (p.parseError) {
@@ -165,7 +165,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         if (agentMode === "plan" && MUTATION_BLOCKED_TOOLS.has(p.name)) {
             // Allow writes into artifacts/ folder (safe workspace for plans)
             if (p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) {
-                } else {
+            } else {
                 const blockedMsg =
                     "Blocked: File mutation and system execution are disabled in Plan Mode. " +
                     "Switch to Agent Mode (/agent) to proceed. " +

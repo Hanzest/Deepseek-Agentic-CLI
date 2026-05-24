@@ -1,4 +1,4 @@
-﻿# Agent Guidelines — Tool Usage & Conventions
+﻿# Agent Guidelines - Tool Usage & Conventions
 
 ## 1. Path conventions
 
@@ -19,9 +19,9 @@ Consent is tiered by tool and content:
 | `get_project_tree`, `search_web` | Runs immediately (read-only / non-destructive) |
 
 When approving terminal commands: the user's shell is **Windows PowerShell**.
-Use `Remove-Item`, `Get-ChildItem`, `Set-Content`, etc. — not Unix commands.
+Use `Remove-Item`, `Get-ChildItem`, `Set-Content`, etc. - not Unix commands.
 
-## 3. File encoding — always UTF-8
+## 3. File encoding - always UTF-8
 
 When creating/editing files via terminal, always use `-Encoding UTF8`:
 
@@ -72,8 +72,8 @@ The system starts in **Plan Mode** by default. The user can toggle modes at any 
 
 | Command | Effect |
 |---------|--------|
-| `/plan` | Switch to Plan Mode — file mutation (`patch_file`, `write_or_create_file`) and system execution (`execute_terminal_command`) are blocked. Writes to `artifacts/` folder are exempt. |
-| `/agent` | Switch to Agent Mode — all tools are available. |
+| `/plan` | Switch to Plan Mode - file mutation (`patch_file`, `write_or_create_file`) and system execution (`execute_terminal_command`) are blocked. Writes to `artifacts/` folder are exempt. |
+| `/agent` | Switch to Agent Mode - all tools are available. |
 
 Sub-agents inherit the current mode from the manager. A sub-agent spawned in Plan Mode cannot bypass the gate.
 

@@ -6,7 +6,7 @@ import { delegate_sub_agent_schema } from "../../tools/delegateSubAgent.js";
 // Placed in functionality folder for organizational completeness.
 // ---------------------------------------------------------------------------
 
-describe("delegateSubAgent — Functionality / Schema Validation", () => {
+describe("delegateSubAgent - Functionality / Schema Validation", () => {
   it("schema has all essential parameter definitions", () => {
     const props = delegate_sub_agent_schema.function.parameters.properties;
     const names = Object.keys(props);

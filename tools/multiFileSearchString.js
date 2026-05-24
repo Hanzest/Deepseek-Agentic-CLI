@@ -114,7 +114,7 @@ function _collect_files(root_path, spec) {
             try {
                 isDir = fs.statSync(fp).isDirectory();
             } catch {
-                // Permission error on single entry — skip it, don't abort the walk
+                // Permission error on single entry - skip it, don't abort the walk
                 continue;
             }
             if (_is_ignored(rp, isDir, spec)) continue;
@@ -177,7 +177,7 @@ async function multiFileSearchStringCore({
     const spec = _load_gitignore_spec(root_path);
     const all_files = _collect_files(root_path, spec);
     const mf = glob_pattern
-        ? all_files.filter(function(f) { return _path_matches_glob(f, root_path, glob_pattern); })
+        ? all_files.filter(function (f) { return _path_matches_glob(f, root_path, glob_pattern); })
         : all_files;
 
     if (mf.length === 0) {

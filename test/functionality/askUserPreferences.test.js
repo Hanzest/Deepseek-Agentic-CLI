@@ -7,7 +7,7 @@ vi.mock("../../lib/cliInput.js", () => ({
 import { ask_user_preferences } from "../../tools/askUserPreferences.js";
 import { ask } from "../../lib/cliInput.js";
 
-describe("askUserPreferences — Functionality / Happy Paths", () => {
+describe("askUserPreferences - Functionality / Happy Paths", () => {
   it("should handle single question with choices", async () => {
     ask.mockResolvedValueOnce("2");
     const result = await ask_user_preferences({

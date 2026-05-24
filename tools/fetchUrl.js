@@ -13,7 +13,7 @@ export const fetch_url_schema = {
             "structured JSON with the meaningful text content converted via Turndown. " +
             "Use this to read up-to-date documentation, articles, or web pages without " +
             "burning tokens on raw HTML. **Always use the urls[] array form for multiple " +
-            "pages** — never call this tool once per URL. When you have search_web results, " +
+            "pages** - never call this tool once per URL. When you have search_web results, " +
             "extract the URLs and pass them all at once via urls[]. Supports per-URL metadata " +
             "(title, content length, truncation info, fetch timestamp) for source attribution.",
         parameters: {
@@ -51,7 +51,7 @@ export const fetch_url_schema = {
 };
 
 // ---------------------------------------------------------------------------
-// Pure handler — single URL fetch
+// Pure handler - single URL fetch
 // ---------------------------------------------------------------------------
 async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, TurndownService) {
     const fetched_at = new Date().toISOString();
@@ -135,7 +135,7 @@ async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, Turndown
             ).toFixed(0);
             markdown_text =
                 markdown_text.substring(0, max_chars) +
-                `\n\n[... truncated at ${max_chars} characters — ` +
+                `\n\n[... truncated at ${max_chars} characters - ` +
                 `${pct_trimmed}% of original page trimmed. ` +
                 `Full page is ${content_length_chars} characters.]`;
             truncated = true;
@@ -144,9 +144,9 @@ async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, Turndown
 
         console.log(
             `\x1b[92m[Fetched OK] ${url.substring(0, 100)}` +
-                ` — ${content_length_chars} chars` +
-                (truncated ? ` (truncated at ${max_chars})` : "") +
-                `\x1b[0m`
+            ` - ${content_length_chars} chars` +
+            (truncated ? ` (truncated at ${max_chars})` : "") +
+            `\x1b[0m`
         );
 
         return {
@@ -171,7 +171,7 @@ async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, Turndown
 }
 
 // ---------------------------------------------------------------------------
-// Pure handler — dispatcher (single vs batch)
+// Pure handler - dispatcher (single vs batch)
 // ---------------------------------------------------------------------------
 async function fetchUrlCore({ url, urls, timeout_seconds = 15, max_chars = 8000 }) {
     // Soft-import dependencies
@@ -206,7 +206,7 @@ async function fetchUrlCore({ url, urls, timeout_seconds = 15, max_chars = 8000 
         });
     }
 
-    // Deduplicate URLs (case-sensitive — URL normalization is out of scope)
+    // Deduplicate URLs (case-sensitive - URL normalization is out of scope)
     urlList = [...new Set(urlList)];
 
     const isBatch = urlList.length > 1;

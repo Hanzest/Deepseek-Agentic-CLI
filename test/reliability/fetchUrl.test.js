@@ -9,7 +9,7 @@ vi.mock("../../lib/cliInput.js", () => ({
 // Reliability / Edge Case tests for fetchUrl
 // ---------------------------------------------------------------------------
 
-describe("fetchUrl reliability — schema validation", () => {
+describe("fetchUrl reliability - schema validation", () => {
   // ── Schema oneOf constraint ───────────────────────────────────────────────
   it("schema has oneOf constraint requiring url or urls", () => {
     const params = fetch_url_schema.function.parameters;
@@ -23,7 +23,7 @@ describe("fetchUrl reliability — schema validation", () => {
   });
 });
 
-describe("fetchUrl reliability — input edge cases", () => {
+describe("fetchUrl reliability - input edge cases", () => {
   it("rejects invalid/malformed URL", { timeout: 15_000 }, async () => {
     const result = await fetch_url({ url: "not-a-valid-url" });
     const parsed =
@@ -54,7 +54,7 @@ describe("fetchUrl reliability — input edge cases", () => {
         expect(parsed).toHaveProperty("message");
         expect(typeof parsed.message).toBe("string");
       } else {
-        // On some networks, DNS might redirect — just verify we got something
+        // On some networks, DNS might redirect - just verify we got something
         expect(parsed).toBeTruthy();
       }
     },
@@ -64,14 +64,14 @@ describe("fetchUrl reliability — input edge cases", () => {
     "@network timeout with very short timeout_seconds (1s) against slow URL",
     { timeout: 15_000 },
     async () => {
-      // Use a URL known to be slow — httpbin's delayed response
+      // Use a URL known to be slow - httpbin's delayed response
       const result = await fetch_url({
         url: "https://httpbin.org/delay/5",
         timeout_seconds: 1,
       });
       const parsed =
         typeof result === "string" ? JSON.parse(result) : result;
-      // Should timeout — either error is true and message mentions timeout
+      // Should timeout - either error is true and message mentions timeout
       // OR tool handles gracefully
       expect(parsed).toBeTruthy();
       // If no error, it means the response arrived within 1s (unlikely but possible)

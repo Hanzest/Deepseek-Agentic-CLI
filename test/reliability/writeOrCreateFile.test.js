@@ -3,7 +3,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { existsSync, rmSync, readFileSync } from "fs";
 
-// Mock consent — writeOrCreateFileCore internally calls ask() for .env targets
+// Mock consent - writeOrCreateFileCore internally calls ask() for .env targets
 vi.mock("../../lib/cliInput.js", () => ({
   ask: vi.fn().mockResolvedValue("y"),
 }));
@@ -19,12 +19,12 @@ import {
 
 const SUITE = "writeOrCreateFile-reliability";
 
-describe("writeOrCreateFile — Reliability / Edge Cases", () => {
+describe("writeOrCreateFile - Reliability / Edge Cases", () => {
   beforeEach(() => { createTempDir(SUITE); });
   afterEach(() => { cleanupTempDir(SUITE); });
 
   // -----------------------------------------------------------------------
-  // .env file security — proceeds with mocked consent
+  // .env file security - proceeds with mocked consent
   // -----------------------------------------------------------------------
   it("should handle .env file target with mocked consent", async () => {
     const fp = tmpPath(SUITE, ".env");
@@ -86,7 +86,7 @@ describe("writeOrCreateFile — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Write outside project directory — system temp
+  // Write outside project directory - system temp
   // -----------------------------------------------------------------------
   it("should write a file outside the project directory (system temp)", async () => {
     const fp = join(tmpdir(), "writeOrCreateFile-ext-test.txt");

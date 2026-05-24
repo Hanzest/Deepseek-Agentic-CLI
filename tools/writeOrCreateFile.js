@@ -20,7 +20,7 @@ export const write_or_create_file_schema = {
         name: "write_or_create_file",
         description:
             "Writes content to a file, creating it if it doesn't exist. " +
-            "For small targeted edits, prefer patch_file instead — it transmits only the diff " +
+            "For small targeted edits, prefer patch_file instead - it transmits only the diff " +
             "and saves significant tokens. Use write_or_create_file as the primary tool for " +
             "creating new files, writing complete file contents, or replacing large sections. " +
             "Optionally creates parent directories. Can overwrite, append, " +

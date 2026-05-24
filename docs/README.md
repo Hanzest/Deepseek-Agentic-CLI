@@ -1,4 +1,4 @@
-# Skill Docs — Single Source of Truth for Agent Skills
+# Skill Docs - Single Source of Truth for Agent Skills
 
 **Purpose:** A central index of all skill documents available to agents in this codebase. Each entry explains what the skill covers and where to find the full document.
 
@@ -87,7 +87,7 @@ docs/
 ```
 
 - **General docs** (`agents.md`, `this_repo`) apply to all agents regardless of role.
-- **Shared skills** (`skills/shared/`) apply to all agents — universal tool rules.
+- **Shared skills** (`skills/shared/`) apply to all agents - universal tool rules.
 - **Role skills** (`skills/{role}/AGENTS.md`) are role-specific and assume familiarity with shared docs.
 
 ---

@@ -17,7 +17,7 @@ afterAll(() => {
   cleanupTempDir(tempDirName);
 });
 
-describe("getProjectTree — Reliability / Edge Cases", () => {
+describe("getProjectTree - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Non-existent root_path
   // -----------------------------------------------------------------------
@@ -31,7 +31,7 @@ describe("getProjectTree — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // max_depth = 1 — only top-level entries
+  // max_depth = 1 - only top-level entries
   // -----------------------------------------------------------------------
   it("should return only top-level entries when max_depth is 1", async () => {
     // Use the fixtures dir so we can predict output

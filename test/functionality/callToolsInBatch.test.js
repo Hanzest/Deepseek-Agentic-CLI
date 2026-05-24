@@ -27,7 +27,7 @@ function makeToolCall(id, name, args = {}) {
   };
 }
 
-describe("callToolsInBatch — Functionality / Happy Paths", () => {
+describe("callToolsInBatch - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Single read-only tool executes
   // -----------------------------------------------------------------------
@@ -90,7 +90,7 @@ describe("callToolsInBatch — Functionality / Happy Paths", () => {
     const call = makeToolCall("c1", "write_x");
     const count = await callToolsInBatch([call], MOCK_REGISTRY, messages, "agent");
     expect(count).toBe(1);
-    // Not blocked — content should be valid JSON from the handler
+    // Not blocked - content should be valid JSON from the handler
     const parsed = JSON.parse(messages[0].content);
     expect(parsed.success).toBe(true);
     expect(parsed.error).toBeFalsy?.(); // optional check

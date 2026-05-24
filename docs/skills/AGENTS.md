@@ -1,4 +1,4 @@
-# Agent Skills — Directory & Format Guide
+# Agent Skills - Directory & Format Guide
 
 **Purpose:** Define the structure and formatting rules for all documents in `docs/skills/`. Every agent (manager and sub-agent) reads from this directory.
 
@@ -27,7 +27,7 @@ docs/skills/
 
 | Layer | Location | Read By | Contains |
 |-------|----------|---------|----------|
-| **Shared** | `shared/` | All agents (manager + sub-agents) | Universal tool rules, conventions, and constraints — tool-agnostic knowledge needed to operate correctly |
+| **Shared** | `shared/` | All agents (manager + sub-agents) | Universal tool rules, conventions, and constraints - tool-agnostic knowledge needed to operate correctly |
 | **Role** | `{role}/AGENTS.md` | Agents spawned with that role | Role-specific must/should/prohibited rules derived from the canonical role definitions in `tools/roleSystemPrompts.js` |
 | **Orchestrator** | `orchestrator/AGENTS.md` | The manager agent only | Delegation strategy: when to delegate, how to define goals, role selection, anti-patterns |
 
@@ -37,14 +37,14 @@ docs/skills/
 
 Shared documents in `shared/` follow this structure:
 
-1. **Title** — concise, descriptive name
-2. **Must Do** — hard rules; violation breaks functionality or security
-3. **Should Do** — best practices; violation degrades quality but won't break things
-4. **Must Not** — prohibited actions
-5. **Should Not** — discouraged patterns
-6. **Justification** — rationale for each rule group, deferred to the end
+1. **Title** - concise, descriptive name
+2. **Must Do** - hard rules; violation breaks functionality or security
+3. **Should Do** - best practices; violation degrades quality but won't break things
+4. **Must Not** - prohibited actions
+5. **Should Not** - discouraged patterns
+6. **Justification** - rationale for each rule group, deferred to the end
 
-Rules within each section use numbered tables (`| # | Rule |`) for scanability. Shared documents contain no role-specific advice — that belongs in the role AGENTS.md files.
+Rules within each section use numbered tables (`| # | Rule |`) for scanability. Shared documents contain no role-specific advice - that belongs in the role AGENTS.md files.
 
 ---
 
@@ -75,14 +75,14 @@ Every `{role}/AGENTS.md` follows this structure:
 ## 4. How Agents Read These Files
 
 ### Manager (Orchestrator)
-1. Read `shared/tool-usage-conventions.md` first — it applies universally.
+1. Read `shared/tool-usage-conventions.md` first - it applies universally.
 2. Read `orchestrator/AGENTS.md` for delegation strategy.
 3. When selecting a role for `delegate_sub_agent`, briefly review that role's `AGENTS.md` to confirm the match.
 
 ### Sub-Agents
 1. Read `shared/tool-usage-conventions.md` first.
 2. Read your own role's `AGENTS.md` (the role is stated in your system prompt).
-3. Do NOT read other roles' AGENTS.md files — they contain irrelevant or conflicting constraints.
+3. Do NOT read other roles' AGENTS.md files - they contain irrelevant or conflicting constraints.
 
 ---
 
@@ -105,4 +105,4 @@ Every `{role}/AGENTS.md` follows this structure:
 
 **Deferred justification:** Separating rationale from rules keeps the rule sections scannable and actionable. Agents need to know *what* to do immediately; the *why* is reference material.
 
-**Prerequisite line:** Every role file explicitly references the shared document so sub-agents never miss universal tool conventions — even if their system prompt is trimmed.
+**Prerequisite line:** Every role file explicitly references the shared document so sub-agents never miss universal tool conventions - even if their system prompt is trimmed.

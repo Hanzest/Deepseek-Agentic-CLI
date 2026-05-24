@@ -18,7 +18,7 @@ import {
 
 const SUITE = "writeOrCreateFile-functionality";
 
-describe("writeOrCreateFile — Functionality / Happy Paths", () => {
+describe("writeOrCreateFile - Functionality / Happy Paths", () => {
   beforeEach(() => { createTempDir(SUITE); });
   afterEach(() => { cleanupTempDir(SUITE); });
 

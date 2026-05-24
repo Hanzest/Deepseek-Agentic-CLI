@@ -25,7 +25,7 @@ function makeToolCall(id, name, args) {
   };
 }
 
-describe("callToolsInBatch — Reliability / Edge Cases", () => {
+describe("callToolsInBatch - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Empty tool calls
   // -----------------------------------------------------------------------
@@ -37,7 +37,7 @@ describe("callToolsInBatch — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Parse error — invalid JSON arguments
+  // Parse error - invalid JSON arguments
   // -----------------------------------------------------------------------
   it("handles tool calls with invalid JSON arguments (parse error)", async () => {
     const messages = [];

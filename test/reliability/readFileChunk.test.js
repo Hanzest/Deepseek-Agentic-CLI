@@ -14,7 +14,7 @@ afterAll(() => {
   cleanupTempDir(tempDirName);
 });
 
-describe("readFileChunk — Reliability / Edge Cases", () => {
+describe("readFileChunk - Reliability / Edge Cases", () => {
   // -----------------------------------------------------------------------
   // Non-existent file path
   // -----------------------------------------------------------------------
@@ -30,7 +30,7 @@ describe("readFileChunk — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // .env file path — security block
+  // .env file path - security block
   // -----------------------------------------------------------------------
   it("should return a security error when the file is a .env file", async () => {
     const result = await read_file_chunk({
@@ -72,7 +72,7 @@ describe("readFileChunk — Reliability / Edge Cases", () => {
   });
 
   // -----------------------------------------------------------------------
-  // start_line < 1 — clamped to 1
+  // start_line < 1 - clamped to 1
   // -----------------------------------------------------------------------
   it("should clamp start_line to 1 when start_line < 1", async () => {
     const result = await read_file_chunk({

@@ -3,10 +3,10 @@ import { delegate_sub_agent_schema } from "../../tools/delegateSubAgent.js";
 
 // ---------------------------------------------------------------------------
 // Schema validation only (per user preference: delegateSubAgent too complex
-// to test in isolation — schema checks ensure the tool interface is stable)
+// to test in isolation - schema checks ensure the tool interface is stable)
 // ---------------------------------------------------------------------------
 
-describe("delegateSubAgent — Reliability / Schema Validation", () => {
+describe("delegateSubAgent - Reliability / Schema Validation", () => {
   // -----------------------------------------------------------------------
   // Top-level structure
   // -----------------------------------------------------------------------

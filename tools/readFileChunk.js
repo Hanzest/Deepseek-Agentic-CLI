@@ -39,7 +39,7 @@ export const read_file_chunk_schema = {
 };
 
 // ---------------------------------------------------------------------------
-// Pure handler logic (no consent needed — read-only)
+// Pure handler logic (no consent needed - read-only)
 // ---------------------------------------------------------------------------
 async function readFileChunkCore({ file_path, start_line, end_line }) {
     if (path.basename(file_path).toLowerCase().includes(".env")) {
@@ -111,7 +111,7 @@ async function readFileChunkCore({ file_path, start_line, end_line }) {
 }
 
 // ---------------------------------------------------------------------------
-// Wrapped handler (no consent — read-only tool)
+// Wrapped handler (no consent - read-only tool)
 // ---------------------------------------------------------------------------
 export const read_file_chunk = createToolHandler(
     "read_file_chunk",

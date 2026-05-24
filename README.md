@@ -1,19 +1,19 @@
-﻿# DeepSeek Chatbot — Multi-Turn CLI with Tool-Use & Sub-Agent Delegation
+﻿# DeepSeek Chatbot - Multi-Turn CLI with Tool-Use & Sub-Agent Delegation
 
 A modular, multi-turn conversational chatbot powered by **DeepSeek models** via an OpenAI-compatible API.  
 The chatbot runs in the terminal and supports **streaming responses**, **reasoning/thinking content**, **sliding context windows**, **10 built-in tool-use capabilities**, and a **sub-agent delegation system** for complex multi-step tasks.
 
 ## Features
 
-- **Multi-turn conversation** — persistent chat history with automatic context window management.
-- **Streaming output** — real-time token-by-token display of model responses.
-- **Reasoning content** — optional display of the model's chain-of-thought / thinking blocks.
-- **Tool-use agent loop** — the model can autonomously invoke tools in parallel, receive results, and continue the conversation.
-- **Sub-agent delegation** — spawn independent terminal windows running isolated model loops for complex sub-tasks, with full context isolation.
-- **Token estimation** — real-time input/output token counts powered by `tiktoken` (with heuristic fallback).
-- **Sliding context window** — when approaching the token limit, older messages are pruned while preserving conversation integrity.
-- **Colour-coded terminal output** — clear visual distinction between reasoning, model output, tool alerts, batch summaries, and errors.
-- **Modular architecture** — single-responsibility files, DRY boilerplate via a tool handler factory, and an Open/Closed principle-friendly tool registry.
+- **Multi-turn conversation** - persistent chat history with automatic context window management.
+- **Streaming output** - real-time token-by-token display of model responses.
+- **Reasoning content** - optional display of the model's chain-of-thought / thinking blocks.
+- **Tool-use agent loop** - the model can autonomously invoke tools in parallel, receive results, and continue the conversation.
+- **Sub-agent delegation** - spawn independent terminal windows running isolated model loops for complex sub-tasks, with full context isolation.
+- **Token estimation** - real-time input/output token counts powered by `tiktoken` (with heuristic fallback).
+- **Sliding context window** - when approaching the token limit, older messages are pruned while preserving conversation integrity.
+- **Colour-coded terminal output** - clear visual distinction between reasoning, model output, tool alerts, batch summaries, and errors.
+- **Modular architecture** - single-responsibility files, DRY boilerplate via a tool handler factory, and an Open/Closed principle-friendly tool registry.
 
 ## Project Structure
 
@@ -32,8 +32,8 @@ Deepseek_Chatbot/
 │   ├── subAgentLoop.js     # Independent model loop for sub-agents (uses SUBAGENT_TOOLS)
 │   └── subAgentTerminal.js # Spawn and manage dedicated terminal windows for sub-agents
 ├── tools/
-│   ├── registry.js         # Central tool map — exports WORKER_TOOLS, SUBAGENT_TOOLS, ORCHESTRATOR_TOOLS
-│   ├── template.js         # createToolHandler() factory — DRY log + consent + try/catch wrapper
+│   ├── registry.js         # Central tool map - exports WORKER_TOOLS, SUBAGENT_TOOLS, ORCHESTRATOR_TOOLS
+│   ├── template.js         # createToolHandler() factory - DRY log + consent + try/catch wrapper
 │   ├── callToolsInBatch.js # Batch execution engine (consent tools serial, read-only concurrent)
 │   ├── executeTerminal.js  # Shell command execution
 │   ├── patchFile.js        # Targeted string search-and-replace in a file
@@ -118,8 +118,8 @@ node main.js
 
 ### Startup Prompts
 
-1. **Model selection** — choose between available DeepSeek models (e.g. `deepseek-v4-flash`, `deepseek-v4-pro`).
-2. **Reasoning toggle** — enable or disable the display of chain-of-thought / thinking content.
+1. **Model selection** - choose between available DeepSeek models (e.g. `deepseek-v4-flash`, `deepseek-v4-pro`).
+2. **Reasoning toggle** - enable or disable the display of chain-of-thought / thinking content.
 
 ### Conversation Loop
 
@@ -168,7 +168,7 @@ When the model encounters a complex multi-step task (e.g., refactoring a module,
 4. The sub-agent operates autonomously, writing results back to the project files.
 5. The main agent continues its own conversation in the original terminal, checking the sub-agent's output when done.
 
-This provides **true context isolation** — the sub-agent's token budget, message history, and reasoning do not consume the main agent's context window.
+This provides **true context isolation** - the sub-agent's token budget, message history, and reasoning do not consume the main agent's context window.
 
 ### Security
 
@@ -192,66 +192,66 @@ Sub-agents use a separate `HYPERPARAMETERS` block in `lib/subAgentLoop.js` with 
 
 ## Code Overview
 
-### `main.js` (7 lines) — Entry Point
+### `main.js` (7 lines) - Entry Point
 
 - Imports `runChat` from `lib/orchestrator.js` and invokes it with `await`.
-- No other logic — pure entry dispatch.
+- No other logic - pure entry dispatch.
 
-### `lib/orchestrator.js` (~319 lines) — Application Orchestration
+### `lib/orchestrator.js` (~319 lines) - Application Orchestration
 
 - Sets up OpenAI client and loads `HYPERPARAMETERS`.
-- `runChat()` — top-level entry: calls model selection + thinking toggle, then starts the loop.
-- `multiTurnLoop()` — conversation orchestrator with sliding context window, inner tool-execution loop, and per-iteration telemetry.
-- `callModel()` — thin wrapper over `OpenAI.chat.completions.create()`.
+- `runChat()` - top-level entry: calls model selection + thinking toggle, then starts the loop.
+- `multiTurnLoop()` - conversation orchestrator with sliding context window, inner tool-execution loop, and per-iteration telemetry.
+- `callModel()` - thin wrapper over `OpenAI.chat.completions.create()`.
 - Uses `ORCHESTRATOR_TOOLS` from `tools/registry.js`.
 
-### `lib/tokenizer.js` (~161 lines) — Token Estimation
+### `lib/tokenizer.js` (~161 lines) - Token Estimation
 
 - Initialises `tiktoken` encoder with heuristic fallback.
-- `estimateTokens(messages, reasoning_history, token_multiplier)` — iterates messages, sums input/output tokens accounting for tool calls, reasoning history, and structural overhead.
+- `estimateTokens(messages, reasoning_history, token_multiplier)` - iterates messages, sums input/output tokens accounting for tool calls, reasoning history, and structural overhead.
 
-### `lib/cliInput.js` (~58 lines) — User I/O
+### `lib/cliInput.js` (~58 lines) - User I/O
 
-- `ask(question)` — wraps `readline.question()` in a Promise.
-- `startChat()` — model selection menu (1. flash, 2. pro).
-- `thinkingToggle()` — reasoning content enable/disable menu.
+- `ask(question)` - wraps `readline.question()` in a Promise.
+- `startChat()` - model selection menu (1. flash, 2. pro).
+- `thinkingToggle()` - reasoning content enable/disable menu.
 
-### `lib/streamHandler.js` (~62 lines) — Streaming Response Parser
+### `lib/streamHandler.js` (~62 lines) - Streaming Response Parser
 
-- `printStreamResponse(stream, extra_body)` — async generator consumer that returns `{ reasoning_content, content, tool_calls }`.
+- `printStreamResponse(stream, extra_body)` - async generator consumer that returns `{ reasoning_content, content, tool_calls }`.
 - Handles thinking content, standard content, and incremental tool-call assembly from chunks.
 
-### `lib/subAgentLoop.js` (~187 lines) — Sub-Agent Model Loop
+### `lib/subAgentLoop.js` (~187 lines) - Sub-Agent Model Loop
 
 - Mirrors the main orchestrator loop but uses `SUBAGENT_TOOLS` (9 tools, all consent-free).
-- Reasoning is disabled by default — sub-agents are autonomous workers.
+- Reasoning is disabled by default - sub-agents are autonomous workers.
 - Reads the delegated task prompt and runs until the task is complete.
 
-### `lib/subAgentTerminal.js` (~120 lines) — Independent Terminal Manager
+### `lib/subAgentTerminal.js` (~120 lines) - Independent Terminal Manager
 
-- `createSubAgentTerminal(subAgentName)` — spawns a new PowerShell window that tails a temp log file.
+- `createSubAgentTerminal(subAgentName)` - spawns a new PowerShell window that tails a temp log file.
 - Returns a logger object with `write()` and `close()` methods.
 - All sub-agent output appears in the dedicated window, isolated from the main terminal.
 
-### `tools/registry.js` (~87 lines) — Central Tool Map
+### `tools/registry.js` (~87 lines) - Central Tool Map
 
 - Imports all 10 tool schemas and handlers.
 - Exports three registries: `WORKER_TOOLS`, `SUBAGENT_TOOLS`, `ORCHESTRATOR_TOOLS`.
 - Exports `callToolsInBatch` for batch execution.
 
-### `tools/template.js` (~69 lines) — DRY Boilerplate Factory
+### `tools/template.js` (~69 lines) - DRY Boilerplate Factory
 
-- `createToolHandler(name, handlerFn, needsConsent)` — wraps any pure handler with:
+- `createToolHandler(name, handlerFn, needsConsent)` - wraps any pure handler with:
   1. Console alert (tool name + truncated args)
   2. Optional user consent prompt (`y/n`)
   3. `try/catch` with formatted error return
 
-### `tools/callToolsInBatch.js` (~183 lines) — Batch Execution Engine
+### `tools/callToolsInBatch.js` (~183 lines) - Batch Execution Engine
 
 - Runs multiple tool calls from a single model response.
 - Consent-required tools execute sequentially (via a lock); read-only tools execute concurrently via `Promise.all`.
-- Phase 1: batch summary display — prints all tool calls with consent tags.
-- Phase 2: unified execution — serialises consent tools, parallelises read-only tools.
+- Phase 1: batch summary display - prints all tool calls with consent tags.
+- Phase 2: unified execution - serialises consent tools, parallelises read-only tools.
 
 ## Agent Guidelines
 

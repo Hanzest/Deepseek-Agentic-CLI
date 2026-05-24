@@ -5,7 +5,7 @@ import { search_web, search_web_schema } from "../../tools/searchWeb.js";
 // Reliability / Edge Case tests for searchWeb
 // ---------------------------------------------------------------------------
 
-describe("searchWeb reliability — schema & input validation", () => {
+describe("searchWeb reliability - schema & input validation", () => {
   // ── Schema validation ────────────────────────────────────────────────────
   it("schema requires 'query' in required array", () => {
     const params = search_web_schema.function.parameters;
@@ -33,7 +33,7 @@ describe("searchWeb reliability — schema & input validation", () => {
     const result = await search_web({ query: "hello world", max_results: 0 });
     const text = typeof result === "string" ? result : JSON.stringify(result);
     expect(text).toBeTruthy();
-    // Should return a string — either empty results or no results message
+    // Should return a string - either empty results or no results message
     if (text.includes("No results")) {
       expect(text).toMatch(/no results/i);
     } else {

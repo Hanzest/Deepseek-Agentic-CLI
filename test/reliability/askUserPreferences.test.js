@@ -7,7 +7,7 @@ vi.mock("../../lib/cliInput.js", () => ({
 import { ask_user_preferences, ask_user_preferences_schema } from "../../tools/askUserPreferences.js";
 import { ask } from "../../lib/cliInput.js";
 
-describe("askUserPreferences — Reliability / Edge Cases", () => {
+describe("askUserPreferences - Reliability / Edge Cases", () => {
   it("should return 'No questions provided' for empty array", async () => {
     const result = await ask_user_preferences({ questions: [] });
     expect(result).toBe("No questions provided.");

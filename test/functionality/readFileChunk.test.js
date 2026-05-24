@@ -15,7 +15,7 @@ afterAll(() => {
   cleanupTempDir(tempDirName);
 });
 
-describe("readFileChunk — Functionality / Happy Paths", () => {
+describe("readFileChunk - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Read lines 1–5 from sample.txt
   // -----------------------------------------------------------------------

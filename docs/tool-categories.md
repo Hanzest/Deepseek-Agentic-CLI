@@ -1,4 +1,4 @@
-# Tool Categories — Capability-Based Index
+# Tool Categories - Capability-Based Index
 
 **Purpose:** Group all available tools by their capability domain so you can discover what tools exist and pick the right one without re-reading all 12 schemas.
 
@@ -62,7 +62,7 @@ Prompt the user for decisions during ambiguous situations.
 
 ## 6. Agent Management
 
-Delegate complex sub-tasks to isolated sub-agents. **Manager-only** — sub-agents do not have access to this tool.
+Delegate complex sub-tasks to isolated sub-agents. **Manager-only** - sub-agents do not have access to this tool.
 
 | Tool | Quick Purpose |
 |------|--------------|

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { execute_terminal_command } from "../../tools/executeTerminal.js";
 
-describe("executeTerminal — Functionality / Happy Paths", () => {
+describe("executeTerminal - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // echo command
   // -----------------------------------------------------------------------

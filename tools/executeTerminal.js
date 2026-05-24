@@ -12,7 +12,7 @@ export const execute_terminal_command_schema = {
         name: "execute_terminal_command",
         description:
             "Executes a shell/bash command on the user's terminal (PowerShell on Windows). " +
-            "Returns the command's stdout as a string. **Requires user consent** — prefer " +
+            "Returns the command's stdout as a string. **Requires user consent** - prefer " +
             "read-only tools (get_project_tree, read_file_chunk) when possible. " +
             "Do NOT use for filesystem exploration; use get_project_tree instead.",
         parameters: {
@@ -29,7 +29,7 @@ export const execute_terminal_command_schema = {
 };
 
 // ---------------------------------------------------------------------------
-// Pure handler logic (no consent, no logging — handled by template)
+// Pure handler logic (no consent, no logging - handled by template)
 // ---------------------------------------------------------------------------
 async function executeTerminalCore({ command }) {
     if (command.toLowerCase().includes(".env")) {

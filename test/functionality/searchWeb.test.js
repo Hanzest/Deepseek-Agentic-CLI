@@ -5,7 +5,7 @@ import { search_web, search_web_schema } from "../../tools/searchWeb.js";
 // Functionality / Happy Path tests for searchWeb  (all @network)
 // ---------------------------------------------------------------------------
 
-describe("searchWeb functionality — real network calls", () => {
+describe("searchWeb functionality - real network calls", () => {
   it(
     "@network basic query returns results with title, url, snippet",
     { timeout: 30_000 },
@@ -19,7 +19,7 @@ describe("searchWeb functionality — real network calls", () => {
       expect(typeof result).toBe("string");
       expect(result.length).toBeGreaterThan(0);
 
-      // If DDG rate-limited, result will be an error message — skip format assertions
+      // If DDG rate-limited, result will be an error message - skip format assertions
       if (result.startsWith("Error")) {
         return;
       }
@@ -49,7 +49,7 @@ describe("searchWeb functionality — real network calls", () => {
         max_results: 3,
       });
 
-      // If DDG rate-limited, result will be an error message — skip format assertions
+      // If DDG rate-limited, result will be an error message - skip format assertions
       if (result.startsWith("Error")) {
         return;
       }
@@ -71,7 +71,7 @@ describe("searchWeb functionality — real network calls", () => {
         max_results: 2,
       });
 
-      // If DDG rate-limited, result will be an error message — skip format assertions
+      // If DDG rate-limited, result will be an error message - skip format assertions
       if (result.startsWith("Error")) {
         return;
       }
@@ -79,7 +79,7 @@ describe("searchWeb functionality — real network calls", () => {
       // The formatted output should contain lines with "URL:" and a description
       expect(result).toMatch(/URL:/);
 
-      // Split into result blocks — each block has: "1. Title", "   URL: ...", "   description"
+      // Split into result blocks - each block has: "1. Title", "   URL: ...", "   description"
       const blocks = result.split(/\n(?=\d+\.\s)/);
       for (const block of blocks) {
         if (/^\d+\.\s/.test(block)) {
@@ -97,7 +97,7 @@ describe("searchWeb functionality — real network calls", () => {
     { timeout: 30_000 },
     async () => {
       // Use a query that's extremely unlikely to return real results
-      // but still valid — a random string of gibberish
+      // but still valid - a random string of gibberish
       const result = await search_web({
         query: "zxcvbnmlkjhgfdsaqwertyuiop1234567890",
         max_results: 5,

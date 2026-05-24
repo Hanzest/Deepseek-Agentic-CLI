@@ -17,7 +17,7 @@ export const get_project_tree_schema = {
             "source code. Use this to navigate the project without noisy terminal " +
             "outputs from node_modules, .git, venv, etc. " +
             "Use this instead of execute_terminal_command for filesystem exploration " +
-            "(dir/ls/tree) — it is read-only, respects .gitignore, and never requires " +
+            "(dir/ls/tree) - it is read-only, respects .gitignore, and never requires " +
             "user consent.",
         parameters: {
             type: "object",
@@ -56,7 +56,7 @@ function _load_gitignore_spec(root_path) {
 }
 
 // ---------------------------------------------------------------------------
-// Pure handler logic (no consent — read-only tool)
+// Pure handler logic (no consent - read-only tool)
 // ---------------------------------------------------------------------------
 async function getProjectTreeCore({ root_path = ".", max_depth = 10 } = {}) {
     root_path = path.resolve(root_path);
@@ -164,7 +164,7 @@ async function getProjectTreeCore({ root_path = ".", max_depth = 10 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Wrapped handler (no consent — read-only tool)
+// Wrapped handler (no consent - read-only tool)
 // ---------------------------------------------------------------------------
 export const get_project_tree = createToolHandler(
     "get_project_tree",

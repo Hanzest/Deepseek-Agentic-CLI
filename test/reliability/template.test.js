@@ -22,7 +22,7 @@ async function throwingHandler(args) {
   throw new Error("intentional test error");
 }
 
-describe("template — Reliability / Edge Cases", () => {
+describe("template - Reliability / Edge Cases", () => {
   beforeEach(() => {
     resetAlertCounter();
     ask.mockResolvedValue("y");

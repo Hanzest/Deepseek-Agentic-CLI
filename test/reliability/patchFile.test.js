@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock consent — patchFileCore internally calls ask() for .env targets
+// Mock consent - patchFileCore internally calls ask() for .env targets
 vi.mock("../../lib/cliInput.js", () => ({
   ask: vi.fn().mockResolvedValue("y"),
 }));
