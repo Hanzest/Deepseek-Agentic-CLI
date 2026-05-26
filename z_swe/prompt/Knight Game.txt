@@ -1,9 +1,14 @@
 ## Turn 1: The foundation logic of the game
 
-Create an infinite round game in Knight Game so that every round, the player has to fight a monster.
+Create an infinite round game called Knight_CLI using plain JavaScript, no framework.
+Every round, the player has to fight a monster.
+The CLI must be clear on every user's interaction. Clear Result of previous action must be shown.
 The player can: Attack (use weapon in hands to attack, if no weapon, use bare hands), Calm (heal Stamina).
-The player has the following stats when fighting:
-HP, Armor, Stamina, Mana. By default, HP = 10, Armor = 0, Stamina = 100, Mana = 10.
+The player has the following stats to be provided when fighting:
+HP, Armor, Stamina, Mana, Damage for `Attack` action.
+Player based stats: HP = 20, Armor = 0, Stamina = 100, Mana = 10, Base Damage = 2.
+Monster based stats: HP = 10, Armor = 0, Stamina = 100, Mana = 10, Base Damage = 2.
+Damage to be dealt = (Base Damage + Weapon Damage).
 After every round, the player can: buy new armor or weapon
 (there are 4 piece of armors of the same tier: helmet, chestplate, leggings, and boots,
 only when user buy all 4 armor, the shop will renew with the next tier both armor and weapon),
@@ -17,15 +22,22 @@ The mana can be used by both Human and Monster as follows:
 1. Lightning Stunt enemy for 1 turn, cost 80% of max mana, damage = 20% of mana used.
 2. Contaminate Poison enemy for the rest of turn, cost 80% of max mana, damage = 2% of mana used every human turn.
 3. Weakness curse enemy for the next turn, cost 35% of max mana, enemy gets all stats debuffed by 35% each.
-Ensure DRY and SOLID principles. You should use plain JavaScript, no framework. This should be CLI game.
-The folder to be implemented is Knight Game inside z_swe folder.
+The menu ofactions after fighting must use number to navigate. Player can choose `Back` at anytime, except
+proceeding to next Round. 
+Ensure DRY and SOLID principles.
+The folder to be implemented is Knight_CLI inside z_swe folder.
 
 ## Turn 2: Balanced the game and infinite scaling game
 
-Update the Knight Game in z_swe folder to: the tiering must used number to show the level of
+Update the Knight_CLI in z_swe folder to:
+1. The tiering must used number to show the level of
 the tier for scaling up to infinite, rather than fixed tiering. Pricing strategy and
 gold acquire should increase linearly, with monster will drop gold based on the current level.
-Update game mechanisms for user to trade gold for skill points (base: 5 gold = 1 skill point,
+2. The Game mechanisms for user to trade gold for skill points (base: 5 gold = 1 skill point,
 x1.5 price every purchase, infinitely, round to integer). Player based HP should be 20 at the start.
-Ensure multiplier of every linearly or exponentially or anything increased must be left as parameters
-inside an array at the top nof the file for better tuning.
+3. Ensure the multiplier of every linearly or exponentially or anything increased must be left as parameters
+inside an array at the top of the file for better tuning.
+4. For every new round, the player must have their stats refresh to full.
+5. Fixed allocate size with hyperparameters tuning for the shop (purchase weapon or armor) and update skills.
+6. Compact status of the Player and Monster into a table in one line with fixed allocate size with
+hyperparameters tuning.

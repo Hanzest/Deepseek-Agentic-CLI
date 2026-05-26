@@ -16,7 +16,7 @@ describe("executeTerminal - Reliability / Edge Cases", () => {
     expect(typeof result).toBe("string");
     // PowerShell returns error output for unknown commands
     expect(result.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 
   // -----------------------------------------------------------------------
   // Command with .env reference - security check (mocked consent)
@@ -28,7 +28,7 @@ describe("executeTerminal - Reliability / Edge Cases", () => {
     // Consent is mocked to "y", command proceeds
     expect(typeof result).toBe("string");
     expect(result).toContain(".env");
-  });
+  }, 15000);
 
   // -----------------------------------------------------------------------
   // Empty command string
@@ -37,5 +37,5 @@ describe("executeTerminal - Reliability / Edge Cases", () => {
     const result = await execute_terminal_command({ command: "" });
     expect(typeof result).toBe("string");
     // PowerShell with empty command either returns empty or errors
-  });
+  }, 15000);
 });

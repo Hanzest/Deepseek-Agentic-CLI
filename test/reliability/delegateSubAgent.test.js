@@ -79,7 +79,7 @@ describe("delegateSubAgent - Reliability / Schema Validation", () => {
   // Enum values
   // -----------------------------------------------------------------------
   it("role has correct enum values", () => {
-    expect(props.role.enum).toEqual(["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"]);
+    expect(props.role.enum).toEqual(["execution"]);
   });
 
   // -----------------------------------------------------------------------

@@ -54,15 +54,7 @@ Deepseek_Chatbot/
         │   └── tool-usage-conventions.md  # Universal tool rules (all agents)
         ├── orchestrator/
         │   └── AGENTS.md          # Manager: delegation strategy
-        ├── requirement_analyzer/
-        │   └── AGENTS.md          # Sub-agent role
-        ├── execution/
-        │   └── AGENTS.md          # Sub-agent role
-        ├── inspection/
-        │   └── AGENTS.md          # Sub-agent role
-        ├── unit_review/
-        │   └── AGENTS.md          # Sub-agent role
-        └── integration_review/
+        └── execution/
             └── AGENTS.md          # Sub-agent role
 ```
 

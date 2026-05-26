@@ -67,7 +67,7 @@ describe("registry - Reliability / Edge Cases", () => {
   // buildSubagentTools - all needsConsent flags are false
   // -----------------------------------------------------------------------
   it("buildSubagentTools always produces needsConsent=false for every role", () => {
-    const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
+    const roles = ["execution"];
     for (const role of roles) {
       const tools = buildSubagentTools(role);
       for (const [name, entry] of Object.entries(tools)) {
@@ -80,7 +80,7 @@ describe("registry - Reliability / Edge Cases", () => {
   // buildSubagentTools - each role's tools are a subset of ALL_TOOLS
   // -----------------------------------------------------------------------
   it("buildSubagentTools result tools are always subsets of ALL_TOOLS", () => {
-    const roles = ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"];
+    const roles = ["execution"];
     for (const role of roles) {
       const tools = buildSubagentTools(role);
       for (const [name, entry] of Object.entries(tools)) {

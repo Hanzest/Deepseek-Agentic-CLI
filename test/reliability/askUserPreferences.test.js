@@ -22,7 +22,9 @@ describe("askUserPreferences - Reliability / Edge Cases", () => {
   });
 
   it("should handle non-numeric choice input", async () => {
-    ask.mockResolvedValueOnce("abc");
+    ask
+      .mockResolvedValueOnce("abc")
+      .mockResolvedValueOnce("1");
     const result = await ask_user_preferences({
       questions: [{ question_text: "Pick one", choices: ["A", "B"] }],
     });

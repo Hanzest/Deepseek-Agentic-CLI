@@ -40,7 +40,7 @@ import {
 } from "./multiFileSearchString.js";
 
 import { callToolsInBatch } from "./callToolsInBatch.js";
-import { getRoleEntry } from "./roleSystemPrompts.js";
+import { getRoleEntry, VALID_ROLES } from "./roleSystemPrompts.js";
 
 export { callToolsInBatch };
 
@@ -95,7 +95,7 @@ export function buildSubagentTools(role) {
     if (!roleEntry) {
         throw new Error(
             `Unknown role: "${role}". Must be one of: ` +
-            ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"].join(", ")
+            VALID_ROLES.join(", ")
         );
     }
 

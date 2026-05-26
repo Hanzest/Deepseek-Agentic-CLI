@@ -13,15 +13,7 @@ docs/skills/
     tool-usage-conventions.md             ← Universal tool rules (all agents)
   orchestrator/
     AGENTS.md                             ← Manager: delegation strategy
-  requirement_analyzer/
-    AGENTS.md                             ← Sub-agent role
   execution/
-    AGENTS.md                             ← Sub-agent role
-  inspection/
-    AGENTS.md                             ← Sub-agent role
-  unit_review/
-    AGENTS.md                             ← Sub-agent role
-  integration_review/
     AGENTS.md                             ← Sub-agent role
 ```
 
@@ -66,7 +58,7 @@ Every `{role}/AGENTS.md` follows this structure:
 ### Rules for content:
 - **No inline "why".** Every rule is stated factually. All rationale lives in `## Justification`.
 - Must Do rules derive from the role's `description` and `output_constraints` in `roleSystemPrompts.js`.
-- Must Not rules derive from role boundaries (e.g., inspection agents must not modify files).
+- Must Not rules derive from role boundaries (e.g., execution agents must not modify files outside the deliverable).
 - Should/Should Not rules fill gaps with best-practice guidance.
 - Justification groups explanations by section (Must Do, Should Do, Must Not, Should Not).
 

@@ -23,32 +23,6 @@
  * @type {Array<{role: string, description: string, output_constraints: string, include_goal_deliverable: boolean, tools: string[]}>}
  */
 export const ROLE_SYSTEM_PROMPT = [
-  // {
-  //   role: "requirement_analyzer",
-  //   description:
-  //     `Break down high-level objectives into verifiable, atomic requirements.
-  //     Identify ambiguities, missing edge cases, and conflicting constraints.
-  //     Forecast resource needs (sub-agent count, iteration budgets, parallelization opportunities)
-  //     and recommend whether the orchestrator should delegate to a multi-agent pipeline
-  //     or handle verification directly. You do NOT implement - you clarify,
-  //     decompose, specify, and resource-plan.`,
-  //   output_constraints:
-  //     `Output structured requirement lists with unique IDs, acceptance criteria, and
-  //     priority classifications (P0-P3). Include a Resource Plan section with: recommended
-  //     sub-agent count, per-agent iteration budgets, parallelization strategy, and estimated
-  //     complexity tier (Low/Medium/High). Use markdown tables where appropriate. Every requirement
-  //     must be independently testable.`,
-  //   include_goal_deliverable: true,
-  //   tools: [
-  //     // "read_file_chunk",
-  //     "get_project_tree",
-  //     "multi_file_search_string",
-  //     // "search_web",
-  //     // "fetch_url",
-  //     "ask_user_preferences",
-  //     "write_or_create_file",
-  //   ],
-  // },
   {
     role: "execution",
     description:
@@ -65,51 +39,6 @@ export const ROLE_SYSTEM_PROMPT = [
       edits (≤20 lines), write_or_create_file for new files or large rewrites.`,
     include_goal_deliverable: true,
     model: "deepseek-v4-flash",
-    tools: [
-      "execute_terminal_command",
-      "patch_file",
-      "read_file_chunk",
-      "get_project_tree",
-      "search_web",
-      "fetch_url",
-      "ask_user_preferences",
-      "write_or_create_file",
-      "multi_file_search_string",
-    ],
-  },
-  // {
-  //   role: "inspection",
-  //   description:
-  //     `Explore and audit the codebase. Search for patterns, trace dependencies, identify technical debt,
-  //     and surface issues. Stay focused on the user's requirements - provide clear, targeted summaries,
-  //     not open-ended exploration.`,
-  //   output_constraints:
-  //     `Output findings as structured reports with file references,
-  //     severity ratings (Critical/High/Medium/Low), and actionable recommendations.
-  //     Group related findings. Do NOT modify any files.`,
-  //   include_goal_deliverable: true,
-  //   model: "deepseek-v4-flash",
-  //   tools: [
-  //     "read_file_chunk",
-  //     "get_project_tree",
-  //     "multi_file_search_string",
-  //     "search_web",
-  //     "fetch_url",
-  //     "ask_user_preferences",
-  //     "write_or_create_file",
-  //   ],
-  // },
-  {
-    role: "integration_review",
-    description:
-      `Review how components integrate - interfaces, data flow, contracts, cross-module consistency,
-      and architectural alignment. Focus on the boundaries between units,
-      not the internals of any single unit.`,
-    output_constraints:
-      `Output integration analysis with component interaction descriptions,
-      contract violations, coupling hotspots, and suggested refactors.
-      Use textual diagrams (ASCII) where helpful. Do NOT modify any files.`,
-    include_goal_deliverable: false,
     tools: [
       "execute_terminal_command",
       "patch_file",

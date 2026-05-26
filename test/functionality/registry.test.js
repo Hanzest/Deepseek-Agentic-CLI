@@ -48,25 +48,6 @@ describe("registry - Functionality / Happy Paths", () => {
     expect(Object.keys(tools).length).toBe(9);
   });
 
-  it("buildSubagentTools('inspection') returns 7 tools (read + ask_user + write)", () => {
-    const tools = buildSubagentTools("inspection");
-    expect(Object.keys(tools).length).toBe(7);
-  });
-
-  it("buildSubagentTools('requirement_analyzer') returns 7 tools", () => {
-    const tools = buildSubagentTools("requirement_analyzer");
-    expect(Object.keys(tools).length).toBe(7);
-  });
-
-  it("buildSubagentTools('unit_review') returns 7 tools", () => {
-    const tools = buildSubagentTools("unit_review");
-    expect(Object.keys(tools).length).toBe(7);
-  });
-
-  it("buildSubagentTools('integration_review') returns all 9 tools", () => {
-    const tools = buildSubagentTools("integration_review");
-    expect(Object.keys(tools).length).toBe(9);
-  });
 
   it("buildSubagentTools throws for an unknown role", () => {
     expect(() => buildSubagentTools("nonexistent")).toThrow(/Unknown role/);

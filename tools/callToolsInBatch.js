@@ -137,7 +137,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-
+                name: p.name,
                 content: JSON.stringify({
                     error: true,
                     tool: p.name,
@@ -150,7 +150,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-
+                name: p.name,
                 content: JSON.stringify({
                     error: true,
                     tool: p.name,
@@ -174,7 +174,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                 return {
                     role: "tool",
                     tool_call_id: p.id,
-
+                    name: p.name,
                     content: JSON.stringify({
                         error: true,
                         tool: p.name,
@@ -203,7 +203,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                     return {
                         role: "tool",
                         tool_call_id: p.id,
-
+                        name: p.name,
                         content,
                     };
                 } finally {
@@ -218,7 +218,7 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             return {
                 role: "tool",
                 tool_call_id: p.id,
-
+                name: p.name,
                 content,
             };
         })();

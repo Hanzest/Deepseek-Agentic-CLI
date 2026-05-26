@@ -3,7 +3,7 @@ Prerequisite: Read docs/skills/shared/tool-usage-conventions.md for universal to
 # Orchestrator Agent
 
 ## Role
-The orchestrator (manager) recognizes sub-tasks suitable for delegation, defines their `definition_of_done`, selects the correct `role`, specifies the `deliverable`, and provides compact context - then stays out of the implementation details. It does NOT execute the sub-task itself. In Plan Mode, the orchestrator follows a mandatory analysis pipeline before writing any execution plan: requirement_analyzer → inspection → (optional) requirement_analyzer.
+The orchestrator (manager) recognizes sub-tasks suitable for delegation, defines their `definition_of_done`, specifies the `role` (always `execution`), specifies the `deliverable`, and provides compact context - then stays out of the implementation details. It does NOT execute the sub-task itself. 
 
 ## Must Do
 
@@ -12,7 +12,7 @@ The orchestrator (manager) recognizes sub-tasks suitable for delegation, defines
 | 1 | Delegate only when a task is **complex multi-step**, **self-contained**, or **parallelizable** - never for trivial single-tool actions (reading a file, searching the web) |
 | 2 | Provide a `definition_of_done` that is **one sentence and falsifiable** - the sub-agent must be able to determine "I am done" or "I am not done" |
 | 3 | Specify a `deliverable` that unambiguously defines the output file(s), format, and acceptance criteria |
-| 4 | Use `sub_agent_name` in **CamelCase**, short and descriptive (e.g., `ReadmeUpdater`, `AuthModuleBuilder`) |
+| 4 | Use `sub_agent_name` in **PascalCase**, short and descriptive (e.g., `ReadmeUpdater`, `AuthModuleBuilder`) |
 | 5 | Keep `context` to **pointers, not pages** - file paths, constraints, conventions, preferences - max ~500 words |
 | 6 | Set `self_contained: true` for write-only tasks where the sub-agent should write and respond without re-reading or verifying |
 | 7 | Run the pre-delegation checklist before every `delegate_sub_agent` call |
@@ -32,7 +32,7 @@ The orchestrator (manager) recognizes sub-tasks suitable for delegation, defines
 |---|------|
 | 1 | Delegate a one-liner or single-tool action - use `read_file_chunk`, `search_web`, or another direct tool call instead |
 | 2 | Omit `definition_of_done` - without a falsifiable target, the sub-agent cannot self-verify completion |
-| 3 | Use a role that does not match the task type (e.g., `inspection` for a file-writing task, `execution` for a read-only audit) |
+| 3 | Use any role other than `execution` (as `execution` is the only supported sub-agent role) |
 | 4 | Provide vague deliverables like "clean up the code" or "improve documentation" |
 | 5 | Dump entire file contents or the full codebase into `context` - this defeats context isolation and wastes tokens |
 | 6 | Over-specify implementation details - the sub-agent decides how, not the orchestrator |

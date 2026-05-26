@@ -11,7 +11,7 @@ describe("getProjectTree - Functionality / Happy Paths", () => {
     expect(result).toBeTypeOf("string");
     expect(result).toContain("Project tree for:");
     // The root should be the project directory
-    expect(result).toContain("Deepseek_Chatbot/");
+    expect(result).toContain("Deepseek-Agentic-CLI/");
   });
 
   // -----------------------------------------------------------------------

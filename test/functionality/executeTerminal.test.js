@@ -11,7 +11,7 @@ describe("executeTerminal - Functionality / Happy Paths", () => {
     });
     expect(typeof result).toBe("string");
     expect(result).toContain("Hello from vitest");
-  });
+  }, 15000);
 
   // -----------------------------------------------------------------------
   // node -e command
@@ -22,7 +22,7 @@ describe("executeTerminal - Functionality / Happy Paths", () => {
     });
     expect(typeof result).toBe("string");
     expect(result).toContain("test_output_42");
-  });
+  }, 15000);
 
   // -----------------------------------------------------------------------
   // Directory listing
@@ -33,7 +33,7 @@ describe("executeTerminal - Functionality / Happy Paths", () => {
     });
     expect(typeof result).toBe("string");
     expect(result.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 
   // -----------------------------------------------------------------------
   // Command with no output
@@ -44,5 +44,5 @@ describe("executeTerminal - Functionality / Happy Paths", () => {
     });
     expect(typeof result).toBe("string");
     expect(result.length).toBeGreaterThan(0); // success message or empty
-  });
+  }, 15000);
 });

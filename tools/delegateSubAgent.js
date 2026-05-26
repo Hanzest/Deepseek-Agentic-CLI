@@ -21,26 +21,25 @@ export const delegate_sub_agent_schema = {
     function: {
         name: "delegate_sub_agent",
         description:
-            "Delegates a complex sub-task to a specialized sub-agent by generating a " +
+            "Delegates a task to the sub-agent by generating a " +
             "structured Markdown prompt file in the artifacts/active/ directory. The main agent " +
             "feeds this prompt into a fresh conversation to achieve true context isolation, " +
-            "parallelization, and specialization. Use this to break down complex multi-step " +
-            "tasks into independent, focused sub-tasks.",
+            "parallelization. Use this to break down complex tasks into independent, focused sub-tasks.",
         parameters: {
             type: "object",
             properties: {
                 sub_agent_name: {
-                    type: "string",
+                    type: "string", 
                     description:
-                        "Unique, descriptive name for this sub-agent. Used as the filename " +
-                        "stem (e.g., 'auth-module-builder', 'database-schema-designer'). " +
-                        "Keep it short and kebab-case.",
+                        "Unique, descriptive name for this sub-agent." +
+                        "Example: 'AuthModuleBuilder', 'DatabaseSchemaDesigner'. " +
+                        "Keep it short and PascalCase.",
                 },
                 definition_of_done: {
                     type: "string",
                     description:
-                        "The specific, concrete definition_of_done for the sub-agent in one clear sentence. " +
-                        "Must be verifiable - the sub-agent should know exactly when it is done.",
+                        "The specific, concrete, verifiable Definition of Done in one clear, falsifiable sentence. " +
+                        "The sub-agent must know exactly when it is done based on this definition.",
                 },
                 deliverable: {
                     type: "string",
@@ -50,7 +49,7 @@ export const delegate_sub_agent_schema = {
                 },
                 role: {
                     type: "string",
-                    enum: ["requirement_analyzer", "execution", "inspection", "unit_review", "integration_review"],
+                    enum: ["execution"],
                     description:
                         "The sub-agent's role, which determines its system prompt. " +
                         "Each role has a pre-defined description and output constraints " +
@@ -60,34 +59,28 @@ export const delegate_sub_agent_schema = {
                     type: "string",
                     description:
                         "Background information, code references (method names), " +
-                        "constraints, or relevant file paths the sub-agent needs to complete its task. " +
-                        "**Keep it concise**: no full file contents, no line numbers" +
+                        "dependencies, or relevant file paths to complete sub-agent's task. " +
+                        "Keep it concise: no full file contents, no line numbers" +
                         "The sub-agent has tools to read files. Max ~500 words recommended."
                 },
                 budget_iterations: {
                     type: "integer",
                     description:
                         "Maximum iterations the sub-agent may use. " +
-                        "Override the default (20). Lower values save tokens on simple tasks; " +
-                        "higher values provide headroom for complex tasks. " +
-                        "Recommended: 5-10 for single-file changes, 15-20 for multi-file, " +
-                        "20-25 for full codebase analysis. Defaults to 20.",
+                        "Recommended formula: 4 * <number of files to change> + 2 * <number of files to inspect>.",
                 },
                 self_contained: {
                     type: "boolean",
                     description:
                         "Set to true when the deliverable is purely a file write with no " +
                         "verification needed. Instructs the sub-agent to write and respond " +
-                        "immediately - no re-reading, no verification loop. Saves 1-2 " +
-                        "iterations per task. **Use this for all write-only delegations.** " +
-                        "Defaults to false.",
+                        "immediately - no re-reading, no verification loop.",
                 },
                 output_file: {
                     type: "string",
                     description:
                         "Custom filename relative to artifacts/active/. Defaults to " +
-                        "'subagent-{sub_agent_name}.md'. Only alphanumeric, dash, dot, " +
-                        "and underscore characters are permitted. Must end with .md.",
+                        "'subagent-{sub_agent_name}.md'. Only alphanumeric and must end with .md.",
                 },
             },
             required: ["sub_agent_name", "definition_of_done", "deliverable", "role"],
@@ -232,17 +225,11 @@ function buildMarkdownPrompt({
         lines.push("");
     }
 
-    lines.push("---");
-    lines.push("");
     lines.push("## Instructions");
     lines.push("");
     lines.push("1. Read this entire prompt carefully before starting.");
-    lines.push("2. Plan your approach before writing any code or making changes.");
-    lines.push("3. Produce exactly the deliverable described above (if applicable).");
-    lines.push("4. When done, clearly state that the deliverable is complete.");
-    lines.push("");
-    lines.push("---");
-    lines.push(`*Generated by delegateSubAgent tool. Feed this entire prompt into a fresh conversation for true context isolation.*`);
+    lines.push("2. Produce exactly the deliverable described above.");
+    lines.push("3. When done, clearly state that the deliverable is complete.");
 
     return lines.join("\n");
 }

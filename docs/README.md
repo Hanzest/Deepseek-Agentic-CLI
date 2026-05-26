@@ -33,22 +33,21 @@ When you need to understand:
 - **How the codebase is structured** → read `docs/this_repo/system-architecture.md`.
 - **What capability categories of tools are available** → read `docs/tool-categories.md`.
 - **How to delegate a complex task to a sub-agent** → read `docs/skills/orchestrator/AGENTS.md`.
-- **What each sub-agent role does** → read `docs/skills/{role}/AGENTS.md` for the target role.
+- **What the execution sub-agent role does** → read `docs/skills/execution/AGENTS.md`.
 
 ### For Sub-Agents
 
 Your system prompt already includes your role. Read:
 - **Universal tool rules** → `docs/skills/shared/tool-usage-conventions.md`.
-- **Your role-specific rules** → `docs/skills/{your-role}/AGENTS.md`.
+- **Your role-specific rules** → `docs/skills/execution/AGENTS.md`.
 - **What capability categories of tools are available** → read `docs/tool-categories.md`.
 - **Codebase structure** (module responsibilities, dependencies) → read `docs/this_repo/system-architecture.md`.
 
 ### For Contributors Adding New Skills
 
 1. If the skill is a **universal tool rule**, add it to `docs/skills/shared/tool-usage-conventions.md`.
-2. If the skill is **role-specific**, add a section to the role's `docs/skills/{role}/AGENTS.md`.
-3. If the skill is a **new role**, create `docs/skills/{role}/AGENTS.md` following the format in `docs/skills/AGENTS.md`.
-4. If the skill is a **general reference**, place it in `docs/` and add an entry to the **Skill Index** table above.
+2. If the skill is **execution role-specific**, add a section to `docs/skills/execution/AGENTS.md`.
+3. If the skill is a **general reference**, place it in `docs/` and add an entry to the **Skill Index** table above.
 
 ---
 
@@ -74,21 +73,13 @@ docs/
       tool-usage-conventions.md  ← Universal tool rules (all agents)
     orchestrator/
       AGENTS.md            ← Manager: delegation strategy
-    requirement_analyzer/
-      AGENTS.md            ← Sub-agent role
     execution/
-      AGENTS.md            ← Sub-agent role
-    inspection/
-      AGENTS.md            ← Sub-agent role
-    unit_review/
-      AGENTS.md            ← Sub-agent role
-    integration_review/
       AGENTS.md            ← Sub-agent role
 ```
 
 - **General docs** (`agents.md`, `this_repo`) apply to all agents regardless of role.
 - **Shared skills** (`skills/shared/`) apply to all agents - universal tool rules.
-- **Role skills** (`skills/{role}/AGENTS.md`) are role-specific and assume familiarity with shared docs.
+- **Role skills** (`skills/execution/AGENTS.md`) are execution role-specific and assume familiarity with shared docs.
 
 ---
 
