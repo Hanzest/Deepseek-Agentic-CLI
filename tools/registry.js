@@ -74,6 +74,8 @@ export const ORCHESTRATOR_TOOLS = {
     execute_terminal_command: [execute_terminal_command_schema, execute_terminal_command, true],
     patch_file: [patch_file_schema, patch_file, false],
     write_or_create_file: [write_or_create_file_schema, write_or_create_file, false],
+    search_web: [search_web_schema, search_web, false],
+    fetch_url: [fetch_url_schema, fetch_url, false],
 };
 
 // ---------------------------------------------------------------------------

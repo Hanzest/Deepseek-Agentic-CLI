@@ -1,6 +1,13 @@
 # Skill Document Writing Guidelines
 
-**Purpose:** Define the authoring rules for every `SKILL.md` file in `docs/skills/`. These documents capture domain-specific industry-standard knowledge — principles, constraints, and decision factors — for agentic consumption.
+## Intended Audience
+
+This document has two audiences:
+
+1. **Human authors** writing or maintaining `SKILL.md` files - follow the template and writing rules below.
+2. **AI agents** - `SKILL.md` files are your source of domain-specific industry standards. When a user request falls into a covered domain, you **MUST** read the relevant `docs/skills/<domain>/SKILL.md` during resource gathering to inform your plan and implementation decisions.
+
+**Purpose:** Define the authoring rules for every `SKILL.md` file in `docs/skills/`. These documents capture domain-specific industry-standard knowledge - principles, constraints, and decision factors - for agentic consumption.
 
 ---
 
@@ -11,10 +18,10 @@ Every `SKILL.md` **must** contain the following sections **in order**:
 | # | Section | Purpose | Required |
 |---|---------|---------|----------|
 | 1 | **Metadata** | Frontmatter: `name` (short title), `description` (one-paragraph scope summary) | Yes |
-| 2 | **When to Use** | Two bullet lists: `**USE WHEN**` and `**DO NOT USE FOR**` — clear boundary conditions for applicability | Yes |
+| 2 | **When to Use** | Two bullet lists: `**USE WHEN**` and `**DO NOT USE FOR**` - clear boundary conditions for applicability | Yes |
 | 3 | **Constraints & Rules** | Non-negotiable boundary conditions, technical guardrails, and forced decisions inherent to the domain | Yes |
-| 4 | **Core Principles** | Foundational doctrines that guide decision-making — timeless, framework-agnostic truths | Yes |
-| 5 | **Workflow** | Phases or stages of the domain process, described as **factors to consider** at each stage — never step-by-step commands | Yes |
+| 4 | **Core Principles** | Foundational doctrines that guide decision-making - timeless, framework-agnostic truths | Yes |
+| 5 | **Workflow** | Phases or stages of the domain process, described as **factors to consider** at each stage - never step-by-step commands | Yes |
 | 6 | **Anti-patterns** | Common misapplications, why they fail, and what factor was overlooked | Yes |
 
 ---

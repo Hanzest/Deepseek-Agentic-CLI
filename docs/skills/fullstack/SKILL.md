@@ -3,20 +3,20 @@
 ## Metadata
 
 - **Name:** Fullstack Development
-- **Description:** Full-stack software development covering frontend, backend, API design, data layer, and integration decisions — with emphasis on architecture, separation of concerns, and end-to-end system thinking.
+- **Description:** Full-stack software development covering frontend, backend, API design, data layer, and integration decisions - with emphasis on architecture, separation of concerns, and end-to-end system thinking.
 
 ---
 
 ## When to Use
 
-- **USE WHEN:** Making architectural decisions that span the entire application stack — from data persistence through API layer to client-side rendering — or when evaluating trade-offs between frontend and backend responsibility boundaries.
+- **USE WHEN:** Making architectural decisions that span the entire application stack - from data persistence through API layer to client-side rendering - or when evaluating trade-offs between frontend and backend responsibility boundaries.
 - **DO NOT USE FOR:** Single-layer decisions (CSS-only layout, database index tuning, or Docker networking in isolation) that are better served by their respective domain skill documents.
 
 ---
 
 ## Constraints & Rules
 
-- **Network round-trip budget:** Every client-server interaction incurs latency, bandwidth, and reliability costs. Consider the number of API hops a critical user flow requires — excessive chained requests degrade perceived performance regardless of server speed.
+- **Network round-trip budget:** Every client-server interaction incurs latency, bandwidth, and reliability costs. Consider the number of API hops a critical user flow requires - excessive chained requests degrade perceived performance regardless of server speed.
 - **Data consistency model:** Evaluate whether the system requires strong consistency (e.g., financial transactions), eventual consistency (e.g., social feeds), or causal consistency. Choosing the wrong model leads to incorrect behavior or unnecessary complexity.
 - **Authentication/authorization boundary:** Authentication belongs at the API gateway or middleware layer; authorization logic must be enforced server-side regardless of client-side checks. Client-only access control is a security illusion.
 - **State ownership:** Determine whether state lives on the client (SPA state), server (session), or both (hybrid). Mismatched state ownership causes synchronization bugs and stale-data hallucinations.
@@ -36,19 +36,19 @@
 
 ## Workflow
 
-- **Architecture phase — factors to consider:**
-  - How is the domain decomposed? (monolith vs. modules vs. services — evaluate by change frequency, team boundaries, and deployment coupling)
+- **Architecture phase - factors to consider:**
+  - How is the domain decomposed? (monolith vs. modules vs. services - evaluate by change frequency, team boundaries, and deployment coupling)
   - What is the data flow for the most critical user journey? (trace end-to-end: UI event → API → business logic → persistence → response → UI update)
-  - What caching strategy does each layer tolerate? (HTTP caching, in-memory cache, CDN, database query cache — each has invalidation complexity and staleness tolerance)
+  - What caching strategy does each layer tolerate? (HTTP caching, in-memory cache, CDN, database query cache - each has invalidation complexity and staleness tolerance)
 
-- **Implementation phase — factors to consider:**
-  - How are cross-cutting concerns handled without layer violation? (logging, monitoring, authentication, rate-limiting — should be middleware/decoration, not embedded in business logic)
-  - What is the testing strategy per layer? (unit for logic, integration for API contracts, E2E for critical paths — each layer has different ROI and maintenance cost)
+- **Implementation phase - factors to consider:**
+  - How are cross-cutting concerns handled without layer violation? (logging, monitoring, authentication, rate-limiting - should be middleware/decoration, not embedded in business logic)
+  - What is the testing strategy per layer? (unit for logic, integration for API contracts, E2E for critical paths - each layer has different ROI and maintenance cost)
   - How does the system handle partial failure? (degraded UI, circuit breakers, retry with backoff, fallback data sources)
 
-- **Deployment phase — factors to consider:**
+- **Deployment phase - factors to consider:**
   - Are frontend and backend deployments coupled or independent? (separate deployment cycles reduce risk but may require backward-compatible API versioning)
-  - What is the rollback strategy for each layer? (feature flags, blue-green, canary — each has different complexity and safety profiles)
+  - What is the rollback strategy for each layer? (feature flags, blue-green, canary - each has different complexity and safety profiles)
 
 ---
 

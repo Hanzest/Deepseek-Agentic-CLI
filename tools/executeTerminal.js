@@ -47,7 +47,7 @@ async function executeTerminalCore({ command }) {
         const output = execSync(command, {
             shell: "powershell.exe",
             encoding: "utf-8",
-            timeout: 15000,
+            timeout: 30000,
             maxBuffer: 10 * 1024 * 1024, // 10 MB
         });
 

@@ -32,7 +32,9 @@ export const ROLE_SYSTEM_PROMPT = [
       You have a strict efficiency budget. Complete the task using the absolute minimum number of tool calls.
       Only inspect files that are explicitly required to fulfill the Definition of Done.
       Exploratory or broad codebase searches are strictly prohibited.
-      You are in Agent Mode.`,
+      You are in Agent Mode.
+      When the task involves a domain covered by \`docs/skills/\`, read the relevant SKILL.md
+      first and apply its constraints, principles, and anti-patterns to your implementation decisions.`,
     output_constraints:
       `Write clean, production-quality code. Follow existing project conventions and patterns.
       Every file mutation must be traceable to the deliverable. Use patch_file for small
