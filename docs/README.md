@@ -1,86 +1,62 @@
-# Skill Docs - Single Source of Truth for Agent Skills
+# Skill Document Writing Guidelines
 
-**Purpose:** A central index of all skill documents available to agents in this codebase. Each entry explains what the skill covers and where to find the full document.
-
-**Principle:** One skill, one document. No duplication. No scattering of conventions across multiple files.
+**Purpose:** Define the authoring rules for every `SKILL.md` file in `docs/skills/`. These documents capture domain-specific industry-standard knowledge — principles, constraints, and decision factors — for agentic consumption.
 
 ---
 
-## Skill Index
+## 1. Document Structure (Mandatory Template)
 
-| Skill | Document | Summary |
-|---|---|---|
-| **Tool Usage & Conventions** | [`docs/agents.md`](agents.md) | Path conventions, tool consent model, `.env` security policy, PowerShell quick reference, file encoding rules. |
-| **Tool Usage Conventions (Shared)** | [`docs/skills/shared/tool-usage-conventions.md`](skills/shared/tool-usage-conventions.md) | Consolidated universal tool rules for all agents: batch-first strategy, consent model, encoding, PowerShell, mode system. |
-| **System Architecture** | [`docs/this_repo/system-architecture.md`](this_repo/system-architecture.md) | Module responsibilities, data flow diagram, security model, OCP impact analysis, dependency map. |
-| **Lib Modules Reference** | [`docs/this_repo/modules-lib.md`](this_repo/modules-lib.md) | Per-module reference for all 8 `lib/` files: roles, exports, line counts, dependencies. |
-| **Tools Reference** | [`docs/this_repo/modules-tools.md`](this_repo/modules-tools.md) | Per-file reference for all 12 `tools/` files: schemas, consent, mutation, batching. |
-| **Data Flow Diagrams** | [`docs/this_repo/data-flow.md`](this_repo/data-flow.md) | Execution paths: main loop, batch tool execution, sub-agent lifecycle, context sliding. |
-| **Agent Onboarding** | [`docs/this_repo/agent-onboarding.md`](this_repo/agent-onboarding.md) | Quick-start navigation guide for agents new to this codebase. |
-| **Skills Directory Format** | [`docs/skills/AGENTS.md`](skills/AGENTS.md) | Format rules for all documents in `docs/skills/`: shared docs, role AGENTS.md structure, how agents read the directory. |
-| **Manager Task Delegation** | [`docs/skills/orchestrator/AGENTS.md`](skills/orchestrator/AGENTS.md) | How to delegate complex sub-tasks efficiently: goal definition, role selection, deliverable specification, anti-patterns. |
-| **Tool Categories by Capability** | [`docs/tool-categories.md`](tool-categories.md) | All 10 tools grouped by capability domain (codebase inspection, web research, file mutation, system execution, user interaction, agent management) with consent/batching info. |
+Every `SKILL.md` **must** contain the following sections **in order**:
+
+| # | Section | Purpose | Required |
+|---|---------|---------|----------|
+| 1 | **Metadata** | Frontmatter: `name` (short title), `description` (one-paragraph scope summary) | Yes |
+| 2 | **When to Use** | Two bullet lists: `**USE WHEN**` and `**DO NOT USE FOR**` — clear boundary conditions for applicability | Yes |
+| 3 | **Constraints & Rules** | Non-negotiable boundary conditions, technical guardrails, and forced decisions inherent to the domain | Yes |
+| 4 | **Core Principles** | Foundational doctrines that guide decision-making — timeless, framework-agnostic truths | Yes |
+| 5 | **Workflow** | Phases or stages of the domain process, described as **factors to consider** at each stage — never step-by-step commands | Yes |
+| 6 | **Anti-patterns** | Common misapplications, why they fail, and what factor was overlooked | Yes |
 
 ---
 
-## How to Use This Index
+## 2. Writing Rules
 
-### For the Manager Agent
+### 2.1 Condition-Based, Not Action-Based
 
-When you need to understand:
-- **What tools are available and their consent rules** → read `docs/agents.md`.
-- **How to use tools efficiently (batch-first, consent, PowerShell)** → read `docs/skills/shared/tool-usage-conventions.md`.
-- **How the codebase is structured** → read `docs/this_repo/system-architecture.md`.
-- **What capability categories of tools are available** → read `docs/tool-categories.md`.
-- **How to delegate a complex task to a sub-agent** → read `docs/skills/orchestrator/AGENTS.md`.
-- **What the execution sub-agent role does** → read `docs/skills/execution/AGENTS.md`.
+| ✅ Correct (Condition / Factor) | ❌ Incorrect (Action / Command) |
+|---------------------------------|--------------------------------|
+| "Consider bundling strategy when page load latency exceeds user tolerance thresholds." | "Run `webpack --mode production` to bundle your assets." |
+| "Evaluate state management complexity against component tree depth and data mutation frequency." | "Use Redux for all global state." |
+| "Factor in image layer cache invalidation frequency when ordering Dockerfile instructions." | "Place `RUN apt-get install` before `COPY` in your Dockerfile." |
 
-### For Sub-Agents
+**Why:** Action-based instructions become outdated as tools evolve. Condition-based guidance remains valid across framework shifts, version upgrades, and tool replacements.
 
-Your system prompt already includes your role. Read:
-- **Universal tool rules** → `docs/skills/shared/tool-usage-conventions.md`.
-- **Your role-specific rules** → `docs/skills/execution/AGENTS.md`.
-- **What capability categories of tools are available** → read `docs/tool-categories.md`.
-- **Codebase structure** (module responsibilities, dependencies) → read `docs/this_repo/system-architecture.md`.
+### 2.2 Technical Accuracy
 
-### For Contributors Adding New Skills
+- Every claim must be verifiably true in the industry (cite standards, RFCs, or well-established practices where possible).
+- Avoid opinion masquerading as fact. If a practice is contested, frame it as a trade-off: *"When X is true, consider Y; when Z is true, consider W."*
 
-1. If the skill is a **universal tool rule**, add it to `docs/skills/shared/tool-usage-conventions.md`.
-2. If the skill is **execution role-specific**, add a section to `docs/skills/execution/AGENTS.md`.
-3. If the skill is a **general reference**, place it in `docs/` and add an entry to the **Skill Index** table above.
+### 2.3 Conciseness
 
----
+- No filler introductions, no motivational language, no "in today's fast-paced world."
+- Use bullet points, tables, and concise prose. One idea per bullet.
+- Target: 300–800 words per SKILL.md.
 
-## Design Principle
+### 2.4 Domain Isolation
 
-All documentation follows a layered approach:
-
-```
-docs/
-  agents.md              ← General: tool conventions, security, shell reference
-  tool-categories.md     ← General: tools grouped by capability domain
-  README.md              ← This file: central index
-  this_repo/             ← Codebase-specific: architecture, modules, tools, data flow, onboarding
-    README.md              ← Index of all this_repo/ documents
-    system-architecture.md ← Full architecture: module map, data flow, dependencies, security model
-    modules-lib.md         ← Per-module reference for lib/ (8 modules)
-    modules-tools.md       ← Per-file reference for tools/ (12 files)
-    data-flow.md           ← Execution path diagrams (main loop, batch, sub-agent, context sliding)
-    agent-onboarding.md    ← Quick-start navigation for agents
-  skills/
-    AGENTS.md              ← Format rules & directory index
-    shared/
-      tool-usage-conventions.md  ← Universal tool rules (all agents)
-    orchestrator/
-      AGENTS.md            ← Manager: delegation strategy
-    execution/
-      AGENTS.md            ← Sub-agent role
-```
-
-- **General docs** (`agents.md`, `this_repo`) apply to all agents regardless of role.
-- **Shared skills** (`skills/shared/`) apply to all agents - universal tool rules.
-- **Role skills** (`skills/execution/AGENTS.md`) are execution role-specific and assume familiarity with shared docs.
+- Each `SKILL.md` covers **one domain only**. Do not cross-reference other skill domains.
+- If a concept legitimately spans domains (e.g., "security" applies to Docker and CI/CD alike), each document covers the **domain-specific facet** of that concept independently.
 
 ---
 
-*Last updated: 2026. Maintained as the single source of truth for agent skills.*
+## 3. Quality Checklist
+
+Before finalizing a `SKILL.md`, verify:
+
+- [ ] All 6 sections present and in correct order
+- [ ] No imperative action commands (no `do this`, `run that`, `use this tool`)
+- [ ] Every item describes a **condition to evaluate** or a **factor to weigh**
+- [ ] `USE WHEN` / `DO NOT USE FOR` boundaries are mutually exclusive and collectively exhaustive for the domain
+- [ ] Anti-patterns each explain **why** it fails and what factor was missed
+- [ ] No cross-references to other skill documents
+- [ ] Under 800 words

@@ -1,0 +1,1 @@
+Plan to restructured and update docs folder markdown structures and affected markdowns. I want a single README.md that describe the folder, and every inclusion. The folder inside skills folder must be based on the task, rather than the role (e.g., uiux, fullstack, github_cicd, docker).
