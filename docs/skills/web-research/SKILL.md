@@ -3,7 +3,7 @@
 ## Metadata
 
 - **Name:** Web Research & Information Retrieval
-- **Description:** Systematic search, evaluation, and extraction of information from the web — covering query formulation, result assessment, content extraction strategies, source verification, and handling of incomplete or contradictory information, and graceful error handling when fetches are blocked by bot-protection systems.
+- **Description:** Systematic search, evaluation, and extraction of information from the web — covering query formulation, result assessment, content extraction strategies, source verification, handling of incomplete or contradictory information, graceful error handling when fetches are blocked by bot-protection systems, proxied fetch routing, and archived fallback retrieval (Wayback Machine, Google Cache).
 
 ---
 
@@ -69,3 +69,54 @@
 - **Refetching the same page multiple times:** Re-fetching a page that was already retrieved to re-read its content instead of referencing the previously extracted information. Wastes token budget and risks rate limiting. The overlooked factor: batch and cache — fetch once, reference many times.
 - **Overly broad queries followed by manual scanning:** Using vague search terms like "how to do X" and scanning dozens of irrelevant results. Produces high noise and low yield. The overlooked factor: query refinement (adding version numbers, language names, error codes) costs fewer tokens than parsing irrelevant pages.
 - **Ignoring fetch failure signals:** Consuming a bot-block or login-wall page as if it were genuine content, extracting garbage or misleading information, and incorporating it into the answer. The overlooked factor: a 200 HTTP status does not imply useful content — evaluate the semantic content of the response, not just its status code, before treating it as a valid data source.
+
+---
+
+## Interpreting `blocked` + `block_signal` After a Failed Fetch
+
+When `fetch_url` returns an error response, inspect these new fields:
+- `blocked: true` → the request was blocked by bot protection
+- `block_signal`: one of `"403"` (HTTP 403 Forbidden), `"timeout"` (request timed out), `"fetch_failed"` (DNS/network error), or `"proxy_error"` (proxy configuration failed)
+- `status_code`: the raw HTTP status code (0 for timeouts)
+
+A blocked fetch is not valid content — do not parse it. Either retry with `allow_archived_fallback: true` or the proxy parameter, or find an alternative source.
+
+---
+
+## Opt-in Archive Fallback via `allow_archived_fallback: true`
+
+When a primary fetch is blocked, pass `allow_archived_fallback: true` to automatically retry via archived sources:
+1. **Wayback Machine** (primary): retrieves the latest snapshot from `web.archive.org`
+2. **Google Cache** (secondary): attempts `webcache.googleusercontent.com`
+
+If all fallbacks fail, the original error is returned. Note: Google Cache itself may be blocked in some environments — this is a best-effort fallback.
+
+The response includes fields `source: "wayback"` or `source: "google_cache"` to indicate the fallback source used.
+
+---
+
+## Routing Through a Proxy with `proxy_url`
+
+To route fetch requests through a proxy, pass `proxy_url` with an HTTP/HTTPS proxy URL. Supported formats:
+- No auth: `http://proxy.example.com:8080`
+- With auth: `http://user:password@proxy.example.com:8080`
+- HTTPS: `https://proxy.example.com:443`
+
+Requires Node.js 18+ (uses built-in undici ProxyAgent). If the proxy fails, the response contains `block_signal: "proxy_error"`.
+
+Use this for:
+- Corporate environments requiring outbound proxies
+- Rotating proxy services to bypass IP-based rate limiting
+
+---
+
+## Handling Outdated Wayback Content (Age >= 5 Years)
+
+When content is served from the Wayback Machine, the tool extracts the snapshot timestamp and calculates its age. If the snapshot is 5 years or older, the content is prefixed with a `**[Caution: Outdated Content]**` banner showing the archive date and approximate age in years.
+
+Before using archived content, verify:
+- Is the information still relevant? (API versions, library APIs, pricing)
+- Has the domain/company changed since the snapshot?
+- Can a more recent primary source be found instead?
+
+The response fields `archived_at` (YYYYMMDDHHMMSS) and `age_years` can be used to programmatically evaluate staleness.

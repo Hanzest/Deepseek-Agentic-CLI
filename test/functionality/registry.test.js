@@ -9,12 +9,12 @@ describe("registry - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Counts
   // -----------------------------------------------------------------------
-  it("ALL_TOOLS has exactly 9 tools", () => {
-    expect(Object.keys(ALL_TOOLS).length).toBe(9);
+  it("ALL_TOOLS has exactly 10 tools", () => {
+    expect(Object.keys(ALL_TOOLS).length).toBe(10);
   });
 
-  it("ORCHESTRATOR_TOOLS has exactly 8 tools (4 read-only + 3-write + 1 sub-agent delegation)", () => {
-    expect(Object.keys(ORCHESTRATOR_TOOLS).length).toBe(8);
+  it("ORCHESTRATOR_TOOLS has exactly 10 tools", () => {
+    expect(Object.keys(ORCHESTRATOR_TOOLS).length).toBe(10);
   });
 
   // -----------------------------------------------------------------------

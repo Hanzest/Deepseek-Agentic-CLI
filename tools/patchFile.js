@@ -4,6 +4,7 @@ import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
 import { readFileUtf8Normalized } from "../lib/fileReader.js";
 import { C, colorize } from "../lib/colors.js";
+import { isPlanFile, validatePlanContent } from "../lib/artifactManager.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -123,7 +124,22 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
             const success_msg =
                 `Successfully patched '${file_path}'. ${action} ${line_number}.`;
             console.log(`\x1b[92m${success_msg}\x1b[0m`);
-            return success_msg;
+
+            let warning = undefined;
+            if (isPlanFile(file_path)) {
+                const missing = validatePlanContent(new_content);
+                if (missing.length > 0) {
+                    warning = `Plan Validation Warning: The plan was updated but is missing the following required sections: ${missing.join(", ")}. Please update the plan file to include them.`;
+                    console.log(colorize(`\n[Plan Validation Warning] ${warning}`, C.warning));
+                }
+            }
+            return JSON.stringify({
+                success: true,
+                tool: "patch_file",
+                file_path,
+                message: success_msg,
+                warning,
+            });
         } catch (e) {
             const error_msg = `Error writing to file '${file_path}': ${e.message}`;
             console.log(`\x1b[91m${error_msg}\x1b[0m`);
@@ -180,7 +196,22 @@ async function patchFileCore({ file_path, search_string, replace_string, line_nu
             `Successfully patched '${file_path}'. ` +
             `Replaced 1 occurrence of the search string.`;
         console.log(`\x1b[92m${success_msg}\x1b[0m`);
-        return success_msg;
+
+        let warning = undefined;
+        if (isPlanFile(file_path)) {
+            const missing = validatePlanContent(new_content);
+            if (missing.length > 0) {
+                warning = `Plan Validation Warning: The plan was updated but is missing the following required sections: ${missing.join(", ")}. Please update the plan file to include them.`;
+                console.log(colorize(`\n[Plan Validation Warning] ${warning}`, C.warning));
+            }
+        }
+        return JSON.stringify({
+            success: true,
+            tool: "patch_file",
+            file_path,
+            message: success_msg,
+            warning,
+        });
     } catch (e) {
         const error_msg = `Error writing to file '${file_path}': ${e.message}`;
         console.log(`\x1b[91m${error_msg}\x1b[0m`);

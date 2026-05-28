@@ -1,6 +1,42 @@
 import { createToolHandler } from "./template.js";
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+];
+
+/**
+ * Build browser-like headers with a random User-Agent.
+ * @returns {object} Headers object for fetch()
+ */
+function buildHeaders() {
+    const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    return {
+        "User-Agent": ua,
+        Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Sec-Ch-Ua": '"Chromium";v="125", "Not.A/Brand";v="24"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "Cache-Control": "max-age=0",
+        Priority: "u=0, i",
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 export const fetch_url_schema = {
@@ -44,6 +80,20 @@ export const fetch_url_schema = {
                         "Maximum characters per URL output before truncation. " +
                         "Defaults to 8000. Set to 0 for no limit.",
                 },
+                proxy_url: {
+                    type: "string",
+                    description:
+                        "HTTP/HTTPS proxy URL for routing the fetch request. " +
+                        "Supports authentication. " +
+                        "E.g., 'http://user:pass@proxy.example.com:8080'. " +
+                        "Uses Node.js undici ProxyAgent under the hood. Requires Node.js 18+.",
+                },
+                allow_archived_fallback: {
+                    type: "boolean",
+                    description:
+                        "When true and primary fetch is blocked (403/timeout), " +
+                        "automatically retry via Wayback Machine or Google Cache. Default: false.",
+                },
             },
             oneOf: [{ required: ["url"] }, { required: ["urls"] }],
         },
@@ -51,38 +101,237 @@ export const fetch_url_schema = {
 };
 
 // ---------------------------------------------------------------------------
+// Archive fallback helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a URL via Wayback Machine.
+ * Returns null if unavailable.
+ */
+async function fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
+    const waybackUrl = `https://web.archive.org/web/${url}`;
+    try {
+        const controller = new AbortController();
+        const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
+        const response = await fetch(waybackUrl, {
+            headers: buildHeadersFn(),
+            redirect: "follow",
+            signal: controller.signal,
+        });
+        clearTimeout(timeout_id);
+
+        if (!response.ok) return null;
+
+        const finalUrl = response.url || "";
+        const timestampMatch = finalUrl.match(/\/web\/(\d{14})\//);
+        const timestamp = timestampMatch ? timestampMatch[1] : null;
+        let age_years = null;
+        if (timestamp) {
+            const year = parseInt(timestamp.substring(0, 4), 10);
+            const currentYear = new Date().getFullYear();
+            age_years = currentYear - year;
+        }
+
+        const html = await response.text();
+        const $ = cheerio(html);
+
+        // Remove unwanted elements
+        $("script, style, nav, footer, header, aside, noscript").remove();
+
+        let main_content =
+            $("main").first() ||
+            $("article").first() ||
+            $("div.content").first() ||
+            $("#content").first() ||
+            $("body").first();
+        if (!main_content || main_content.length === 0) {
+            main_content = $("body").first();
+        }
+        if (!main_content || main_content.length === 0) {
+            main_content = $.root();
+        }
+
+        const main_html = main_content.html() || main_content.text() || "";
+        let markdown_text;
+        try {
+            const turndownService = new TurndownService({ headingStyle: "atx" });
+            markdown_text = turndownService.turndown(main_html);
+        } catch {
+            markdown_text = (main_content.text() || "").replace(/\n{3,}/g, "\n\n").trim();
+        }
+
+        markdown_text = markdown_text.replace(/\n{3,}/g, "\n\n").trim();
+
+        // If the snapshot is >= 5 years old, prepend a caution banner
+        if (age_years !== null && age_years >= 5) {
+            const banner =
+                `**⚠️ Caution: This content is from an archived snapshot ${age_years} year(s) old.**\n\n`;
+            markdown_text = banner + markdown_text;
+        }
+
+        return { content: markdown_text, source: "wayback", archived_at: timestamp, age_years };
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Fetch a URL via Google Cache.
+ * Returns null if unavailable.
+ */
+async function fetchViaGoogleCache(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
+    const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}`;
+    try {
+        const controller = new AbortController();
+        const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
+        const response = await fetch(cacheUrl, {
+            headers: buildHeadersFn(),
+            redirect: "follow",
+            signal: controller.signal,
+        });
+        clearTimeout(timeout_id);
+
+        if (!response.ok) return null;
+
+        const html = await response.text();
+        const $ = cheerio(html);
+
+        // Remove unwanted elements
+        $("script, style, nav, footer, header, aside, noscript").remove();
+
+        let main_content =
+            $("main").first() ||
+            $("article").first() ||
+            $("div.content").first() ||
+            $("#content").first() ||
+            $("body").first();
+        if (!main_content || main_content.length === 0) {
+            main_content = $("body").first();
+        }
+        if (!main_content || main_content.length === 0) {
+            main_content = $.root();
+        }
+
+        const main_html = main_content.html() || main_content.text() || "";
+        let markdown_text;
+        try {
+            const turndownService = new TurndownService({ headingStyle: "atx" });
+            markdown_text = turndownService.turndown(main_html);
+        } catch {
+            markdown_text = (main_content.text() || "").replace(/\n{3,}/g, "\n\n").trim();
+        }
+
+        markdown_text = markdown_text.replace(/\n{3,}/g, "\n\n").trim();
+
+        return { content: markdown_text, source: "google_cache" };
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Orchestrate fallback: try Wayback first, then Google Cache.
+ * Returns the best available result or null.
+ */
+async function fallbackOrchestrator(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
+    const waybackResult = await fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn);
+    if (waybackResult) {
+        return { ...waybackResult, _fallback_note: "Retrieved from Wayback Machine archive." };
+    }
+
+    const cacheResult = await fetchViaGoogleCache(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn);
+    if (cacheResult) {
+        return { ...cacheResult, _fallback_note: "Retrieved from Google Cache." };
+    }
+
+    return null;
+}
+
+// ---------------------------------------------------------------------------
 // Pure handler - single URL fetch
 // ---------------------------------------------------------------------------
-async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, TurndownService) {
+async function fetchSingleUrl(
+    url,
+    timeout_seconds,
+    max_chars,
+    cheerio,
+    TurndownService,
+    proxy_url,
+    allow_archived_fallback,
+) {
     const fetched_at = new Date().toISOString();
 
     try {
         const controller = new AbortController();
         const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
 
-        const response = await fetch(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                    "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                    "Chrome/125.0.0.0 Safari/537.36",
-            },
+        const fetchOptions = {
+            headers: buildHeaders(),
             signal: controller.signal,
-        });
+        };
+
+        // Apply proxy if provided
+        if (proxy_url) {
+            try {
+                const { ProxyAgent } = await import("undici");
+                fetchOptions.dispatcher = new ProxyAgent(proxy_url);
+            } catch (e) {
+                return {
+                    url,
+                    error: true,
+                    blocked: true,
+                    block_signal: "proxy_error",
+                    message: `ProxyAgent failed: ${e.message}. Requires Node.js 18+.`,
+                    fetched_at,
+                };
+            }
+        }
+
+        const response = await fetch(url, fetchOptions);
 
         clearTimeout(timeout_id);
 
         if (!response.ok) {
-            const msg = `HTTP error: ${response.status} ${response.statusText}`;
+            const status_code = response.status;
+            const msg = `HTTP error: ${status_code} ${response.statusText}`;
             console.log(`\x1b[91m[Fetch Error] ${url.substring(0, 100)}: ${msg}\x1b[0m`);
-            return {
+
+            // Determine if this is a "blocked" scenario (403)
+            const isBlocked = status_code === 403;
+            const result = {
                 url,
                 error: true,
                 message: msg,
                 fetched_at,
+                blocked: isBlocked,
+                status_code,
             };
+            if (isBlocked) {
+                result.block_signal = "403";
+            }
+
+            // Archived fallback for blocked responses
+            if (isBlocked && allow_archived_fallback) {
+                const fallback = await fallbackOrchestrator(url, timeout_seconds, cheerio, TurndownService, buildHeaders);
+                if (fallback) {
+                    return {
+                        url,
+                        title: url,
+                        fetched_at,
+                        source: fallback.source,
+                        content: fallback.content,
+                        archived_at: fallback.archived_at || null,
+                        age_years: fallback.age_years || null,
+                        _fallback_note: fallback._fallback_note,
+                        blocked: false,
+                    };
+                }
+            }
+
+            return result;
         }
 
+        const status_code = response.status;
         const html = await response.text();
         const $ = cheerio(html);
 
@@ -146,7 +395,7 @@ async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, Turndown
             `\x1b[92m[Fetched OK] ${url.substring(0, 100)}` +
             ` - ${content_length_chars} chars` +
             (truncated ? ` (truncated at ${max_chars})` : "") +
-            `\x1b[0m`
+            `\x1b[0m`,
         );
 
         return {
@@ -157,23 +406,89 @@ async function fetchSingleUrl(url, timeout_seconds, max_chars, cheerio, Turndown
             truncated,
             truncation_ratio,
             content: markdown_text,
+            blocked: false,
+            source: "direct",
+            status_code,
         };
     } catch (e) {
         if (e.name === "AbortError") {
             const msg = `Request timed out after ${timeout_seconds} seconds.`;
             console.log(`\x1b[91m[Fetch Timeout] ${url.substring(0, 100)}: ${msg}\x1b[0m`);
-            return { url, error: true, message: msg, fetched_at };
+            const result = {
+                url,
+                error: true,
+                message: msg,
+                fetched_at,
+                blocked: true,
+                block_signal: "timeout",
+                status_code: 0,
+            };
+
+            // Archived fallback for timeouts
+            if (allow_archived_fallback) {
+                const fallback = await fallbackOrchestrator(url, timeout_seconds, cheerio, TurndownService, buildHeaders);
+                if (fallback) {
+                    return {
+                        url,
+                        title: url,
+                        fetched_at,
+                        source: fallback.source,
+                        content: fallback.content,
+                        archived_at: fallback.archived_at || null,
+                        age_years: fallback.age_years || null,
+                        _fallback_note: fallback._fallback_note,
+                        blocked: false,
+                    };
+                }
+            }
+
+            return result;
         }
         const msg = e.message || String(e);
         console.log(`\x1b[91m[Fetch Error] ${url.substring(0, 100)}: ${msg}\x1b[0m`);
-        return { url, error: true, message: msg, fetched_at };
+        const result = {
+            url,
+            error: true,
+            message: msg,
+            fetched_at,
+            blocked: true,
+            block_signal: "fetch_failed",
+            status_code: 0,
+        };
+
+        // Archived fallback for generic fetch failures
+        if (allow_archived_fallback) {
+            const fallback = await fallbackOrchestrator(url, timeout_seconds, cheerio, TurndownService, buildHeaders);
+            if (fallback) {
+                return {
+                    url,
+                    title: url,
+                    fetched_at,
+                    source: fallback.source,
+                    content: fallback.content,
+                    archived_at: fallback.archived_at || null,
+                    age_years: fallback.age_years || null,
+                    _fallback_note: fallback._fallback_note,
+                    blocked: false,
+                };
+            }
+        }
+
+        return result;
     }
 }
 
 // ---------------------------------------------------------------------------
 // Pure handler - dispatcher (single vs batch)
 // ---------------------------------------------------------------------------
-async function fetchUrlCore({ url, urls, timeout_seconds = 15, max_chars = 8000 }) {
+async function fetchUrlCore({
+    url,
+    urls,
+    timeout_seconds = 15,
+    max_chars = 8000,
+    proxy_url,
+    allow_archived_fallback = false,
+}) {
     // Soft-import dependencies
     let cheerio, TurndownService;
     try {
@@ -214,8 +529,16 @@ async function fetchUrlCore({ url, urls, timeout_seconds = 15, max_chars = 8000 
     // Fetch all URLs concurrently with isolated error handling
     const results = await Promise.all(
         urlList.map((u) =>
-            fetchSingleUrl(u, timeout_seconds, max_chars, cheerio, TurndownService)
-        )
+            fetchSingleUrl(
+                u,
+                timeout_seconds,
+                max_chars,
+                cheerio,
+                TurndownService,
+                proxy_url,
+                allow_archived_fallback,
+            ),
+        ),
     );
 
     // Build output
@@ -236,4 +559,4 @@ async function fetchUrlCore({ url, urls, timeout_seconds = 15, max_chars = 8000 
 // ---------------------------------------------------------------------------
 // Wrapped handler (consent required)
 // ---------------------------------------------------------------------------
-export const fetch_url = createToolHandler("fetch_url", fetchUrlCore, true);
+export const fetch_url = createToolHandler("fetch_url", fetchUrlCore, false);

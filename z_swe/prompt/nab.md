@@ -1,0 +1,1 @@
+Conduct Research on NAB in Vietnam for Software Engineer roles of their salary, perks, and promotions policy information from intern to Tech Lead Position. Provide proper citations of URLs for the information you get.

@@ -18,6 +18,32 @@ import { resetAlertCounter } from "./template.js";
 import { MUTATION_BLOCKED_TOOLS } from "../lib/orchestrator.js";
 import { C, colorize } from "../lib/colors.js";
 
+const READ_ONLY_CACHED_TOOLS = new Set([
+    "get_project_tree",
+    "read_file_chunk",
+    "multi_file_search_string"
+]);
+
+const readOnlyCache = new Map();
+
+export function clearReadOnlyCache() {
+    readOnlyCache.clear();
+}
+
+function isSafePlanModeCommand(command) {
+    if (!command) return false;
+    const trimmed = command.trim();
+    // Allow basic git status / git diff
+    if (/^git\s+(status|diff)(\s+|$)/i.test(trimmed)) {
+        return true;
+    }
+    // Allow commands redirecting to artifacts/ directory
+    if (/>+?\s*artifacts[\/\\]/i.test(trimmed)) {
+        return true;
+    }
+    return false;
+}
+
 const W = 56; // separator width
 
 /**
@@ -75,7 +101,8 @@ function printBatchFooter(count, timings) {
     console.log(colorize(`${'─'.repeat(W)}`, C.border));
     if (timings && timings.length > 0) {
         for (const t of timings) {
-            const ms = t.ms < 1 ? `${(t.ms * 1000).toFixed(0)}μs` :
+            const ms = t.ms === 0 ? "cached" :
+                t.ms < 1 ? `${(t.ms * 1000).toFixed(0)}μs` :
                 t.ms < 1000 ? `${t.ms.toFixed(1)}ms` :
                     `${(t.ms / 1000).toFixed(1)}s`;
             console.log(colorize(`  [done] ${t.name} (${ms})`, C.success));
@@ -164,7 +191,8 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         // ---- Plan Mode gate: block mutation/execution tools (artifacts/ exempt) ----
         if (agentMode === "plan" && MUTATION_BLOCKED_TOOLS.has(p.name)) {
             // Allow writes into artifacts/ folder (safe workspace for plans)
-            if (p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) {
+            const isSafeTerminal = p.name === "execute_terminal_command" && isSafePlanModeCommand(p.args?.command);
+            if ((p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) || isSafeTerminal) {
             } else {
                 const blockedMsg =
                     "Blocked: File mutation and system execution are disabled in Plan Mode. " +
@@ -185,6 +213,9 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         }
 
         const timedHandler = async () => {
+            if (MUTATION_BLOCKED_TOOLS.has(p.name)) {
+                clearReadOnlyCache();
+            }
             const start = performance.now();
             const result = await handler(p.args);
             const ms = performance.now() - start;
@@ -213,6 +244,30 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         }
 
         // Read-only tool → run immediately (concurrent with other read-only tools)
+        if (READ_ONLY_CACHED_TOOLS.has(p.name)) {
+            const cacheKey = `${p.name}:${JSON.stringify(p.args)}`;
+            return (async () => {
+                if (readOnlyCache.has(cacheKey)) {
+                    const cachedResult = readOnlyCache.get(cacheKey);
+                    timings.push({ name: p.name, ms: 0, index });
+                    return {
+                        role: "tool",
+                        tool_call_id: p.id,
+                        name: p.name,
+                        content: cachedResult,
+                    };
+                }
+                const content = await timedHandler();
+                readOnlyCache.set(cacheKey, content);
+                return {
+                    role: "tool",
+                    tool_call_id: p.id,
+                    name: p.name,
+                    content,
+                };
+            })();
+        }
+
         return (async () => {
             const content = await timedHandler();
             return {

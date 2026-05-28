@@ -138,7 +138,7 @@ The model has access to the following **10 tools**. Tools that modify the system
 | `ask_user_preferences` | Ask the user a series of preference questions | ❌ No |
 | `write_or_create_file` | Write or create files, with optional parent directory creation | ✅ Yes |
 | `multi_file_search_string` | Search for a string across multiple files with glob support | ❌ No |
-| `delegate_sub_agent` | Delegate a complex sub-task to a specialised sub-agent in an isolated terminal | ❌ No |
+| `delegate_sub_agents` | Delegate 1..N sub-tasks to specialised sub-agents concurrently in isolated terminals | ❌ No |
 
 ### Tool Registries
 
@@ -146,13 +146,13 @@ Three tool registries control which tools are available to which agent:
 
 | Registry | Contents | Used By |
 |----------|----------|---------|
-| `WORKER_TOOLS` | 9 tools (all except `delegate_sub_agent`), with consent flags | Sub-agents (prevent infinite delegation chains) |
+| `WORKER_TOOLS` | 9 tools (delegation tools excluded), with consent flags | Sub-agents (prevent infinite delegation chains) |
 | `SUBAGENT_TOOLS` | Same 9 tools as `WORKER_TOOLS`, but all consent flags set to `false` | Sub-agent loops (autonomous, no per-tool prompts) |
-| `ORCHESTRATOR_TOOLS` | 5 tools (read_file_chunk, get_project_tree, multi_file_search_string + delegate_sub_agent, ask_user_preferences) | Main orchestrator |
+| `ORCHESTRATOR_TOOLS` | Full tool set with consent flags, including `delegate_sub_agents` | Main orchestrator |
 
 ### Sub-Agent Delegation System
 
-When the model encounters a complex multi-step task (e.g., refactoring a module, writing documentation, auditing code), it can use the `delegate_sub_agent` tool to:
+When the model encounters a complex multi-step task (e.g., refactoring a module, writing documentation, auditing code), it can use the `delegate_sub_agents` tool to:
 
 1. Generate a structured Markdown prompt file with the sub-agent's goal, purpose, deliverables, skills, and context.
 2. Spawn an **independent PowerShell terminal window** via `subAgentTerminal.js`.

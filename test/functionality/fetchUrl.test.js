@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../../lib/cliInput.js", () => ({
   ask: vi.fn().mockResolvedValue("y"),
@@ -144,4 +144,103 @@ describe("fetchUrl functionality - real network calls", () => {
       expect(parsed.content_length_chars).toBe(parsed.content.length);
     },
   );
+});
+
+// ---------------------------------------------------------------------------
+// Anti-block / UA rotation / enhanced headers tests (mocked, no @network)
+// ---------------------------------------------------------------------------
+
+describe("fetchUrl anti-block features", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("UA rotation across multiple calls uses at least 2 different UA strings", async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      text: async () => '<html><body><h1>Test Content</h1></body></html>',
+    };
+    global.fetch = vi.fn().mockResolvedValue(mockResponse);
+
+    for (let i = 0; i < 5; i++) {
+      const result = await fetch_url({ url: "https://example.com/", max_chars: 100 });
+      const parsed = typeof result === "string" ? JSON.parse(result) : result;
+      expect(parsed.error).toBeFalsy();
+    }
+
+    const userAgents = global.fetch.mock.calls.map((call) => call[1].headers["User-Agent"]);
+    const uniqueUAs = [...new Set(userAgents)];
+    expect(uniqueUAs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Enhanced browser headers present in fetch call", async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      text: async () => '<html><body><h1>Test Content</h1></body></html>',
+    };
+    global.fetch = vi.fn().mockResolvedValue(mockResponse);
+
+    const result = await fetch_url({ url: "https://example.com/", max_chars: 100 });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+    expect(parsed.error).toBeFalsy();
+
+    const headers = global.fetch.mock.calls[0][1].headers;
+    expect(headers).toHaveProperty("Sec-Fetch-Dest");
+    expect(headers).toHaveProperty("Accept-Language");
+    expect(headers).toHaveProperty("Upgrade-Insecure-Requests");
+  });
+
+  it("403 returns blocked metadata", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: "Forbidden",
+    });
+
+    const result = await fetch_url({ url: "https://example.com/" });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+
+    expect(parsed.blocked).toBe(true);
+    expect(parsed.block_signal).toBe("403");
+    expect(parsed.status_code).toBe(403);
+    expect(parsed.error).toBe(true);
+  });
+
+  it("Timeout returns blocked metadata", async () => {
+    global.fetch = vi.fn().mockRejectedValue(
+      Object.assign(new Error("Aborted"), { name: "AbortError" }),
+    );
+
+    const result = await fetch_url({
+      url: "https://example.com/",
+      timeout_seconds: 1,
+    });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+
+    expect(parsed.blocked).toBe(true);
+    expect(parsed.block_signal).toBe("timeout");
+    expect(parsed.status_code).toBe(0);
+    expect(parsed.error).toBe(true);
+  });
+
+  it("Success path has blocked: false and source: direct", async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      text: async () => '<html><body><h1>Test Content</h1></body></html>',
+    };
+    global.fetch = vi.fn().mockResolvedValue(mockResponse);
+
+    const result = await fetch_url({ url: "https://example.com/", max_chars: 100 });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+
+    expect(parsed.blocked).toBe(false);
+    expect(parsed.source).toBe("direct");
+  });
 });

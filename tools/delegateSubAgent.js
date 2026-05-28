@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createToolHandler } from "./template.js";
@@ -14,79 +14,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// Schema
+// delegate_sub_agent_schema was removed in favor of delegate_sub_agents_schema
+// (plural), which supports 1..N delegations via the delegations[] array.
+// See delegate_sub_agents_schema below.
 // ---------------------------------------------------------------------------
-export const delegate_sub_agent_schema = {
-    type: "function",
-    function: {
-        name: "delegate_sub_agent",
-        description:
-            "Delegates a task to the sub-agent by generating a " +
-            "structured Markdown prompt file in the artifacts/active/ directory. The main agent " +
-            "feeds this prompt into a fresh conversation to achieve true context isolation, " +
-            "parallelization. Use this to break down complex tasks into independent, focused sub-tasks.",
-        parameters: {
-            type: "object",
-            properties: {
-                sub_agent_name: {
-                    type: "string", 
-                    description:
-                        "Unique, descriptive name for this sub-agent." +
-                        "Example: 'AuthModuleBuilder', 'DatabaseSchemaDesigner'. " +
-                        "Keep it short and PascalCase.",
-                },
-                definition_of_done: {
-                    type: "string",
-                    description:
-                        "The specific, concrete, verifiable Definition of Done in one clear, falsifiable sentence. " +
-                        "The sub-agent must know exactly when it is done based on this definition.",
-                },
-                deliverable: {
-                    type: "string",
-                    description:
-                        "Clear, unambiguous description of the expected output. Include format, " +
-                        "location (e.g., which file to write), and acceptance criteria.",
-                },
-                role: {
-                    type: "string",
-                    enum: ["execution"],
-                    description:
-                        "The sub-agent's role, which determines its system prompt. " +
-                        "Each role has a pre-defined description and output constraints " +
-                        "in ROLE_SYSTEM_PROMPT. Choose the role that best matches the task.",
-                },
-                context: {
-                    type: "string",
-                    description:
-                        "Background information, code references (method names), " +
-                        "dependencies, or relevant file paths to complete sub-agent's task. " +
-                        "Keep it concise: no full file contents, no line numbers" +
-                        "The sub-agent has tools to read files. Max ~500 words recommended."
-                },
-                budget_iterations: {
-                    type: "integer",
-                    description:
-                        "Maximum iterations the sub-agent may use. " +
-                        "Recommended formula: 4 * <number of files to change> + 2 * <number of files to inspect>.",
-                },
-                self_contained: {
-                    type: "boolean",
-                    description:
-                        "Set to true when the deliverable is purely a file write with no " +
-                        "verification needed. Instructs the sub-agent to write and respond " +
-                        "immediately - no re-reading, no verification loop.",
-                },
-                output_file: {
-                    type: "string",
-                    description:
-                        "Custom filename relative to artifacts/active/. Defaults to " +
-                        "'subagent-{sub_agent_name}.md'. Only alphanumeric and must end with .md.",
-                },
-            },
-            required: ["sub_agent_name", "definition_of_done", "deliverable", "role"],
-        },
-    },
-};
 
 // ---------------------------------------------------------------------------
 // Internal: sanitize a name for use in a filename
@@ -235,6 +166,32 @@ function buildMarkdownPrompt({
 }
 
 // ---------------------------------------------------------------------------
+// Internal: extract JSON block from text
+// ---------------------------------------------------------------------------
+function extractJSONBlock(text) {
+    if (!text) return null;
+    const regex = /```json\s*\n([\s\S]*?)\n\s*```/;
+    const match = text.match(regex);
+    if (match) {
+        try {
+            return JSON.parse(match[1].trim());
+        } catch (e) {
+            // fallback below
+        }
+    }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+            return JSON.parse(text.substring(firstBrace, lastBrace + 1));
+        } catch (e) {
+            // fallback below
+        }
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
 // Pure handler logic (no consent - safe workspace writes only)
 async function delegateSubAgentCore({
     sub_agent_name,
@@ -243,6 +200,7 @@ async function delegateSubAgentCore({
     role,
     context = "",
     budget_iterations,
+    max_wall_time_seconds = 300,
     self_contained = false,
     output_file = "",
 } = {}) {
@@ -317,13 +275,13 @@ async function delegateSubAgentCore({
         if (roleEntry && roleEntry.model) {
             modelConfig = { ...modelConfig, model_name: roleEntry.model };
         }
-        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig, toolsMap);
+        result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig, toolsMap, max_wall_time_seconds);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;
         console.log(`\n\x1b[91m${errMsg}\x1b[0m`);
         return JSON.stringify({
             error: true,
-            tool: "delegate_sub_agent",
+            tool: "delegate_sub_agents",
             sub_agent_name,
             definition_of_done,
             role,
@@ -398,6 +356,8 @@ async function delegateSubAgentCore({
         estimatedCost: estCost,
     });
 
+    const structuredSummary = extractJSONBlock(result.finalContent);
+
     const returnObj = {
         file_path: `artifacts/active/${fileName}`,
         report_path: `artifacts/active/${reportName}`,
@@ -406,7 +366,14 @@ async function delegateSubAgentCore({
         role,
         iteration_count: result.iterationCount,
         final_content_preview: result.finalContent.substring(0, 500),
-        status: "completed",
+        status: result.status || "completed",
+        structured_summary: structuredSummary || {
+            files_modified: [],
+            files_created: [],
+            verification_status: "unknown",
+            verification_details: "Could not parse structured summary JSON.",
+            key_decisions: []
+        },
         prompt_token_count: promptTokenCount,
     };
 
@@ -417,11 +384,100 @@ async function delegateSubAgentCore({
     return JSON.stringify(returnObj);
 }
 
+// delegate_sub_agent handler was removed in favor of delegate_sub_agents (plural).
+// The core delegateSubAgentCore function remains - used by delegateSubAgentsCore.
+
 // ---------------------------------------------------------------------------
-// Wrapped handler (no consent - artifacts/active/ is a safe workspace)
+// delegate_sub_agents tool and schema
 // ---------------------------------------------------------------------------
-export const delegate_sub_agent = createToolHandler(
-    "delegate_sub_agent",
-    delegateSubAgentCore,
+export const delegate_sub_agents_schema = {
+    type: "function",
+    function: {
+        name: "delegate_sub_agents",
+        description:
+            "Delegates multiple independent tasks to multiple sub-agents concurrently. " +
+            "Use this when you have several tasks that can be performed in parallel (e.g. independent modules, " +
+            "different parts of a plan that have no dependencies on each other).",
+        parameters: {
+            type: "object",
+            properties: {
+                delegations: {
+                    type: "array",
+                    description: "List of sub-agent task delegations to run in parallel.",
+                    items: {
+                        type: "object",
+                        properties: {
+                            sub_agent_name: {
+                                type: "string",
+                                description: "Unique, descriptive name for this sub-agent (PascalCase).",
+                            },
+                            definition_of_done: {
+                                type: "string",
+                                description: "Concrete, verifiable Definition of Done in one sentence.",
+                            },
+                            deliverable: {
+                                type: "string",
+                                description: "Clear description of the expected output format and location.",
+                            },
+                            role: {
+                                type: "string",
+                                enum: ["execution"],
+                                description: "The sub-agent's role (determines tools and prompt).",
+                            },
+                            context: {
+                                type: "string",
+                                description: "Background info, code references, relevant paths. Max 500 words.",
+                            },
+                            budget_iterations: {
+                                type: "integer",
+                                description: "Maximum iterations the sub-agent may use.",
+                            },
+                            max_wall_time_seconds: {
+                                type: "integer",
+                                description: "Maximum wall-clock execution time in seconds. Defaults to 300.",
+                            },
+                            self_contained: {
+                                type: "boolean",
+                                description: "Set to true if deliverable is a file write with no verification needed.",
+                            },
+                            output_file: {
+                                type: "string",
+                                description: "Custom filename under artifacts/active/. Must end with .md.",
+                            },
+                        },
+                        required: ["sub_agent_name", "definition_of_done", "deliverable", "role"],
+                    },
+                },
+            },
+            required: ["delegations"],
+        },
+    },
+};
+
+async function delegateSubAgentsCore({ delegations }) {
+    if (!Array.isArray(delegations) || delegations.length === 0) {
+        return JSON.stringify({ error: true, message: "No delegations provided." });
+    }
+    const results = await Promise.all(
+        delegations.map(async (d) => {
+            try {
+                const resStr = await delegateSubAgentCore(d);
+                return JSON.parse(resStr);
+            } catch (err) {
+                return {
+                    error: true,
+                    sub_agent_name: d.sub_agent_name,
+                    message: err.message || String(err),
+                };
+            }
+        })
+    );
+    return JSON.stringify(results);
+}
+
+export const delegate_sub_agents = createToolHandler(
+    "delegate_sub_agents",
+    delegateSubAgentsCore,
     false
 );
+

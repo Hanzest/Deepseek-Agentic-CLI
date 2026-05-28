@@ -1,10 +1,10 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createToolHandler } from "./template.js";
 import { ask } from "../lib/cliInput.js";
 import { readFileUtf8Normalized } from "../lib/fileReader.js";
-import { isPlanFile, archiveActiveToHistory, extractTaskName, timestampedFilename, ACTIVE_DIR } from "../lib/artifactManager.js";
+import { isPlanFile, archiveActiveToHistory, extractTaskName, timestampedFilename, ACTIVE_DIR, validatePlanContent } from "../lib/artifactManager.js";
 import { C, colorize } from "../lib/colors.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -210,6 +210,15 @@ async function writeOrCreateFileCore({
                 "'" + actual_path + "' (lines " + start_line +
                 "-" + end_line + ", " + size + " bytes)\x1b[0m"
             );
+
+            let warning = undefined;
+            if (isPlanFile(actual_path)) {
+                const missing = validatePlanContent(newContent);
+                if (missing.length > 0) {
+                    warning = `Plan Validation Warning: The plan was updated but is missing the following required sections: ${missing.join(", ")}. Please update the plan file to include them.`;
+                    console.log(colorize(`\n[Plan Validation Warning] ${warning}`, C.warning));
+                }
+            }
             return JSON.stringify({
                 success: true,
                 tool: "write_or_create_file",
@@ -218,6 +227,7 @@ async function writeOrCreateFileCore({
                 mode: "line_range",
                 start_line,
                 end_line,
+                warning,
             });
         } catch (e) {
             const error_msg =
@@ -236,12 +246,23 @@ async function writeOrCreateFileCore({
         console.log(
             '\x1b[32m' + action + " '" + actual_path + "' (" + size + " bytes)\x1b[0m"
         );
+
+        let warning = undefined;
+        if (isPlanFile(actual_path)) {
+            const fileContent = fs.readFileSync(actual_path, "utf-8");
+            const missing = validatePlanContent(fileContent);
+            if (missing.length > 0) {
+                warning = `Plan Validation Warning: The plan was written but is missing the following required sections: ${missing.join(", ")}. Please update the plan file to include them.`;
+                console.log(colorize(`\n[Plan Validation Warning] ${warning}`, C.warning));
+            }
+        }
         return JSON.stringify({
             success: true,
             tool: "write_or_create_file",
             file_path: actual_path,
             bytes_written: size,
             mode,
+            warning,
         });
     } catch (e) {
         const error_msg =

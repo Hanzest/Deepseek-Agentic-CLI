@@ -1,93 +1,105 @@
 import { describe, it, expect } from "vitest";
-import { delegate_sub_agent_schema } from "../../tools/delegateSubAgent.js";
+import { delegate_sub_agents_schema } from "../../tools/delegateSubAgent.js";
 
 // ---------------------------------------------------------------------------
-// Schema validation only (per user preference: delegateSubAgent too complex
-// to test in isolation - schema checks ensure the tool interface is stable)
+// Schema validation for delegate_sub_agents (plural)
+// Validates the array-item delegation schema structure and types.
 // ---------------------------------------------------------------------------
 
-describe("delegateSubAgent - Reliability / Schema Validation", () => {
+describe("delegateSubAgents - Reliability / Schema Validation", () => {
   // -----------------------------------------------------------------------
   // Top-level structure
   // -----------------------------------------------------------------------
   it("has top-level type 'function'", () => {
-    expect(delegate_sub_agent_schema.type).toBe("function");
+    expect(delegate_sub_agents_schema.type).toBe("function");
   });
 
-  it("has function.name 'delegate_sub_agent'", () => {
-    expect(delegate_sub_agent_schema.function.name).toBe("delegate_sub_agent");
+  it("has function.name 'delegate_sub_agents'", () => {
+    expect(delegate_sub_agents_schema.function.name).toBe("delegate_sub_agents");
   });
 
   it("has a description string", () => {
-    expect(typeof delegate_sub_agent_schema.function.description).toBe("string");
-    expect(delegate_sub_agent_schema.function.description.length).toBeGreaterThan(10);
+    expect(typeof delegate_sub_agents_schema.function.description).toBe("string");
+    expect(delegate_sub_agents_schema.function.description.length).toBeGreaterThan(10);
   });
 
   // -----------------------------------------------------------------------
-  // Required fields
+  // Root-level required field
   // -----------------------------------------------------------------------
-  it("requires sub_agent_name", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("sub_agent_name");
+  it("requires delegations at root level", () => {
+    expect(delegate_sub_agents_schema.function.parameters.required).toContain("delegations");
   });
 
-  it("requires definition_of_done", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("definition_of_done");
+  // -----------------------------------------------------------------------
+  // Delegation item fields - required
+  // -----------------------------------------------------------------------
+  const itemProps = delegate_sub_agents_schema.function.parameters.properties.delegations.items.properties;
+  const itemRequired = delegate_sub_agents_schema.function.parameters.properties.delegations.items.required;
+
+  it("requires sub_agent_name in items", () => {
+    expect(itemRequired).toContain("sub_agent_name");
   });
 
-  it("requires role", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("role");
+  it("requires definition_of_done in items", () => {
+    expect(itemRequired).toContain("definition_of_done");
   });
 
-  it("requires deliverable", () => {
-    expect(delegate_sub_agent_schema.function.parameters.required).toContain("deliverable");
+  it("requires role in items", () => {
+    expect(itemRequired).toContain("role");
+  });
+
+  it("requires deliverable in items", () => {
+    expect(itemRequired).toContain("deliverable");
   });
 
   // -----------------------------------------------------------------------
   // Parameter types
   // -----------------------------------------------------------------------
-  const props = delegate_sub_agent_schema.function.parameters.properties;
-
   it("sub_agent_name is type string", () => {
-    expect(props.sub_agent_name.type).toBe("string");
+    expect(itemProps.sub_agent_name.type).toBe("string");
   });
 
   it("definition_of_done is type string", () => {
-    expect(props.definition_of_done.type).toBe("string");
+    expect(itemProps.definition_of_done.type).toBe("string");
   });
 
   it("role is type string", () => {
-    expect(props.role.type).toBe("string");
+    expect(itemProps.role.type).toBe("string");
   });
 
   it("deliverable is type string", () => {
-    expect(props.deliverable.type).toBe("string");
+    expect(itemProps.deliverable.type).toBe("string");
   });
 
   it("context is type string", () => {
-    expect(props.context.type).toBe("string");
+    expect(itemProps.context.type).toBe("string");
   });
 
   it("self_contained is type boolean", () => {
-    expect(props.self_contained.type).toBe("boolean");
+    expect(itemProps.self_contained.type).toBe("boolean");
   });
 
   it("budget_iterations is type integer", () => {
-    expect(props.budget_iterations.type).toBe("integer");
+    expect(itemProps.budget_iterations.type).toBe("integer");
+  });
+
+  it("max_wall_time_seconds is type integer", () => {
+    expect(itemProps.max_wall_time_seconds.type).toBe("integer");
   });
 
   // -----------------------------------------------------------------------
   // Enum values
   // -----------------------------------------------------------------------
   it("role has correct enum values", () => {
-    expect(props.role.enum).toEqual(["execution"]);
+    expect(itemProps.role.enum).toEqual(["execution"]);
   });
 
   // -----------------------------------------------------------------------
-  // output_file pattern
+  // output_file description
   // -----------------------------------------------------------------------
-  it("output_file has pattern restriction", () => {
-    expect(props.output_file.type).toBe("string");
-    expect(typeof props.output_file.description).toBe("string");
-    expect(props.output_file.description).toContain(".md");
+  it("output_file has description referencing .md", () => {
+    expect(itemProps.output_file.type).toBe("string");
+    expect(typeof itemProps.output_file.description).toBe("string");
+    expect(itemProps.output_file.description).toContain(".md");
   });
 });
