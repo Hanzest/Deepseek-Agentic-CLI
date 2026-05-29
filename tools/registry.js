@@ -54,7 +54,7 @@ export const ALL_TOOLS = {
     patch_file: [patch_file_schema, patch_file],
     read_file_chunk: [read_file_chunk_schema, read_file_chunk],
     get_project_tree: [get_project_tree_schema, get_project_tree],
-    search_web: [search_web_schema, search_web],
+    // search_web: [search_web_schema, search_web],
     fetch_url: [fetch_url_schema, fetch_url],
     ask_user_preferences: [ask_user_preferences_schema, ask_user_preferences],
     write_or_create_file: [write_or_create_file_schema, write_or_create_file],
@@ -74,7 +74,7 @@ export const ORCHESTRATOR_TOOLS = {
     execute_terminal_command: [execute_terminal_command_schema, execute_terminal_command, true],
     patch_file: [patch_file_schema, patch_file, false],
     write_or_create_file: [write_or_create_file_schema, write_or_create_file, false],
-    search_web: [search_web_schema, search_web, false],
+    // search_web: [search_web_schema, search_web, false],
     fetch_url: [fetch_url_schema, fetch_url, false],
     delegate_sub_agents: [delegate_sub_agents_schema, delegate_sub_agents, false],
 };

@@ -72,7 +72,7 @@ export const fetch_url_schema = {
                 },
                 timeout_seconds: {
                     type: "integer",
-                    description: "Request timeout in seconds per URL. Defaults to 15.",
+                    description: "Request timeout in seconds per URL. Defaults to 3.",
                 },
                 max_chars: {
                     type: "integer",
@@ -92,7 +92,7 @@ export const fetch_url_schema = {
                     type: "boolean",
                     description:
                         "When true and primary fetch is blocked (403/timeout), " +
-                        "automatically retry via Wayback Machine or Google Cache. Default: false.",
+                        "automatically retry via Wayback Machine archive. Default: false.",
                 },
             },
             oneOf: [{ required: ["url"] }, { required: ["urls"] }],
@@ -104,12 +104,52 @@ export const fetch_url_schema = {
 // Archive fallback helpers
 // ---------------------------------------------------------------------------
 
+function getUrlSource(url) {
+    try {
+        const parsed = new URL(url);
+        const parts = parsed.hostname.split('.');
+        if (parts.length >= 2) {
+            return parts[parts.length - 2];
+        }
+        return parsed.hostname;
+    } catch {
+        return url;
+    }
+}
+
+async function checkWaybackAvailability(url, timeout_seconds) {
+    const apiUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(url)}`;
+    try {
+        const controller = new AbortController();
+        const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
+        const response = await fetch(apiUrl, {
+            signal: controller.signal,
+        });
+        clearTimeout(timeout_id);
+        if (!response.ok) return null;
+        const data = await response.json();
+        const closest = data?.archived_snapshots?.closest;
+        if (closest && closest.available && closest.url) {
+            return {
+                url: closest.url,
+                timestamp: closest.timestamp,
+            };
+        }
+    } catch {
+        // Fallback or ignore
+    }
+    return null;
+}
+
 /**
  * Fetch a URL via Wayback Machine.
  * Returns null if unavailable.
  */
 async function fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
-    const waybackUrl = `https://web.archive.org/web/${url}`;
+    const availability = await checkWaybackAvailability(url, timeout_seconds);
+    if (!availability) return null;
+
+    const waybackUrl = availability.url;
     try {
         const controller = new AbortController();
         const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
@@ -122,9 +162,7 @@ async function fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, b
 
         if (!response.ok) return null;
 
-        const finalUrl = response.url || "";
-        const timestampMatch = finalUrl.match(/\/web\/(\d{14})\//);
-        const timestamp = timestampMatch ? timestampMatch[1] : null;
+        const timestamp = availability.timestamp || null;
         let age_years = null;
         if (timestamp) {
             const year = parseInt(timestamp.substring(0, 4), 10);
@@ -176,72 +214,13 @@ async function fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, b
 }
 
 /**
- * Fetch a URL via Google Cache.
- * Returns null if unavailable.
- */
-async function fetchViaGoogleCache(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
-    const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}`;
-    try {
-        const controller = new AbortController();
-        const timeout_id = setTimeout(() => controller.abort(), timeout_seconds * 1000);
-        const response = await fetch(cacheUrl, {
-            headers: buildHeadersFn(),
-            redirect: "follow",
-            signal: controller.signal,
-        });
-        clearTimeout(timeout_id);
-
-        if (!response.ok) return null;
-
-        const html = await response.text();
-        const $ = cheerio(html);
-
-        // Remove unwanted elements
-        $("script, style, nav, footer, header, aside, noscript").remove();
-
-        let main_content =
-            $("main").first() ||
-            $("article").first() ||
-            $("div.content").first() ||
-            $("#content").first() ||
-            $("body").first();
-        if (!main_content || main_content.length === 0) {
-            main_content = $("body").first();
-        }
-        if (!main_content || main_content.length === 0) {
-            main_content = $.root();
-        }
-
-        const main_html = main_content.html() || main_content.text() || "";
-        let markdown_text;
-        try {
-            const turndownService = new TurndownService({ headingStyle: "atx" });
-            markdown_text = turndownService.turndown(main_html);
-        } catch {
-            markdown_text = (main_content.text() || "").replace(/\n{3,}/g, "\n\n").trim();
-        }
-
-        markdown_text = markdown_text.replace(/\n{3,}/g, "\n\n").trim();
-
-        return { content: markdown_text, source: "google_cache" };
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Orchestrate fallback: try Wayback first, then Google Cache.
+ * Orchestrate fallback: try Wayback Machine.
  * Returns the best available result or null.
  */
 async function fallbackOrchestrator(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn) {
     const waybackResult = await fetchViaWayback(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn);
     if (waybackResult) {
         return { ...waybackResult, _fallback_note: "Retrieved from Wayback Machine archive." };
-    }
-
-    const cacheResult = await fetchViaGoogleCache(url, timeout_seconds, cheerio, TurndownService, buildHeadersFn);
-    if (cacheResult) {
-        return { ...cacheResult, _fallback_note: "Retrieved from Google Cache." };
     }
 
     return null;
@@ -276,6 +255,7 @@ async function fetchSingleUrl(
                 const { ProxyAgent } = await import("undici");
                 fetchOptions.dispatcher = new ProxyAgent(proxy_url);
             } catch (e) {
+                const sourceName = getUrlSource(url);
                 return {
                     url,
                     error: true,
@@ -283,6 +263,8 @@ async function fetchSingleUrl(
                     block_signal: "proxy_error",
                     message: `ProxyAgent failed: ${e.message}. Requires Node.js 18+.`,
                     fetched_at,
+                    data_unavailable_marker: `[DATA_UNAVAILABLE: source=${sourceName}, error=proxy_error]`,
+                    content: `[DATA_UNAVAILABLE: source=${sourceName}, error=proxy_error]`
                 };
             }
         }
@@ -298,6 +280,7 @@ async function fetchSingleUrl(
 
             // Determine if this is a "blocked" scenario (403)
             const isBlocked = status_code === 403;
+            const sourceName = getUrlSource(url);
             const result = {
                 url,
                 error: true,
@@ -305,6 +288,8 @@ async function fetchSingleUrl(
                 fetched_at,
                 blocked: isBlocked,
                 status_code,
+                data_unavailable_marker: `[DATA_UNAVAILABLE: source=${sourceName}, error=${status_code}]`,
+                content: `[DATA_UNAVAILABLE: source=${sourceName}, error=${status_code}]`
             };
             if (isBlocked) {
                 result.block_signal = "403";
@@ -325,6 +310,11 @@ async function fetchSingleUrl(
                         _fallback_note: fallback._fallback_note,
                         blocked: false,
                     };
+                } else {
+                    const fallback_failed_msg = `${msg} (Wayback Machine fallback failed: no archive snapshot found)`;
+                    result.message = fallback_failed_msg;
+                    result.data_unavailable_marker = `[DATA_UNAVAILABLE: source=${sourceName}, error=${status_code}_fallback_failed]`;
+                    result.content = `[DATA_UNAVAILABLE: source=${sourceName}, error=${status_code}_fallback_failed]`;
                 }
             }
 
@@ -411,6 +401,7 @@ async function fetchSingleUrl(
             status_code,
         };
     } catch (e) {
+        const sourceName = getUrlSource(url);
         if (e.name === "AbortError") {
             const msg = `Request timed out after ${timeout_seconds} seconds.`;
             console.log(`\x1b[91m[Fetch Timeout] ${url.substring(0, 100)}: ${msg}\x1b[0m`);
@@ -422,6 +413,8 @@ async function fetchSingleUrl(
                 blocked: true,
                 block_signal: "timeout",
                 status_code: 0,
+                data_unavailable_marker: `[DATA_UNAVAILABLE: source=${sourceName}, error=timeout]`,
+                content: `[DATA_UNAVAILABLE: source=${sourceName}, error=timeout]`
             };
 
             // Archived fallback for timeouts
@@ -439,6 +432,11 @@ async function fetchSingleUrl(
                         _fallback_note: fallback._fallback_note,
                         blocked: false,
                     };
+                } else {
+                    const fallback_failed_msg = `${msg} (Wayback Machine fallback failed: no archive snapshot found)`;
+                    result.message = fallback_failed_msg;
+                    result.data_unavailable_marker = `[DATA_UNAVAILABLE: source=${sourceName}, error=timeout_fallback_failed]`;
+                    result.content = `[DATA_UNAVAILABLE: source=${sourceName}, error=timeout_fallback_failed]`;
                 }
             }
 
@@ -454,6 +452,8 @@ async function fetchSingleUrl(
             blocked: true,
             block_signal: "fetch_failed",
             status_code: 0,
+            data_unavailable_marker: `[DATA_UNAVAILABLE: source=${sourceName}, error=fetch_failed]`,
+            content: `[DATA_UNAVAILABLE: source=${sourceName}, error=fetch_failed]`
         };
 
         // Archived fallback for generic fetch failures
@@ -471,6 +471,11 @@ async function fetchSingleUrl(
                     _fallback_note: fallback._fallback_note,
                     blocked: false,
                 };
+            } else {
+                const fallback_failed_msg = `${msg} (Wayback Machine fallback failed: no archive snapshot found)`;
+                result.message = fallback_failed_msg;
+                result.data_unavailable_marker = `[DATA_UNAVAILABLE: source=${sourceName}, error=fetch_failed_fallback_failed]`;
+                result.content = `[DATA_UNAVAILABLE: source=${sourceName}, error=fetch_failed_fallback_failed]`;
             }
         }
 
@@ -484,7 +489,7 @@ async function fetchSingleUrl(
 async function fetchUrlCore({
     url,
     urls,
-    timeout_seconds = 15,
+    timeout_seconds = 3,
     max_chars = 8000,
     proxy_url,
     allow_archived_fallback = false,
@@ -508,7 +513,7 @@ async function fetchUrlCore({
     }
 
     // Determine URL list
-    let urlList = [];
+    let urlList;
     if (urls && Array.isArray(urls) && urls.length > 0) {
         urlList = [...urls];
         if (url) urlList.push(url); // append single url if also provided

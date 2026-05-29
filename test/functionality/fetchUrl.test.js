@@ -17,7 +17,7 @@ describe("fetchUrl functionality - real network calls", () => {
     async () => {
       const result = await fetch_url({
         url: "https://example.com/",
-        max_chars: 2000,
+        max_chars: 1235,
       });
 
       const parsed =
@@ -102,7 +102,7 @@ describe("fetchUrl functionality - real network calls", () => {
     async () => {
       const result = await fetch_url({
         url: "https://example.com/",
-        max_chars: 2000,
+        max_chars: 1235,
       });
 
       const parsed =
@@ -243,4 +243,30 @@ describe("fetchUrl anti-block features", () => {
     expect(parsed.blocked).toBe(false);
     expect(parsed.source).toBe("direct");
   });
+
+  it("Fallback failed returns specific error message", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: "Forbidden",
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+
+    const result = await fetch_url({
+      url: "https://example.com/",
+      allow_archived_fallback: true,
+    });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+
+    expect(parsed.error).toBe(true);
+    expect(parsed.blocked).toBe(true);
+    expect(parsed.message).toContain("Wayback Machine fallback failed: no archive snapshot found");
+    expect(parsed.content).toContain("403_fallback_failed");
+  });
 });
+

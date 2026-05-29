@@ -120,25 +120,40 @@ describe("fetchUrl anti-block reliability", () => {
   });
 
   it("Archive fallback returns content with age warning when snapshot is >=5yrs old", async () => {
-    // First call (primary fetch) returns 403
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        statusText: "Forbidden",
-      })
-      // Second call (Wayback archive) returns 200 with an old snapshot URL
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        url: "https://web.archive.org/web/20180101000000/http://example.com",
-        text: async () => '<html><body><h1>Archived Content</h1></body></html>',
-      });
+    global.fetch = vi.fn().mockImplementation(async (url) => {
+      if (url.includes("archive.org/wayback/available")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            archived_snapshots: {
+              closest: {
+                available: true,
+                url: "https://web.archive.org/web/20180101000000/http://example.com",
+                timestamp: "20180101000000",
+              },
+            },
+          }),
+        };
+      } else if (url.includes("web.archive.org")) {
+        return {
+          ok: true,
+          status: 200,
+          url: "https://web.archive.org/web/20180101000000/http://example.com",
+          text: async () => '<html><body><h1>Archived Content</h1></body></html>',
+        };
+      } else {
+        return {
+          ok: false,
+          status: 403,
+          statusText: "Forbidden",
+        };
+      }
+    });
 
     const result = await fetch_url({
       url: "https://example.com/",
-      max_chars: 2000,
+      max_chars: 1235,
       allow_archived_fallback: true,
     });
     const parsed = typeof result === "string" ? JSON.parse(result) : result;
@@ -150,23 +165,40 @@ describe("fetchUrl anti-block reliability", () => {
   });
 
   it("Recent archive (no caution banner)", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        statusText: "Forbidden",
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        url: "https://web.archive.org/web/20250101000000/http://example.com",
-        text: async () => '<html><body><h1>Recent Content</h1></body></html>',
-      });
+    global.fetch = vi.fn().mockImplementation(async (url) => {
+      if (url.includes("archive.org/wayback/available")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            archived_snapshots: {
+              closest: {
+                available: true,
+                url: "https://web.archive.org/web/20250101000000/http://example.com",
+                timestamp: "20250101000000",
+              },
+            },
+          }),
+        };
+      } else if (url.includes("web.archive.org")) {
+        return {
+          ok: true,
+          status: 200,
+          url: "https://web.archive.org/web/20250101000000/http://example.com",
+          text: async () => '<html><body><h1>Recent Content</h1></body></html>',
+        };
+      } else {
+        return {
+          ok: false,
+          status: 403,
+          statusText: "Forbidden",
+        };
+      }
+    });
 
     const result = await fetch_url({
       url: "https://example.com/",
-      max_chars: 2000,
+      max_chars: 1235,
       allow_archived_fallback: true,
     });
     const parsed = typeof result === "string" ? JSON.parse(result) : result;
@@ -174,6 +206,24 @@ describe("fetchUrl anti-block reliability", () => {
     expect(parsed.blocked).toBe(false);
     expect(parsed.source).toBe("wayback");
     expect(parsed.content).not.toContain("Caution");
+  });
+
+  it("403 returns structured block warning content and data_unavailable_marker", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: "Forbidden",
+    });
+
+    const result = await fetch_url({ url: "https://example.com/" });
+    const parsed = typeof result === "string" ? JSON.parse(result) : result;
+
+    expect(parsed.blocked).toBe(true);
+    expect(parsed.block_signal).toBe("403");
+    expect(parsed.status_code).toBe(403);
+    expect(parsed.error).toBe(true);
+    expect(parsed.data_unavailable_marker).toBe("[DATA_UNAVAILABLE: source=example, error=403]");
+    expect(parsed.content).toBe("[DATA_UNAVAILABLE: source=example, error=403]");
   });
 
   it("Proxy error returns proxy_error signal", async () => {
@@ -192,6 +242,8 @@ describe("fetchUrl anti-block reliability", () => {
     expect(parsed.blocked).toBe(true);
     expect(parsed.block_signal).toBe("proxy_error");
     expect(parsed.error).toBe(true);
+    expect(parsed.data_unavailable_marker).toBe("[DATA_UNAVAILABLE: source=example, error=proxy_error]");
+    expect(parsed.content).toBe("[DATA_UNAVAILABLE: source=example, error=proxy_error]");
   });
 
   it("Fallback disabled when allow_archived_fallback is false (default)", async () => {
