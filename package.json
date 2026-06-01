@@ -23,7 +23,8 @@
     "test:functionality": "vitest run --dir test/functionality",
     "test:unit": "vitest run --grep-invert '@network'",
     "test:network": "vitest run --grep '@network'",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev": "node main.js"
   },
   "vitest": {
     "setupFiles": [

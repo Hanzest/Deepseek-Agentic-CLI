@@ -136,7 +136,7 @@ The model has access to the following **10 tools**. Tools that modify the system
 | `search_web` | Search the web via DuckDuckGo | ❌ No |
 | `fetch_url` | Fetch a URL and extract clean Markdown content | ✅ Yes |
 | `ask_user_preferences` | Ask the user a series of preference questions | ❌ No |
-| `write_or_create_file` | Write or create files, with optional parent directory creation | ✅ Yes |
+| `write_or_create_file` | Write or create files, with optional parent directory creation | ❌ No |
 | `multi_file_search_string` | Search for a string across multiple files with glob support | ❌ No |
 | `delegate_sub_agents` | Delegate 1..N sub-tasks to specialised sub-agents concurrently in isolated terminals | ❌ No |
 

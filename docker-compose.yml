@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    secrets:
+      - app_env
+
+secrets:
+  app_env:
+    file: .env
