@@ -47,6 +47,59 @@ function isSafePlanModeCommand(command) {
 const W = 56; // separator width
 
 /**
+ * Attempts to repair a truncated JSON string by closing unterminated strings
+ * and balancing braces/brackets. Returns repaired JSON or null if irreparable.
+ */
+function repairTruncatedJSON(rawArgs) {
+    try {
+        let repaired = rawArgs;
+
+        // 1. Close unterminated string values: find the last occurrence of ":
+        //    (colon followed by opening quote) and close the string if it was
+        //    not properly terminated.
+        const lastColonQuote = repaired.lastIndexOf('": "');
+        if (lastColonQuote !== -1) {
+            const afterColonQuote = repaired.substring(lastColonQuote + 4);
+            // If there are no more closing quotes after this point (except possibly
+            // at the very end), the string value is unterminated
+            const remainingQuotes = afterColonQuote.match(/"/g);
+            if (!remainingQuotes || remainingQuotes.length === 0) {
+                repaired = repaired + '"';
+            }
+        }
+
+        // 2. Balance braces
+        let openBraces = 0;
+        let openBrackets = 0;
+        let inString = false;
+        let escapeNext = false;
+        for (const ch of repaired) {
+            if (escapeNext) { escapeNext = false; continue; }
+            if (ch === '\\') { escapeNext = true; continue; }
+            if (ch === '"') { inString = !inString; continue; }
+            if (inString) continue;
+            if (ch === '{') openBraces++;
+            if (ch === '}') openBraces--;
+            if (ch === '[') openBrackets++;
+            if (ch === ']') openBrackets--;
+        }
+        // Close any unclosed string at the end (brace/bracket counting may be
+        // off if string was unterminated)
+        if (inString) repaired = repaired + '"';
+
+        // Append missing closing braces/brackets
+        repaired = repaired + '}'.repeat(Math.max(0, openBraces));
+        repaired = repaired + ']'.repeat(Math.max(0, openBrackets));
+
+        // 3. Try parsing
+        const args = JSON.parse(repaired);
+        return args;
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
  * Parse a tool call object. Returns { name, args, parseError }.
  * If JSON parsing fails, parseError is set and args is null.
  */
@@ -61,6 +114,18 @@ function parseToolCall(tc) {
         const args = JSON.parse(rawArgs);
         return { name, args, parseError: null };
     } catch (e) {
+        // Attempt auto-repair for truncated/malformed JSON (e.g. large file writes)
+        const repaired = repairTruncatedJSON(tc.function.arguments.trim()
+            .replace(/^```(?:json)?\s*\n?/i, '')
+            .replace(/\n?\s*```\s*$/, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, ''));
+        if (repaired) {
+            console.warn(colorize(
+                `[Auto-Repair] Arguments for '${name}' were truncated/malformed. JSON was auto-repaired (content beyond truncation point is lost).`,
+                C.warning
+            ));
+            return { name, args: repaired, parseError: null };
+        }
         console.error(colorize(`Error parsing arguments for tool '${name}':`, C.error), e);
         return { name, args: null, parseError: e.message || String(e) };
     }

@@ -28,6 +28,9 @@ export const write_or_create_file_schema = {
             "end_line are provided, only that line range is overwritten " +
             "with the given content. Use this as the primary tool for " +
             "creating new files or writing complete file contents. " +
+            "For large files (~>4000 tokens), use multiple calls with " +
+            "mode: 'append' to build content incrementally, or provide " +
+            "content_file to reference an existing file on disk. " +
             "Security: refuses to write to .env files.",
         parameters: {
             type: "object",
@@ -40,7 +43,19 @@ export const write_or_create_file_schema = {
                 content: {
                     type: "string",
                     description:
-                        "The full content to write to the file.",
+                        "The full content to write to the file. " +
+                        "Omit if content_file is provided instead.",
+                },
+                content_file: {
+                    type: "string",
+                    description:
+                        "Path to an existing file whose content will be " +
+                        "read and used as the write content. Use this as " +
+                        "an alternative to 'content' when the content is " +
+                        "too large to pass inline (~>4000 tokens). The " +
+                        "referenced file must already exist on disk. When " +
+                        "both content and content_file are provided, " +
+                        "content_file takes precedence.",
                 },
                 create_parents: {
                     type: "boolean",
@@ -67,12 +82,12 @@ export const write_or_create_file_schema = {
                     type: "integer",
                     description:
                         "End line number (1-indexed) for line-range " +
-                        "overwrite. Must be used together with start_line. " +
+                        "overwrite. Must be used together with end_line. " +
                         "When provided, the content replaces lines " +
                         "start_line through end_line.",
                 },
             },
-            required: ["file_path", "content"],
+            required: ["file_path"],
         },
     },
 };
@@ -83,11 +98,38 @@ export const write_or_create_file_schema = {
 async function writeOrCreateFileCore({
     file_path,
     content,
+    content_file,
     create_parents = true,
     mode = "write",
     start_line,
     end_line,
 }) {
+    // ---- Resolve content: content_file takes precedence over content ----
+    if (content_file) {
+        if (content) {
+            console.log(
+                '\x1b[90m[write_or_create_file] Both content and content_file provided; content_file takes precedence.\x1b[0m'
+            );
+        }
+        const resolvedContentPath = path.resolve(content_file);
+        try {
+            content = readFileUtf8Normalized(resolvedContentPath);
+        } catch (e) {
+            const error_msg =
+                "Error reading content_file '" + resolvedContentPath + "': " + e.message;
+            console.log('\x1b[91m' + error_msg + '\x1b[0m');
+            return error_msg;
+        }
+    }
+
+    // ---- Validate at least one content source ----
+    if (content === undefined || content === null) {
+        const error_msg =
+            "Error: Either 'content' or 'content_file' must be provided.";
+        console.log('\x1b[91m' + error_msg + '\x1b[0m');
+        return error_msg;
+    }
+
     const resolved_path = path.resolve(file_path);
 
     // ---- Security: block .env files (exact basename check) ----
