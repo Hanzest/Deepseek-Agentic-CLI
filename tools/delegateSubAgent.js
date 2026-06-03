@@ -339,8 +339,11 @@ async function delegateSubAgentCore({
     const perCallInput = result.inputTokens || 0;
     const accOutput = result.accumulatedOutputTokens || 0;
     const msgCount = result.messages ? result.messages.length : 0;
+    // Cache miss applies to the last call (fresh context), input_rate to all PREVIOUS calls.
+    // Subtract perCallInput from accInput to avoid double-counting the last call.
+    const previousInput = Math.max(0, accInput - perCallInput);
     const estCost = (perCallInput / 1_000_000) * rates.cache_miss
-        + (accInput / 1_000_000) * rates.input
+        + (previousInput / 1_000_000) * rates.input
         + (accOutput / 1_000_000) * rates.output;
 
     if (!SessionContext.currentTurnSubAgents) {
