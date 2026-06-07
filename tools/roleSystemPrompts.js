@@ -46,7 +46,7 @@ export const ROLE_SYSTEM_PROMPT = [
       "patch_file",
       "read_file_chunk",
       "get_project_tree",
-      "search_web",
+      // "search_web",
       "fetch_url",
       "ask_user_preferences",
       "write_or_create_file",

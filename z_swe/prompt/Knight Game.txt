@@ -11,13 +11,19 @@ Monster based stats: HP = 10, Armor = 0, Stamina = 100, Mana = 10, Base Damage =
 Damage to be dealt = (Base Damage + Weapon Damage).
 After every round, the player can: buy new armor or weapon
 (there are 4 piece of armors of the same tier: helmet, chestplate, leggings, and boots,
-only when user buy all 4 armor, the shop will renew with the next tier both armor and weapon),
+only when user buy all 4 armor, the shop will renew with the next tier both armor and weapon.
+Armor and weapon have infinite tier. Price for higher tier must be calculated exponentially),
 upgrade their stats (upgrade on level up 5 skill points, getting XP via win against the monster, specifically include:
-strength (+ base damage), dexterity (+ critical chance (x2 damage), increase hit chance),
-agility (increase dodge chance), intelligence (+ Mana, increase Stamina and Mana heal when Calm action),
-defense (+ Health)), proceed next round. All monsters stats are based on the skill points,
+strength (+ base damage. The more strength, the more stamina waste when trigger `Attack` action. when
+Stamin runs out, the user is forced to perform `Calm` with clear message), dexterity (+ critical chance
+(x2 damage), increase hit chance), agility (increase dodge chance), intelligence (+ Mana, increase Stamina and Mana heal
+when Calm action), defense (+ Health)), proceed next round.
+All monsters stats are based on the skill points,
 for every round, monster have +2 more skill points. On level % 10 == 2, monster has full strength,
 == 4 has full dexterity, == 6 has full agility, == 8 has full defense, == 10 has full Intelligence.
+After every 10 rounds, the base stats of monster will increase by 20%, and armor will also increase +20.
+Armor mechanism: similar to Health, will decrease when enemy attacks. When armor runs out, health will decrease.
+Magical attack bypassed armor.
 The mana can be used by both Human and Monster as follows:
 1. Lightning Stunt enemy for 1 turn, cost 80% of max mana, damage = 20% of mana used.
 2. Contaminate Poison enemy for the rest of turn, cost 80% of max mana, damage = 2% of mana used every human turn.

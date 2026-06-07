@@ -310,7 +310,7 @@ Hyperparameters are defined in `lib/orchestrator.js` under the `HYPERPARAMETERS`
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `token_limit` | 200000 | Maximum tokens per request |
+| `token_limit` | 300000 | Maximum tokens per request |
 | `token_multiplier` | 1.5 | Fallback multiplier for heuristic token estimation |
 | `stream` | `true` | Enable streaming responses |
 | `reasoning_effort` | `"high"` | Reasoning effort level (when thinking is enabled) |
