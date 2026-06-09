@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { MarkdownRenderer, BOLD_START, BOLD_END } from "../../lib/markdownFormatter.js";
+import { MarkdownRenderer, BOLD_START, BOLD_END, RESET } from "../../lib/markdownFormatter.js";
+
+// ANSI codes for the new formatting features (mirrors constants in markdownFormatter.js)
+const CYAN = "\x1b[36m";
+const YELLOW = "\x1b[33m";
+const WHITE = "\x1b[37m";
+const DIM = "\x1b[2;37m";
+const BRIGHT_WHITE = "\x1b[1;97m";
+const ITALIC_START = "\x1b[3m";
+const ITALIC_END = "\x1b[23m";
 
 // Helper to strip ANSI codes for readability in test diffs
 function stripAnsi(str) {
@@ -854,6 +863,28 @@ describe("MarkdownRenderer", () => {
             expect(boldStarts.length).toBeGreaterThanOrEqual(3);
         });
 
+        it("renders inline code with cyan inside table cells", () => {
+            const input = "| Command | Description |\n| --- | --- |\n| `npm install` | Installs **packages** |\n| `git commit` | Saves **changes** |\n";
+            const result = renderFull(input);
+            const stripped = stripAnsi(result);
+
+            // Inline code should be cyan-wrapped
+            expect(result).toContain(CYAN + "npm install" + RESET);
+            expect(result).toContain(CYAN + "git commit" + RESET);
+
+            // Bold should still work alongside inline code
+            expect(result).toContain(BOLD_START + "packages" + BOLD_END);
+            expect(result).toContain(BOLD_START + "changes" + BOLD_END);
+
+            // No raw backticks should remain in the output
+            expect(stripped).not.toContain("`");
+
+            // Box-drawing characters should be present
+            expect(result).toContain(BOX.tl);
+            expect(result).toContain(BOX.bl);
+            expect(result).toContain(BOX.v);
+        });
+
         it("handles table without a header row (separator first)", () => {
             const input = "| --- | --- |\n| Data | 42 |\n| More | 17 |\n";
             const result = renderFull(input);
@@ -942,6 +973,198 @@ describe("MarkdownRenderer", () => {
             // U+1F1FA (🇺) and U+1F1F8 (🇸) form the US flag
             expect(renderer._stringWidth("🇺")).toBe(2);
             expect(renderer._stringWidth("🇸")).toBe(2);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Inline code formatting
+    // -----------------------------------------------------------------------
+
+    describe("inline code formatting", () => {
+        it("wraps single backtick code in cyan", () => {
+            const result = renderer.process("use the `variable` here\n");
+            expect(result).toContain(CYAN);
+            expect(result).toContain("variable");
+            expect(result).toContain(RESET);
+            // Ensure the word between backticks is cyan-wrapped
+            const ansiFree = stripAnsi(result);
+            expect(ansiFree).toContain("use the variable here");
+        });
+
+        it("handles multiple inline code spans on the same line", () => {
+            const result = renderer.process("call `fn()` with `args`\n");
+            expect(result).toContain("fn()");
+            expect(result).toContain("args");
+            // Should contain two cyan sequences
+            const cyanCount = result.split(CYAN).length - 1;
+            expect(cyanCount).toBe(2);
+        });
+
+        it("works alongside **bold** on the same line", () => {
+            const result = renderer.process("**bold** and `code` together\n");
+            expect(result).toContain(BOLD_START);
+            expect(result).toContain(CYAN);
+        });
+
+        it("handles inline code with special characters like underscores", () => {
+            const result = renderer.process("use `prefix_sum_array`\n");
+            expect(result).toContain(CYAN + "prefix_sum_array" + RESET);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Heading formatting
+    // -----------------------------------------------------------------------
+
+    describe("heading formatting", () => {
+        it("renders H1 with bright white bold banner (lines above and below)", () => {
+            const result = renderer.process("# Title One\n");
+            expect(result).toContain(BRIGHT_WHITE);
+            expect(result).toContain(BOLD_START);
+            expect(result).toContain("Title One");
+            // Should have dim lines above and below (using ─)
+            const lines = result.split("\n");
+            expect(lines.length).toBeGreaterThanOrEqual(4);
+            // First non-empty line should be a dim ─ line
+            const nonEmptyLines = lines.filter(l => l.trim());
+            expect(nonEmptyLines[0]).toContain(DIM);
+            expect(nonEmptyLines[0]).toContain("─");
+            // Last non-empty line should also be a dim ─ line
+            expect(nonEmptyLines[nonEmptyLines.length - 1]).toContain(DIM);
+            expect(nonEmptyLines[nonEmptyLines.length - 1]).toContain("─");
+            // The heading text should be between dim lines
+            const headingLine = nonEmptyLines.find(l => l.includes("Title One"));
+            expect(headingLine).toContain(BRIGHT_WHITE);
+        });
+
+        it("renders H2 with underline", () => {
+            const result = renderer.process("## Section Two\n");
+            expect(result).toContain(BRIGHT_WHITE);
+            expect(result).toContain("Section Two");
+            // Should have a dim ─ line below the heading
+            const ansiFree = stripAnsi(result);
+            const lines = ansiFree.split("\n");
+            const headingIdx = lines.findIndex(l => l.includes("Section Two"));
+            expect(headingIdx).toBeGreaterThanOrEqual(0);
+            // The line after heading should be a ─ line
+            expect(lines[headingIdx + 1]).toMatch(/─+/);
+        });
+
+        it("renders H3 as cyan bold", () => {
+            const result = renderer.process("### Sub Section\n");
+            expect(result).toContain(CYAN);
+            expect(result).toContain(BOLD_START);
+            expect(result).toContain("Sub Section");
+        });
+
+        it("renders H4 as yellow bold", () => {
+            const result = renderer.process("#### Detail\n");
+            expect(result).toContain(YELLOW);
+            expect(result).toContain(BOLD_START);
+            expect(result).toContain("Detail");
+        });
+
+        it("renders H5 as white", () => {
+            const result = renderer.process("##### Fine\n");
+            expect(result).toContain(WHITE);
+            expect(result).not.toContain(BOLD_START);
+            expect(result).toContain("Fine");
+        });
+
+        it("renders H6 as white italic", () => {
+            const result = renderer.process("###### Tiny\n");
+            expect(result).toContain(WHITE);
+            expect(result).toContain(ITALIC_START);
+            expect(result).toContain(ITALIC_END);
+            expect(result).toContain("Tiny");
+        });
+
+        it("treats non-heading hash (# not at start) as normal text", () => {
+            const result = renderer.process("a # b\n");
+            expect(result).not.toContain(BRIGHT_WHITE);
+            expect(result).toContain("a # b");
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Fenced code block formatting
+    // -----------------------------------------------------------------------
+
+    describe("fenced code block formatting", () => {
+        it("renders a simple code block with dim separators", () => {
+            const result = renderFull("```\nconst x = 1;\n```\n");
+            // Should have two dim ─ lines (top and bottom separators)
+            const dimLines = result.split("\n").filter(l => l.includes(DIM) && l.includes("─"));
+            expect(dimLines.length).toBe(2);
+            // Code content should be dimmed
+            expect(result).toContain(DIM + "const x = 1;" + RESET);
+        });
+
+        it("renders multi-line code blocks", () => {
+            const result = renderFull("```\nline1\nline2\nline3\n```\n");
+            expect(result).toContain(DIM + "line1" + RESET);
+            expect(result).toContain(DIM + "line2" + RESET);
+            expect(result).toContain(DIM + "line3" + RESET);
+            // Two separator lines
+            const sepCount = result.split("\n").filter(l => l.includes(DIM) && l.includes("─")).length;
+            expect(sepCount).toBe(2);
+        });
+
+        it("preserves language tag but does not syntax-highlight", () => {
+            const result = renderFull("```python\nprint('hello')\n```\n");
+            // Language tag is discarded (only used for potential future highlighting)
+            // Content should still be dimmed
+            expect(result).toContain(DIM + "print('hello')" + RESET);
+        });
+
+        it("handles code block with empty content", () => {
+            const result = renderFull("```\n```\n");
+            // No content lines, but separators should still render
+            const sepCount = result.split("\n").filter(l => l.includes(DIM) && l.includes("─")).length;
+            expect(sepCount).toBe(2);
+        });
+
+        it("does not format headings inside code blocks", () => {
+            const result = renderFull("```\n# This is not a heading\n## Nor this\n```\n");
+            // Content should be dimmed, NOT bright white / cyan / etc.
+            expect(result).toContain(DIM + "# This is not a heading" + RESET);
+            expect(result).toContain(DIM + "## Nor this" + RESET);
+            expect(result).not.toContain(BRIGHT_WHITE);
+        });
+
+        it("does not format inline code inside code blocks", () => {
+            const result = renderFull("```\nuse `variable` here\n```\n");
+            // Backticks should pass through literally (no cyan wrapping)
+            expect(result).toContain(DIM + "use `variable` here" + RESET);
+        });
+
+        it("handles streaming code block across multiple chunks", () => {
+            // Opening fence in first chunk
+            const part1 = renderer.process("```\n");
+            expect(part1).toBe(""); // buffered
+
+            // Content in second chunk
+            const part2 = renderer.process("const a = 1;\n");
+            expect(part2).toBe(""); // still buffered
+
+            // Closing fence in third chunk
+            const part3 = renderer.process("```\n");
+            // Now the code block should be rendered
+            expect(part3).toContain(DIM + "const a = 1;" + RESET);
+
+            // Flush should be empty
+            const flush = renderer.flush();
+            // Should not have leftover content
+            expect(flush).toBe("");
+        });
+
+        it("handles unclosed code block via flush()", () => {
+            const part1 = renderer.process("```\nstray content\n");
+            expect(part1).toBe("");
+
+            const flush = renderer.flush();
+            expect(flush).toContain(DIM + "stray content" + RESET);
+            expect(flush).toContain("─"); // has separators
         });
     });
 });
