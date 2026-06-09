@@ -51,6 +51,7 @@ export const ROLE_SYSTEM_PROMPT = [
       "ask_user_preferences",
       "write_or_create_file",
       "multi_file_search_string",
+      "extract_content",
     ],
   },
 ];

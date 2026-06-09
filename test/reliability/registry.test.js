@@ -5,17 +5,18 @@ import {
   buildSubagentTools,
 } from "../../tools/registry.js";
 
-// Expected tool names for the master catalog (all 9 worker tools)
+// Expected tool names for the master catalog (all active worker tools)
 const ALL_TOOL_NAMES = [
   "execute_terminal_command",
   "patch_file",
   "read_file_chunk",
   "get_project_tree",
-  "search_web",
   "fetch_url",
   "ask_user_preferences",
   "write_or_create_file",
   "multi_file_search_string",
+  "extract_content",
+  "delegate_sub_agents",
 ];
 
 describe("registry - Reliability / Edge Cases", () => {

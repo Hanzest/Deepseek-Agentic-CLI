@@ -38,6 +38,10 @@ import {
     multi_file_search_string_schema,
     multi_file_search_string,
 } from "./multiFileSearchString.js";
+import {
+    extract_content_schema,
+    extract_content,
+} from "./extractContent.js";
 
 import { callToolsInBatch } from "./callToolsInBatch.js";
 import { getRoleEntry, VALID_ROLES } from "./roleSystemPrompts.js";
@@ -59,6 +63,7 @@ export const ALL_TOOLS = {
     ask_user_preferences: [ask_user_preferences_schema, ask_user_preferences],
     write_or_create_file: [write_or_create_file_schema, write_or_create_file],
     multi_file_search_string: [multi_file_search_string_schema, multi_file_search_string],
+    extract_content: [extract_content_schema, extract_content],
     delegate_sub_agents: [delegate_sub_agents_schema, delegate_sub_agents],
 };
 
@@ -76,6 +81,7 @@ export const ORCHESTRATOR_TOOLS = {
     write_or_create_file: [write_or_create_file_schema, write_or_create_file, false],
     // search_web: [search_web_schema, search_web, false],
     fetch_url: [fetch_url_schema, fetch_url, false],
+    extract_content: [extract_content_schema, extract_content, false],
     delegate_sub_agents: [delegate_sub_agents_schema, delegate_sub_agents, false],
 };
 

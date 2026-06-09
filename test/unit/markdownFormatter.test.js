@@ -97,8 +97,81 @@ describe("MarkdownRenderer", () => {
     // -------------------------------------------------------------------
 
     /**
+     * Compute the visible display width of a string, mirroring the logic
+     * in MarkdownRenderer._charWidth() so that emoji, CJK, and zero-width
+     * characters are counted correctly.
+     *
+     * - Surrogate pairs (emoji)  → width 2 per code point
+     * - CJK characters           → width 2
+     * - Emoji/icon characters    → width 2
+     * - Zero-width chars         → width 0
+     * - ASCII / others           → width 1
+     */
+    function displayWidth(str) {
+        let width = 0;
+        let i = 0;
+        while (i < str.length) {
+            const code = str.codePointAt(i);
+            const isSurrogate = code > 0xFFFF;
+            i += isSurrogate ? 2 : 1;
+
+            // Zero-width
+            if (
+                code === 0xFE0F || code === 0xFE0E ||
+                code === 0x200D || code === 0x200C ||
+                (code >= 0x0300 && code <= 0x036F) ||
+                (code >= 0xFE00 && code <= 0xFE0F) ||
+                (code >= 0xFE20 && code <= 0xFE2F) ||
+                (code >= 0xE0100 && code <= 0xE01EF) ||
+                (code >= 0x20D0 && code <= 0x20FF)
+            ) {
+                continue;
+            }
+
+            // CJK width 2
+            if (
+                (code >= 0x1100 && code <= 0x11FF) ||
+                (code >= 0x2E80 && code <= 0x9FFF) ||
+                (code >= 0xA000 && code <= 0xA4CF) ||
+                (code >= 0xAC00 && code <= 0xD7AF) ||
+                (code >= 0xF900 && code <= 0xFAFF) ||
+                (code >= 0xFE10 && code <= 0xFE1F) ||
+                (code >= 0xFE30 && code <= 0xFE6F) ||
+                (code >= 0xFF01 && code <= 0xFF60) ||
+                (code >= 0xFFE0 && code <= 0xFFE6)
+            ) {
+                width += 2;
+                continue;
+            }
+
+            // Emoji/icon width 2
+            if (
+                (code >= 0x2316 && code <= 0x23FF) ||
+                (code >= 0x2460 && code <= 0x24FF) ||
+                (code >= 0x25A0 && code <= 0x27BF) ||
+                (code >= 0x2600 && code <= 0x26FF) ||
+                (code >= 0x2934 && code <= 0x2935) ||
+                (code >= 0x2B05 && code <= 0x2B55) ||
+                (code >= 0x3030 && code <= 0x303D) ||
+                (code >= 0x3297 && code <= 0x3299) ||
+                (code >= 0x1F000 && code <= 0x1F9FF) ||
+                (code >= 0x1FA00 && code <= 0x1FA6F) ||
+                (code >= 0x1FA70 && code <= 0x1FAFF) ||
+                (code >= 0x1FB00 && code <= 0x1FBFF)
+            ) {
+                width += 2;
+                continue;
+            }
+
+            width += 1;
+        }
+        return width;
+    }
+
+    /**
      * Given a rendered data line (│ name │ value │), return an array of
-     * segment lengths measured between the box-drawing vertical bars.
+     * segment visible-display-widths measured between the box-drawing
+     * vertical bars.
      * E.g., "│  Alice  │  42  │" → [9, 6] (includes padding).
      */
     function getColumnSegmentLengths(line) {
@@ -108,7 +181,7 @@ describe("MarkdownRenderer", () => {
         // Internal segments are the cell contents
         const cells = [];
         for (let i = 1; i < parts.length - 1; i++) {
-            cells.push(parts[i].length);
+            cells.push(displayWidth(parts[i]));
         }
         return cells;
     }
@@ -421,6 +494,96 @@ describe("MarkdownRenderer", () => {
             const boldStartsArr = [...result.matchAll(/\x1b\[1m/g)];
             const boldEndsArr = [...result.matchAll(/\x1b\[22m/g)];
             expect(boldStartsArr.length).toBe(boldEndsArr.length);
+        });
+
+        it("renders a table with emoji and icon characters without border misalignment", () => {
+            // Emoji/icon characters (🚀, ✅, ❌, ⚠, ⚡) are width-2 in terminals.
+            // If _charWidth undercounts them as width-1, the column widths
+            // would be miscalculated and borders would shift by 1 char per emoji.
+            const input =
+                "| **Feature** | **Status** | Notes |\n" +
+                "| --- | --- | --- |\n" +
+                "| 🚀 Deploy  | ✅ Done   | Auto-scaling enabled |\n" +
+                "| ⚠ Test     | ❌ Failed | Memory leak detected |\n" +
+                "| ⚡ Pipeline | ✅ Done   | All checks passed    |\n";
+
+            const result = renderFull(input + "\n");
+            const stripped = stripAnsi(result);
+            const lines = stripped.split("\n");
+
+            // 1. Box-drawing characters are present
+            expect(result).toContain(BOX.tl);
+            expect(result).toContain(BOX.tr);
+            expect(result).toContain(BOX.bl);
+            expect(result).toContain(BOX.br);
+            expect(result).toContain(BOX.v);
+
+            // 2. All content appears (emoji stripped from ANSI output still shows)
+            expect(stripped).toContain("Deploy");
+            expect(stripped).toContain("Done");
+            expect(stripped).toContain("Failed");
+            expect(stripped).toContain("Pipeline");
+
+            // 3. Column widths are consistent across all rows (regression: the
+            //    key check — border lines and data lines must have matching lengths)
+            const dataLines = lines.filter(l =>
+                l.includes(BOX.v) &&
+                !l.includes("┌") && !l.includes("└") &&
+                !l.includes("├") && !l.includes("┴") &&
+                !l.includes("┬") && !l.includes("┼")
+            );
+            expect(dataLines.length).toBeGreaterThanOrEqual(3);
+
+            const colSegs = dataLines.map(l => getColumnSegmentLengths(l));
+            const numCols = colSegs[0].length;
+            expect(numCols).toBe(3);
+            for (let ci = 0; ci < numCols; ci++) {
+                const lengths = colSegs.map(s => s[ci]);
+                expect(new Set(lengths).size).toBe(1);
+            }
+
+            // 4. Every border line's display width matches its adjacent data line's display width.
+            //    Use displayWidth() instead of .length because surrogate-pair emojis (🚀) inflate
+            //    JS string length while box-drawing borders have only BMP chars.
+            for (let i = 0; i < lines.length - 1; i++) {
+                const isBorder = /[┌├└┬┼┴┐┤┘]/.test(lines[i]);
+                const nextIsData = lines[i + 1]?.includes(BOX.v);
+                if (isBorder && nextIsData) {
+                    expect(displayWidth(lines[i])).toBe(displayWidth(lines[i + 1]));
+                }
+            }
+        });
+
+        it("renders a table with emoji cell content and wraps correctly in narrow terminal", () => {
+            // Narrow terminal forces wrapping even with emoji characters
+            const narrow = new MarkdownRenderer(30);
+            const text = "This ✅ is a **long** description 🚀 that should wrap";
+            const input =
+                "| Icon | Description |\n" +
+                "| --- | --- |\n" +
+                `| 🚀 | ${text} |\n`;
+
+            const result = narrow.process(input) + narrow.flush();
+            const stripped = stripAnsi(result);
+
+            expect(stripped).toContain("Icon");
+            expect(stripped).toContain("Description");
+            expect(stripped).toContain("🚀");
+
+            // ANSI bold codes for **long** should be present
+            expect(result).toContain(BOLD_START);
+            expect(result).toContain(BOLD_END);
+
+            // No raw markdown ** remaining
+            expect(stripped).not.toContain("**");
+
+            // Column widths consistent
+            const lines = stripped.split("\n").filter(l => l.includes(BOX.v) && !l.includes("┌") && !l.includes("└") && !l.includes("├") && !l.includes("┴") && !l.includes("┬") && !l.includes("┼"));
+            const colSegs = lines.map(l => getColumnSegmentLengths(l));
+            for (let ci = 0; ci < colSegs[0].length; ci++) {
+                const lengths = colSegs.map(s => s[ci]);
+                expect(new Set(lengths).size).toBe(1);
+            }
         });
     });
 
@@ -737,6 +900,48 @@ describe("MarkdownRenderer", () => {
         it("measures mixed content correctly", () => {
             const mixed = `${BOLD_START}hello中文${BOLD_END}`;
             expect(renderer._stringWidth(mixed)).toBe(9); // 5 + 4
+        });
+
+        it("measures common emoji characters as width 2", () => {
+            // 🚀 (rocket, U+1F680), ✅ (check mark, U+2705), ❌ (cross mark, U+274C)
+            expect(renderer._stringWidth("🚀")).toBe(2);
+            expect(renderer._stringWidth("✅")).toBe(2);
+            expect(renderer._stringWidth("❌")).toBe(2);
+            expect(renderer._stringWidth("✨")).toBe(2);
+        });
+
+        it("measures miscellaneous icon symbols as width 2", () => {
+            // ⚠ (warning, U+26A0), ★ (star, U+2605), ♻ (recycle, U+267B)
+            expect(renderer._stringWidth("⚠")).toBe(2);
+            expect(renderer._stringWidth("★")).toBe(2);
+            expect(renderer._stringWidth("♻")).toBe(2);
+        });
+
+        it("measures variation selector-16 (U+FE0F) as zero-width", () => {
+            // U+FE0F is zero-width; U+2764 (❤) + U+FE0F = ❤️ (heart emoji style)
+            const vs16 = String.fromCodePoint(0xFE0F);
+            expect(renderer._stringWidth(vs16)).toBe(0);
+            // The heart alone is width 1 (Dingbat range 0x2700-0x27BF includes ❤)
+            expect(renderer._stringWidth("❤")).toBe(2);
+            // heart + VS16 should still be 2 (VS16 contributes 0)
+            expect(renderer._stringWidth("❤" + vs16)).toBe(2);
+        });
+
+        it("measures zero-width joiner (U+200D) as zero-width", () => {
+            const zwj = String.fromCodePoint(0x200D);
+            expect(renderer._stringWidth(zwj)).toBe(0);
+        });
+
+        it("measures text with emoji and regular text correctly", () => {
+            // "Status: 🚀 Active" = 7 (Status:) + 1 (space) + 2 (🚀) + 1 (space) + 6 (Active)
+            expect(renderer._stringWidth("Status: 🚀 Active")).toBe(17);
+        });
+
+        it("measures flag emoji (regional indicator pair approximation) as width 2 each", () => {
+            // Each regional indicator letter is width 2 (approximation for the pair)
+            // U+1F1FA (🇺) and U+1F1F8 (🇸) form the US flag
+            expect(renderer._stringWidth("🇺")).toBe(2);
+            expect(renderer._stringWidth("🇸")).toBe(2);
         });
     });
 });
