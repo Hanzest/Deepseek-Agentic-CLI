@@ -3,6 +3,7 @@
 Create an infinite round game called Knight_CLI using plain JavaScript, no framework.
 Every round, the player has to fight a monster.
 The CLI must be clear on every user's interaction. Clear Result of previous action must be shown.
+The CLI must utilize horizontal space, avoid vertical scrolling as much as possible.
 The player can: Attack (use weapon in hands to attack, if no weapon, use bare hands), Calm (heal Stamina).
 The player has the following stats to be provided when fighting:
 HP, Armor, Stamina, Mana, Damage for `Attack` action.
@@ -12,7 +13,7 @@ Damage to be dealt = (Base Damage + Weapon Damage).
 After every round, the player can: buy new armor or weapon
 (there are 4 piece of armors of the same tier: helmet, chestplate, leggings, and boots,
 only when user buy all 4 armor, the shop will renew with the next tier both armor and weapon.
-Armor and weapon have infinite tier. Price for higher tier must be calculated exponentially),
+Armor and weapon have infinite tier. Price for higher tier must be calculated mild exponentially (to the power of 1.5)),
 upgrade their stats (upgrade on level up 5 skill points, getting XP via win against the monster, specifically include:
 strength (+ base damage. The more strength, the more stamina waste when trigger `Attack` action. when
 Stamin runs out, the user is forced to perform `Calm` with clear message), dexterity (+ critical chance
@@ -28,7 +29,7 @@ The mana can be used by both Human and Monster as follows:
 1. Lightning Stunt enemy for 1 turn, cost 80% of max mana, damage = 20% of mana used.
 2. Contaminate Poison enemy for the rest of turn, cost 80% of max mana, damage = 2% of mana used every human turn.
 3. Weakness curse enemy for the next turn, cost 35% of max mana, enemy gets all stats debuffed by 35% each.
-The menu ofactions after fighting must use number to navigate. Player can choose `Back` at anytime, except
+The menu of actions after fighting must use number to navigate. Player can choose `Back` at anytime, except
 proceeding to next Round. 
 Ensure DRY and SOLID principles.
 The folder to be implemented is Knight_CLI inside z_swe folder.
