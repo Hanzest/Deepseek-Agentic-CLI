@@ -1110,11 +1110,37 @@ describe("MarkdownRenderer", () => {
             expect(sepCount).toBe(2);
         });
 
-        it("preserves language tag but does not syntax-highlight", () => {
+        it("preserves language tag and performs syntax-highlighting", () => {
             const result = renderFull("```python\nprint('hello')\n```\n");
-            // Language tag is discarded (only used for potential future highlighting)
-            // Content should still be dimmed
-            expect(result).toContain(DIM + "print('hello')" + RESET);
+            // String should be highlighted in green
+            expect(result).toContain("\x1b[32m'hello'\x1b[2;37m");
+        });
+
+        it("syntax highlights JavaScript keywords and comments", () => {
+            const result = renderFull("```javascript\nconst a = 123; // comment\n```\n");
+            // Keyword highlighted in cyan
+            expect(result).toContain("\x1b[36mconst\x1b[2;37m");
+            // Number highlighted in yellow
+            expect(result).toContain("\x1b[33m123\x1b[2;37m");
+            // Comment highlighted in gray
+            expect(result).toContain("\x1b[90m// comment\x1b[0m");
+        });
+
+        it("syntax highlights HTML/XML tags and attributes", () => {
+            const result = renderFull("```html\n<div class=\"container\">\n```\n");
+            // Tag name in cyan
+            expect(result).toContain("\x1b[36m<div\x1b[2;37m");
+            // String value in green
+            expect(result).toContain("\x1b[32m\"container\"\x1b[2;37m");
+        });
+
+        it("syntax highlights Bash commands", () => {
+            const result = renderFull("```bash\nnpm install && git commit # deploy\n```\n");
+            // Commands in cyan
+            expect(result).toContain("\x1b[36mnpm\x1b[2;37m");
+            expect(result).toContain("\x1b[36mgit\x1b[2;37m");
+            // Comment in gray
+            expect(result).toContain("\x1b[90m# deploy\x1b[0m");
         });
 
         it("handles code block with empty content", () => {

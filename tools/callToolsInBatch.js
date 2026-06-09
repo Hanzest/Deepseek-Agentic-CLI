@@ -189,6 +189,47 @@ function isArtifactsPath(args) {
     return normalized.startsWith("artifacts/") || normalized.startsWith("artifacts\\") || filePath === "artifacts";
 }
 
+function compressToolResult(toolName, content) {
+    if (typeof content !== "string") return content;
+
+    if (toolName === "get_project_tree" && content.length > 10000) {
+        const truncated = content.substring(0, 10000);
+        const warning = `\n\n... [TRUNCATED 10,000+ characters. Tool output is too large. Consider searching specific subdirectories or using search tools.]`;
+        console.log(colorize(`  [UX Alert] Truncated get_project_tree output (${content.length} -> 10,000 chars)`, C.warning));
+        return truncated + warning;
+    }
+
+    if (toolName === "fetch_url" && content.length > 5000) {
+        const keep = 2500;
+        const prefix = content.substring(0, keep);
+        const suffix = content.substring(content.length - keep);
+        const msg = `\n\n... [TRUNCATED ${content.length - 2 * keep} characters in the middle for brevity] ...\n\n`;
+        console.log(colorize(`  [UX Alert] Truncated fetch_url output (${content.length} -> 5,000 chars)`, C.warning));
+        return prefix + msg + suffix;
+    }
+
+    if (toolName === "execute_terminal_command" && content.length > 4000) {
+        const keep = 2000;
+        const prefix = content.substring(0, keep);
+        const suffix = content.substring(content.length - keep);
+        const msg = `\n\n... [TRUNCATED ${content.length - 2 * keep} characters in the middle for brevity] ...\n\n`;
+        console.log(colorize(`  [UX Alert] Truncated execute_terminal_command output (${content.length} -> 4,000 chars)`, C.warning));
+        return prefix + msg + suffix;
+    }
+
+    if (toolName === "multi_file_search_string" && content.length > 6000) {
+        const keepPrefix = 4000;
+        const keepSuffix = 2000;
+        const prefix = content.substring(0, keepPrefix);
+        const suffix = content.substring(content.length - keepSuffix);
+        const msg = `\n\n... [TRUNCATED ${content.length - (keepPrefix + keepSuffix)} characters in the middle for brevity] ...\n\n`;
+        console.log(colorize(`  [UX Alert] Truncated multi_file_search_string output (${content.length} -> 6,000 chars)`, C.warning));
+        return prefix + msg + suffix;
+    }
+
+    return content;
+}
+
 /**
  * Executes tool calls in batch with clear visual separation.
  *
@@ -281,10 +322,19 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             if (MUTATION_BLOCKED_TOOLS.has(p.name)) {
                 clearReadOnlyCache();
             }
+            if (p.name === "read_file_chunk" && p.args?.file_path) {
+                const normalized = p.args.file_path.replace(/\\/g, "/");
+                const m = normalized.match(/docs\/skills\/([^\/]+)\/SKILL\.md/i);
+                if (m) {
+                    const domain = m[1].toUpperCase();
+                    console.log(colorize(`\n  📘 [Skill] Applied ${domain} domain principles from ${p.args.file_path}\n`, C.success));
+                }
+            }
             const start = performance.now();
-            const result = await handler(p.args);
+            let result = await handler(p.args);
             const ms = performance.now() - start;
             timings.push({ name: p.name, ms, index });
+            result = compressToolResult(p.name, result);
             return result;
         };
 

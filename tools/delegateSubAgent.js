@@ -13,6 +13,13 @@ import { ensureActiveDir, timestampedFilename } from "../lib/artifactManager.js"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+let logMutex = Promise.resolve();
+function lockLog(fn) {
+    const next = logMutex.then(fn);
+    logMutex = next.catch(() => {});
+    return next;
+}
+
 // ---------------------------------------------------------------------------
 // delegate_sub_agent_schema was removed in favor of delegate_sub_agents_schema
 // (plural), which supports 1..N delegations via the delegations[] array.
@@ -238,26 +245,26 @@ async function delegateSubAgentCore({
     const { total_tokens: promptTokenCount } = estimateTokens(mockMessages);
 
     if (promptTokenCount > TOKEN_WARNING_THRESHOLD) {
-        console.log(
-            `\x1b[93m[Warning] Prompt size ~${promptTokenCount} tokens exceeds ${TOKEN_WARNING_THRESHOLD} token threshold. Consider splitting this task.\x1b[0m`
-        );
+        await lockLog(() => {
+            console.log(
+                `\x1b[93m[Warning] Prompt size ~${promptTokenCount} tokens exceeds ${TOKEN_WARNING_THRESHOLD} token threshold. Consider splitting this task.\x1b[0m`
+            );
+        });
     }
 
     // Write with exclusive-create to avoid TOCTOU race
     const filePath = writeFileUnique(artifactsDir, desiredName, markdown);
     const fileName = path.basename(filePath);
 
-    console.log(`\x1b[1;97m[Sub-Agent Delegate]\x1b[0m`);
-    console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
-    console.log(`  DoD:       \x1b[37m${definition_of_done}\x1b[0m`);
-    console.log(`  Prompt:     \x1b[90martifacts/active/${fileName}\x1b[0m`);
-    console.log(`  Role:       \x1b[37m${role}\x1b[0m`);
-    console.log(`  Status:     \x1b[32mcreated\x1b[0m`);
-
-    // -----------------------------------------------------------------------
-    // Launch the sub-agent autonomously in its own terminal window
-    // -----------------------------------------------------------------------
-    console.log(`\n\x1b[36m  Launching sub-agent in independent terminal...\x1b[0m\n`);
+    await lockLog(() => {
+        console.log(`\x1b[1;97m[Sub-Agent Delegate]\x1b[0m`);
+        console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
+        console.log(`  DoD:       \x1b[37m${definition_of_done}\x1b[0m`);
+        console.log(`  Prompt:     \x1b[90martifacts/active/${fileName}\x1b[0m`);
+        console.log(`  Role:       \x1b[37m${role}\x1b[0m`);
+        console.log(`  Status:     \x1b[32mcreated\x1b[0m`);
+        console.log(`\n\x1b[36m  Launching sub-agent in independent terminal...\x1b[0m\n`);
+    });
 
     let terminal;
     let result;
@@ -278,7 +285,9 @@ async function delegateSubAgentCore({
         result = await runSubAgent(markdown, sub_agent_name, subAgentLogger, SessionContext.agentMode, modelConfig, toolsMap, max_wall_time_seconds);
     } catch (e) {
         const errMsg = `Sub-agent launch or execution failed: ${e.message || e}`;
-        console.log(`\n\x1b[91m${errMsg}\x1b[0m`);
+        await lockLog(() => {
+            console.log(`\n\x1b[91m${errMsg}\x1b[0m`);
+        });
         return JSON.stringify({
             error: true,
             tool: "delegate_sub_agents",
@@ -324,11 +333,13 @@ async function delegateSubAgentCore({
 
     fs.writeFileSync(reportPath, reportLines.join("\n"), "utf-8");
 
-    console.log(`\n\x1b[1;97m[Sub-Agent Complete]\x1b[0m`);
-    console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
-    console.log(`  Report:     \x1b[90martifacts/active/${reportName}\x1b[0m`);
-    console.log(`  Iterations: \x1b[37m${result.iterationCount}\x1b[0m`);
-    console.log(`  Status:     \x1b[32mcompleted\x1b[0m`);
+    await lockLog(() => {
+        console.log(`\n\x1b[1;97m[Sub-Agent Complete]\x1b[0m`);
+        console.log(`  Name:       \x1b[93m${sub_agent_name}\x1b[0m`);
+        console.log(`  Report:     \x1b[90martifacts/active/${reportName}\x1b[0m`);
+        console.log(`  Iterations: \x1b[37m${result.iterationCount}\x1b[0m`);
+        console.log(`  Status:     \x1b[32mcompleted\x1b[0m`);
+    });
 
     // -------------------------------------------------------------------
     // Push audit record into SessionContext for the /audit command
