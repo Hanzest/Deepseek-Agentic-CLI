@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { getSessionMemoryContent, getActiveMessages, SessionContext, escapeRegExp } from "../../lib/orchestrator.js";
+import { selectFromList } from "../../lib/cliInput.js";
+import readline from "readline";
 
 describe("Orchestrator Session Memory caching and audit tests", () => {
     let originalSessionMemory;
@@ -80,5 +82,32 @@ describe("Search Regex and whole-word matching logic", () => {
         expect(regex.test("multicaching is not matching")).toBe(false);
         expect(regex.test("caching-related")).toBe(true);
         expect(regex.test("caching? yes")).toBe(true);
+    });
+});
+
+describe("selectFromList non-TTY fallback", () => {
+    it("should fallback to number selection in non-TTY mode", async () => {
+        const originalIsTTY = process.stdin.isTTY;
+        process.stdin.isTTY = false;
+
+        const mockQuestion = vi.fn((q, cb) => cb("1"));
+        const mockClose = vi.fn();
+        const spyCreateInterface = vi.spyOn(readline, "createInterface").mockReturnValue({
+            question: mockQuestion,
+            close: mockClose
+        });
+
+        const options = [
+            { label: "Option A", value: "a" },
+            { label: "Option B", value: "b" }
+        ];
+
+        const result = await selectFromList("Choose one", options);
+        expect(result).toBe("a");
+        expect(mockQuestion).toHaveBeenCalled();
+        expect(mockClose).toHaveBeenCalled();
+
+        process.stdin.isTTY = originalIsTTY;
+        spyCreateInterface.mockRestore();
     });
 });
