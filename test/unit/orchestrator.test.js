@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getSessionMemoryContent, getActiveMessages, SessionContext } from "../../lib/orchestrator.js";
+import { getSessionMemoryContent, getActiveMessages, SessionContext, escapeRegExp } from "../../lib/orchestrator.js";
 
 describe("Orchestrator Session Memory caching and audit tests", () => {
     let originalSessionMemory;
@@ -58,5 +58,27 @@ describe("Orchestrator Session Memory caching and audit tests", () => {
         expect(active[1]).toEqual(initialMessages[1]);
         expect(active[2].role).toBe("system");
         expect(active[2].content).toContain("## Session Memory (State & Decisions)");
+    });
+});
+
+describe("Search Regex and whole-word matching logic", () => {
+    it("should escape regex special characters in keyword", () => {
+        const keyword = "caching.test*helper(func)";
+        const escaped = escapeRegExp(keyword);
+        expect(escaped).toBe("caching\\.test\\*helper\\(func\\)");
+    });
+
+    it("should match whole word case-insensitively with regex", () => {
+        const keyword = "caching";
+        const escaped = escapeRegExp(keyword);
+        const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+
+        expect(regex.test("This is a caching test")).toBe(true);
+        expect(regex.test("Caching is important")).toBe(true);
+        expect(regex.test("We are CACHING results")).toBe(true);
+        expect(regex.test("This is cached")).toBe(false);
+        expect(regex.test("multicaching is not matching")).toBe(false);
+        expect(regex.test("caching-related")).toBe(true);
+        expect(regex.test("caching? yes")).toBe(true);
     });
 });
