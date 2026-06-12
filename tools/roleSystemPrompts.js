@@ -33,8 +33,10 @@ export const ROLE_SYSTEM_PROMPT = [
       Only inspect files that are explicitly required to fulfill the Definition of Done.
       Exploratory or broad codebase searches are strictly prohibited.
       You are in Agent Mode.
-      When the task involves a domain covered by \`docs/skills/\`, read the relevant SKILL.md
-      first and apply its constraints, principles, and anti-patterns to your implementation decisions.`,
+      When the task involves a domain covered by \`docs/skills/\`, use \`multi_file_search_string\`
+      with \`glob_pattern: "docs/skills/**/*.md"\` and a topic keyword to locate the relevant
+      SKILL.md, then \`read_file_chunk\` to read it. Apply its constraints, principles, and
+      anti-patterns to your implementation decisions. All tool calls can be batched.`,
     output_constraints:
       `Write clean, production-quality code. Follow existing project conventions and patterns.
       Every file mutation must be traceable to the deliverable. Use patch_file for small
