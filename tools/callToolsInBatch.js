@@ -15,8 +15,16 @@
 // ---------------------------------------------------------------------------
 
 import { resetAlertCounter } from "./template.js";
-import { MUTATION_BLOCKED_TOOLS } from "../lib/orchestrator.js";
+import { createPolicyEngine, modeGatePolicy, MUTATION_BLOCKED_TOOLS } from "../lib/policyEngine.js";
 import { C, colorize } from "../lib/colors.js";
+
+// ---------------------------------------------------------------------------
+// Policy Engine singleton — pluggable guardrail pipeline.
+// Add new policies here (e.g., budgetPolicy, contentSafetyPolicy).
+// ---------------------------------------------------------------------------
+const policyEngine = createPolicyEngine([
+    modeGatePolicy,
+]);
 
 const READ_ONLY_CACHED_TOOLS = new Set([
     "get_project_tree",
@@ -28,20 +36,6 @@ const readOnlyCache = new Map();
 
 export function clearReadOnlyCache() {
     readOnlyCache.clear();
-}
-
-function isSafePlanModeCommand(command) {
-    if (!command) return false;
-    const trimmed = command.trim();
-    // Allow basic git status / git diff
-    if (/^git\s+(status|diff)(\s+|$)/i.test(trimmed)) {
-        return true;
-    }
-    // Allow commands redirecting to artifacts/ directory
-    if (/>+?\s*artifacts[\/\\]/i.test(trimmed)) {
-        return true;
-    }
-    return false;
 }
 
 const W = 56; // separator width
@@ -178,17 +172,6 @@ function printBatchFooter(count, timings) {
     console.log(colorize(`${'─'.repeat(W)}`, C.border) + "\n");
 }
 
-/**
- * Checks whether a file-mutation tool targets a path inside the artifacts/
- * folder (safe workspace). If so, the tool is allowed even in Plan Mode.
- */
-function isArtifactsPath(args) {
-    const filePath = args?.file_path || "";
-    // Normalize to forward slashes for reliable comparison
-    const normalized = filePath.replace(/\\/g, "/");
-    return normalized.startsWith("artifacts/") || normalized.startsWith("artifacts\\") || filePath === "artifacts";
-}
-
 function compressToolResult(toolName, content) {
     if (typeof content !== "string") return content;
 
@@ -294,28 +277,25 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
 
         const [, handler] = TOOL_REGISTRY[p.name];
 
-        // ---- Plan Mode gate: block mutation/execution tools (artifacts/ exempt) ----
-        if (agentMode === "plan" && MUTATION_BLOCKED_TOOLS.has(p.name)) {
-            // Allow writes into artifacts/ folder (safe workspace for plans)
-            const isSafeTerminal = p.name === "execute_terminal_command" && isSafePlanModeCommand(p.args?.command);
-            if ((p.name !== "execute_terminal_command" && isArtifactsPath(p.args)) || isSafeTerminal) {
-            } else {
-                const blockedMsg =
-                    "Blocked: File mutation and system execution are disabled in Plan Mode. " +
-                    "Switch to Agent Mode (/agent) to proceed. " +
-                    "(Writes to artifacts/ folder are allowed.)";
-                console.log(colorize(`  [Plan Mode] Blocked '${p.name}'`, C.error));
-                return {
-                    role: "tool",
-                    tool_call_id: p.id,
-                    name: p.name,
-                    content: JSON.stringify({
-                        error: true,
-                        tool: p.name,
-                        message: blockedMsg,
-                    }),
-                };
-            }
+        // ---- Policy Engine: evaluate all guardrails for this tool call ----
+        const policyResult = policyEngine.evaluate({
+            toolName: p.name,
+            args: p.args,
+            agentMode,
+            needsConsent: p.needsConsent,
+        });
+        if (!policyResult.allow) {
+            console.log(colorize(`  [Policy] Blocked '${p.name}': ${policyResult.reason}`, C.error));
+            return {
+                role: "tool",
+                tool_call_id: p.id,
+                name: p.name,
+                content: JSON.stringify({
+                    error: true,
+                    tool: p.name,
+                    message: policyResult.reason,
+                }),
+            };
         }
 
         const timedHandler = async () => {
