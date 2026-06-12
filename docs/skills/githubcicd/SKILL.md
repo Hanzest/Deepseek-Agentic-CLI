@@ -3,7 +3,9 @@
 ## Metadata
 
 - **Name:** GitHub & CI/CD
-- **Description:** Continuous integration and continuous delivery practices using GitHub-based tooling - covering workflow design, pipeline security, environment management, and release governance.
+- **Description:** Continuous integration and continuous delivery practices using GitHub-based tooling - covering workflow design, pipeline security, environment management, release governance, and versioning strategy.
+- **Tags:** CI, CD, GitHub-Actions, pipeline, deployment, release, semver, changelog, environment-management, secrets
+- **Version:** 1.1.0
 
 ---
 
@@ -45,6 +47,11 @@
   - What is the rollback mechanism? (revert commit, previous artifact, feature flag toggle - each has different speed and safety characteristics)
   - How are environment-specific variables injected? (GitHub Environments, repository secrets, OIDC - evaluate by audit trail needs and secret rotation complexity)
   - What constitutes a deployment success? (health check pass, smoke test, metric stabilization - define exit criteria explicitly)
+
+- **Release & versioning phase — factors to consider:**
+  - What versioning scheme matches the project's audience? (SemVer for libraries with breaking-change concerns; calendar versioning for time-sensitive releases; zero-versioning for pre-1.0 while iterating rapidly — each communicates different stability guarantees to consumers)
+  - Is the changelog auto-generated or manually curated? (auto-generated from conventional commits for consistency; manual curation for user-facing narratives — evaluate by whether changelogs are consumed by humans or downstream tools)
+  - What is the release cadence? (scheduled releases for predictability; continuous delivery for velocity; LTS branches for enterprise stability — each has different maintenance overhead and upgrade expectations)
 
 - **Security & compliance phase - factors to consider:**
   - Are third-party Actions pinned by commit SHA (not semver tag) to prevent supply-chain compromise?
