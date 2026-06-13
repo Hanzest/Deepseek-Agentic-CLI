@@ -10,16 +10,32 @@ export function escapeHtml(str: unknown): string {
 
 /**
  * Render simple markdown-like content to safe HTML.
- * Supports: ### headings, > blockquotes, **bold**, *italic*, `code`, [link](url), newlines.
+ * Supports: # h1, ## h2, ### h3, #### h4 headings,
+ * > blockquotes, **bold**, *italic*, `code`, [link](url), newlines.
  */
 export function renderMarkdown(text: string): string {
   if (typeof text !== 'string') return '';
   let html = escapeHtml(text);
 
+  // #### Headings (must be before ### and ## to avoid partial matches)
+  html = html.replace(
+    /(?:^|\r?\n)####\s+(.+?)(?=\r?\n|$)/g,
+    '<h4 class="section-heading section-heading-h4">$1</h4>'
+  );
   // ### Headings
   html = html.replace(
-    /(?:^|\r?\n)###\s*(.+?)(?=\r?\n|$)/g,
-    '<h3 class="section-heading">$1</h3>'
+    /(?:^|\r?\n)###\s+(.+?)(?=\r?\n|$)/g,
+    '<h3 class="section-heading section-heading-h3">$1</h3>'
+  );
+  // ## Headings (must be after ### to avoid triple-hash partial matches)
+  html = html.replace(
+    /(?:^|\r?\n)##\s+(.+?)(?=\r?\n|$)/g,
+    '<h2 class="section-heading section-heading-h2">$1</h2>'
+  );
+  // # Headings (must be last since it's the most general)
+  html = html.replace(
+    /(?:^|\r?\n)#\s+(.+?)(?=\r?\n|$)/g,
+    '<h1 class="section-heading section-heading-h1">$1</h1>'
   );
   // > Blockquotes
   html = html.replace(

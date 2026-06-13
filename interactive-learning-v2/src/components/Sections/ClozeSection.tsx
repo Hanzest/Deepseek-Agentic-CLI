@@ -126,23 +126,34 @@ export default function ClozeSection({ section }: ClozeSectionProps) {
           )}
           <button
             onClick={() => toggleHint(blankId)}
-            title="Hint"
+            title="Show hint"
+            aria-label="Show hint"
             style={{
-              padding: '0.125rem 0.25rem',
-              border: 'none',
-              backgroundColor: 'transparent',
+              padding: '0.125rem 0.375rem',
+              border: '1px solid var(--warning-border)',
+              borderRadius: '4px',
+              backgroundColor: 'var(--warning-bg)',
+              color: 'var(--warning-text)',
               cursor: 'pointer',
-              fontSize: '1rem',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              transition: 'var(--transition-fast)',
             }}
           >
-            💡
+            ?
           </button>
           {hints[blankId] && blank.hint && (
             <span style={{
               fontSize: '0.8rem',
-              color: 'var(--text-muted)',
+              color: 'var(--warning-text)',
+              backgroundColor: 'var(--warning-bg)',
+              border: '1px solid var(--warning-border)',
+              borderRadius: '4px',
+              padding: '0.125rem 0.375rem',
               fontStyle: 'italic',
               maxWidth: '200px',
+              lineHeight: 1.4,
             }}>{blank.hint}</span>
           )}
         </span>

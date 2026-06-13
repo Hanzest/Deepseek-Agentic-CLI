@@ -28,7 +28,6 @@ export default function PageListItem({ page, index, isActive, isCompleted, isVie
   const inputRef = useRef<HTMLInputElement>(null);
 
   const title = page.page?.title || `Page ${index + 1}`;
-  const icon = page.page?.icon || '📄';
 
   // Sync with global renaming index
   useEffect(() => {
@@ -115,9 +114,6 @@ export default function PageListItem({ page, index, isActive, isCompleted, isVie
 
       {/* Status indicator */}
       {statusIndicator()}
-
-      {/* Icon */}
-      <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
 
       {/* Title / Rename input */}
       {renaming ? (

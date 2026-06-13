@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { SortingSection as SortingSectionType } from '../../types/schema';
 
 interface SortingSectionProps {
   section: SortingSectionType;
 }
 
-// Simple drag-to-reorder list without external dependencies
+// Drag-to-reorder list with smooth FLIP animation
 export default function SortingSection({ section }: SortingSectionProps) {
   const [items, setItems] = useState(() =>
     [...section.items].sort(() => Math.random() - 0.5)
@@ -14,6 +14,32 @@ export default function SortingSection({ section }: SortingSectionProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragItemRef = useRef<number | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const animFrameRef = useRef<number>(0);
+
+  // FLIP animation: record positions before reorder, animate delta after reorder
+  const flipAnimate = useCallback(() => {
+    const refs = itemRefs.current;
+    const positions = refs.map((el) => el?.getBoundingClientRect());
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = requestAnimationFrame(() => {
+        refs.forEach((el, i) => {
+          if (!el || !positions[i]) return;
+          const newPos = el.getBoundingClientRect();
+          const dx = positions[i]!.left - newPos.left;
+          const dy = positions[i]!.top - newPos.top;
+          if (dx === 0 && dy === 0) return;
+          el.style.transition = 'none';
+          el.style.transform = `translate(${dx}px, ${dy}px)`;
+          // Force style recalc, then animate back
+          void el.offsetHeight;
+          el.style.transition = 'transform 250ms ease';
+          el.style.transform = '';
+        });
+      });
+    };
+  }, []);
 
   const handleDragStart = (index: number) => {
     dragItemRef.current = index;
@@ -32,12 +58,15 @@ export default function SortingSection({ section }: SortingSectionProps) {
       setDragOverIndex(null);
       return;
     }
+    const cleanup = flipAnimate();
     setItems((prev) => {
       const next = [...prev];
       const [moved] = next.splice(from, 1);
       next.splice(index, 0, moved);
       return next;
     });
+    // Run FLIP after state update
+    requestAnimationFrame(() => requestAnimationFrame(cleanup));
     setDragIndex(null);
     setDragOverIndex(null);
     dragItemRef.current = null;
@@ -128,6 +157,7 @@ export default function SortingSection({ section }: SortingSectionProps) {
           return (
             <div
               key={`${item.text}-${i}`}
+              ref={(el) => { itemRefs.current[i] = el; }}
               draggable={!submitted}
               onDragStart={() => handleDragStart(i)}
               onDragOver={(e) => handleDragOver(e, i)}
@@ -142,7 +172,7 @@ export default function SortingSection({ section }: SortingSectionProps) {
                 border: itemBorder(status, isDragging, isDragOver),
                 borderRadius: '6px',
                 cursor: submitted ? 'default' : 'grab',
-                transition: 'var(--transition-fast)',
+                transition: 'background-color 150ms ease, border-color 150ms ease, opacity 150ms ease',
                 opacity: isDragging ? 0.6 : 1,
               }}
             >

@@ -59,7 +59,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const { index } = action.payload;
       if (index < 0 || index >= state.pages.length) return state;
       const removedPage = state.pages[index];
-      const removedHash = computeContentHash(removedPage);
+      // Strip _meta so hash matches the one computed on ADD_PAGE (which was computed
+      // before ensureMeta injected _meta into the stored copy).
+      const { _meta, ...pageContent } = removedPage;
+      const removedHash = computeContentHash(pageContent);
       const newPages = state.pages.filter((_, i) => i !== index);
       const newHashes = { ...state.pageHashes };
       if (removedHash) delete newHashes[removedHash];
