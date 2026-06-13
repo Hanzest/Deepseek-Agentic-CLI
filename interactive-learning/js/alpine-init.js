@@ -338,17 +338,15 @@
       },
 
       /**
-       * Record a quiz score for a given page.
-       * @param {number} pageIndex
-       * @param {object} scoreData
+       * Navigate to a random page, preferring unvisited pages.
        */
-      recordQuizScore: function (pageIndex, sectionIndex, scoreData) {
-        var scores = Object.assign({}, this.progress.quizScores);
-        scores[pageIndex + '-' + sectionIndex] = scoreData;
-        this.progress = Object.assign({}, this.progress, { quizScores: scores });
-        if (window.Storage) {
-          window.Storage.save('quizScores', scores);
-        }
+      goToRandomPage: function () {
+        var vis = this.visibleIndices;
+        if (!vis.length) return;
+        var self = this;
+        var unseen = vis.filter(function (i) { return !self.isPageViewed(i); });
+        var pool = unseen.length > 0 ? unseen : vis;
+        this.goToPage(pool[Math.floor(Math.random() * pool.length)]);
       },
 
       /**
@@ -727,82 +725,16 @@
         };
       },
 
-      /* ---- Play Mode ---- */
-
-      playModeActive: false,
-      playModeInterval: null,
-      playModeDelay: 3,
-
-      /**
-       * Start auto-play mode that cycles through pages.
-       */
-      startPlayMode: function () {
-        if (this.playModeActive) return;
-        if (this.pages.length === 0) return;
-
-        this.playModeActive = true;
-        var self = this;
-
-        // Ensure we're on a page
-        if (this.currentPageIndex < 0 || this.currentPageIndex >= this.pages.length) {
-          this.currentPageIndex = 0;
-        }
-
-        this.playModeInterval = setInterval(function () {
-          self._playTick();
-        }, this.playModeDelay * 1000);
-      },
-
-      /**
-       * Stop auto-play mode.
-       */
-      stopPlayMode: function () {
-        this.playModeActive = false;
-        if (this.playModeInterval) {
-          clearInterval(this.playModeInterval);
-          this.playModeInterval = null;
-        }
-      },
-
-      /**
-       * Internal: tick handler for play mode.
-       * Skips to next page; pauses on pages with interactive sections (quiz, flashcards).
-       */
-      _playTick: function () {
-        if (!this.playModeActive) return;
-
-        var currentPage = this.pages[this.currentPageIndex];
-        // Check if current page has interactive sections
-        if (currentPage && currentPage.sections) {
-          for (var i = 0; i < currentPage.sections.length; i++) {
-            var sec = currentPage.sections[i];
-            if (sec.type === 'quiz' || sec.type === 'flashcards' || sec.type === 'multiple-choice') {
-              // Pause on interactive content — user must manually continue
-              this.stopPlayMode();
-              var toastsStore = Alpine.store('toasts');
-              if (toastsStore) {
-                toastsStore.add('Play mode paused on interactive content', 'info', { duration: 3000 });
-              }
-              return;
-            }
-          }
-        }
-
-        // Navigate to next page
-        var vis = this.visibleIndices;
-        var cur = vis.indexOf(this.currentPageIndex);
-        if (cur < vis.length - 1) {
-          this.goToPage(vis[cur + 1]);
-        } else {
-          // Reached the end
-          this.stopPlayMode();
-          var toastsStore = Alpine.store('toasts');
-          if (toastsStore) {
-            toastsStore.add('Play mode finished — all pages viewed', 'success', { duration: 3000 });
-          }
-        }
-      }
     });
+
+    /* ------------------------------------------------------------------ */
+    /*  Convenience: _showToast                                            */
+    /*  Usage: _showToast(msg, type, opts)                                 */
+    /* ------------------------------------------------------------------ */
+    function _showToast(message, type, opts) {
+      var toastsStore = Alpine.store('toasts');
+      if (toastsStore) toastsStore.add(message, type || 'info', opts || {});
+    }
 
     /* ------------------------------------------------------------------ */
     /*  Global store: toasts                                               */
@@ -1074,6 +1006,85 @@
         timerStore._loadPomodoro();
       }
     })();
+
+    /* ------------------------------------------------------------------ */
+    /*  Global keyboard shortcut handler                                   */
+    /*  Called by @keydown.window on <body> in index.html                  */
+    /* ------------------------------------------------------------------ */
+    window.handleGlobalKeydown = function (event) {
+      var app = Alpine.store('app');
+      if (!app) return;
+
+      // '?' — Toggle shortcuts overlay (skip when typing)
+      if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
+        if (!Utils.isInputFocused()) {
+          event.preventDefault();
+          app.toggleShortcuts();
+        }
+        return;
+      }
+
+      // ArrowLeft — Previous page
+      if (event.key === 'ArrowLeft') {
+        if (!Utils.isInputFocused()) {
+          app.prevPage();
+        }
+        return;
+      }
+
+      // ArrowRight — Next page
+      if (event.key === 'ArrowRight') {
+        if (!Utils.isInputFocused()) {
+          app.nextPage();
+        }
+        return;
+      }
+
+      // Escape — Close overlays / cancel rename
+      if (event.key === 'Escape') {
+        app.showShortcuts = false;
+        app._contextMenu = null;
+        app._renamingIndex = null;
+        return;
+      }
+
+      // Ctrl/Cmd + B — Toggle sidebar
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault();
+        app.sidebarOpen = !app.sidebarOpen;
+        return;
+      }
+
+      // '/' — Focus search input
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        if (!Utils.isInputFocused()) {
+          event.preventDefault();
+          var searchInput = document.querySelector('input[type=text][placeholder*=Search]');
+          if (searchInput) searchInput.focus();
+        }
+        return;
+      }
+
+      // 'r' — Rename current page
+      if (event.key === 'r' && !event.ctrlKey && !event.metaKey && !event.shiftKey && app.currentPage) {
+        if (!Utils.isInputFocused()) {
+          app._renamingIndex = app.currentPageIndex;
+          setTimeout(function () {
+            var inp = document.querySelector('.page-list input[type=text]');
+            if (inp) inp.focus();
+          }, 50);
+        }
+        return;
+      }
+
+      // Delete — Delete current page
+      if ((event.key === 'Delete' || event.key === 'Del') && app.currentPage && !event.ctrlKey && !event.metaKey) {
+        if (!Utils.isInputFocused()) {
+          app.removePage(app.currentPageIndex);
+        }
+        return;
+      }
+    };
 
     /* ------------------------------------------------------------------ */
     /*  Swipe Gesture Helpers                                              */

@@ -26,6 +26,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Application scripts -->
+  <script src="js/utils.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/schema-validator.cjs"></script>
   <script src="js/alpine-init.js"></script>
@@ -33,130 +34,6 @@
 
   <!-- Application styles -->
   <link rel="stylesheet" href="css/style.css" />
-
-  <style>
-    /* Base styles */
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    /* Drop zone hover effect */
-    .drop-zone-active {
-      @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30;
-    }
-
-    /* Smooth transitions for dark mode */
-    *, *::before, *::after {
-      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
-    }
-
-    /* Prevent text cursor on non-interactive elements */
-    body {
-      user-select: none;
-    }
-    /* Re-enable selection for content/text areas */
-    p, h1, h2, h3, h4, h5, h6, span, li, td, th, blockquote, pre, code,
-    .prose, [x-html], .tab-content, .timeline-content,
-    input, textarea, select, [contenteditable] {
-      user-select: text;
-    }
-    input, textarea, select {
-      cursor: text;
-    }
-    button, a, label, [role="button"], .cursor-pointer {
-      cursor: pointer;
-      user-select: none;
-    }
-
-    /* Custom scrollbar for sidebar */
-    .sidebar-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .sidebar-scroll::-webkit-scrollbar-thumb {
-      @apply bg-gray-300 dark:bg-gray-600 rounded;
-    }
-
-    /* Toast notification styles */
-    .toast-container {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      max-width: 24rem;
-      pointer-events: none;
-    }
-    .toast-item {
-      pointer-events: auto;
-      animation: toast-slide-in 0.25s ease-out;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    @keyframes toast-slide-in {
-      from { opacity: 0; transform: translateX(100%); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes toast-slide-out {
-      from { opacity: 1; transform: translateX(0); }
-      to { opacity: 0; transform: translateX(100%); }
-    }
-    .toast-leaving {
-      animation: toast-slide-out 0.2s ease-in forwards;
-    }
-    /* Sidebar drag ghost styling */
-    .sortable-ghost {
-      opacity: 0.4;
-      background: #c7d2fe !important;
-    }
-    .sortable-drag {
-      opacity: 0.8;
-      transform: rotate(2deg);
-    }
-    /* Context menu */
-    .context-menu {
-      position: fixed;
-      z-index: 100;
-      min-width: 160px;
-      animation: scale-in 0.12s ease-out;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    }
-    /* Hamburger button */
-    .sidebar-toggle {
-      display: none;
-    }
-    @media (max-width: 767px) {
-      .sidebar-toggle {
-        display: flex;
-      }
-    }
-    /* x-cloak - hide elements until Alpine is ready */
-    [x-cloak] { display: none !important; }
-    /* Dark mode context menu overrides */
-    html.dark .context-menu {
-      background: #1e293b;
-      border-color: #334155;
-    }
-
-    /* Keyboard shortcut overlay fade */
-    .shortcuts-overlay {
-      transition: opacity 0.2s ease;
-    }
-
-    /* Progress bar animation */
-    .progress-fill {
-      transition: width 0.3s ease;
-    }
-
-    /* Lock viewport — prevent page-level scroll so sidebar stays fixed */
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-  </style>
 </head>
 <body
   class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-screen flex flex-col overflow-hidden"
@@ -175,62 +52,7 @@
       $store.app._saveSession();
     });
   "
-  @keydown.window="
-    if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
-      // Toggle shortcuts overlay only if not typing in input/textarea/select fields
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
-        event.preventDefault();
-        $store.app.toggleShortcuts();
-      }
-    }
-    if (event.key === 'ArrowLeft') {
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !document.activeElement.isContentEditable) {
-        $store.app.prevPage();
-      }
-    }
-    if (event.key === 'ArrowRight') {
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !document.activeElement.isContentEditable) {
-        $store.app.nextPage();
-      }
-    }
-    if (event.key === 'Escape') {
-      $store.app.showShortcuts = false;
-      $store.app._contextMenu = null;
-      $store.app._renamingIndex = null;
-    }
-    if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
-      event.preventDefault();
-      $store.app.sidebarOpen = !$store.app.sidebarOpen;
-    }
-    if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
-        event.preventDefault();
-        var searchInput = document.querySelector('input[type=text][placeholder*=Search]');
-        if (searchInput) searchInput.focus();
-      }
-    }
-    if (event.key === 'r' && !event.ctrlKey && !event.metaKey && !event.shiftKey && $store.app.currentPage) {
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !document.activeElement.isContentEditable) {
-        $store.app._renamingIndex = $store.app.currentPageIndex;
-        // Focus the rename input after Alpine re-renders
-        setTimeout(function() { 
-          var inp = document.querySelector('.page-list input[type=text]');
-          if (inp) inp.focus();
-        }, 50);
-      }
-    }
-    if ((event.key === 'Delete' || event.key === 'Del') && $store.app.currentPage && !event.ctrlKey && !event.metaKey) {
-      var tag = document.activeElement ? document.activeElement.tagName : '';
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !document.activeElement.isContentEditable) {
-        $store.app.removePage($store.app.currentPageIndex);
-      }
-    }
-  "
+  @keydown.window="handleGlobalKeydown($event)"
 >
 
   <!-- ========================================================== -->
@@ -722,7 +544,7 @@
                         </button>
                         <div x-show="isAccordionOpen(aIdx)"
                              x-collapse.duration.200ms
-                             class="px-4 pb-3.5 text-gray-650 dark:text-gray-200 leading-relaxed prose dark:prose-invert max-w-none text-sm font-medium"
+                             class="px-4 pb-3.5 text-gray-700 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none text-sm"
                              x-html="renderContent(item.content)"></div>
                       </div>
                     </template>
@@ -1108,13 +930,12 @@
                           <button @click="toggleBlankHint(sIdx)"
                                   type="button"
                                   :disabled="blankSubmitted"
-                                  class="p-2 border rounded-lg transition-all duration-150 flex items-center justify-center min-w-[38px] min-h-[38px] shadow-sm"
-                                  :class="blankSubmitted 
-                                    ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-705 text-gray-400 dark:text-gray-600 cursor-not-allowed' 
-                                    : (blankHints[sIdx] 
-                                      ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-400' 
-                                      : 'bg-amber-50/50 dark:bg-amber-950/10 border-amber-250 dark:border-amber-900/30 text-amber-500 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:border-amber-300 dark:hover:border-amber-800')
-                                  "
+                                  class="p-2 border rounded-lg transition-colors flex items-center justify-center min-w-[38px] min-h-[38px]"
+                                  :class="blankSubmitted
+                                    ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-50'
+                                    : (blankHints[sIdx]
+                                      ? 'bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-300'
+                                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-500 dark:hover:text-amber-300')"
                                   title="Show hint">
                             💡
                           </button>
@@ -1172,12 +993,18 @@
                         <template x-for="(pair, lIdx) in (section.pairs || [])" :key="'l-' + lIdx">
                           <div class="match-item relative z-10"
                                :data-left-id="lIdx"
-                               :class="getMatchColorClass(lIdx, true) + (parseInt(_selectedLeft) === parseInt(lIdx) ? ' ring-2 ring-indigo-400' : '')"
+                               :class="(matchSubmitted
+                                  ? (matchResults[lIdx] ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300' : 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300')
+                                  : (parseInt(_selectedLeft) === parseInt(lIdx)
+                                    ? 'border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 ring-2 ring-indigo-400'
+                                    : (matchAssignments[lIdx] !== undefined
+                                      ? 'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-gray-800'
+                                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800')))"
                                @click="_selectLeft(lIdx)"
                           >
                             <span class="font-medium text-gray-800 dark:text-gray-200" x-text="pair.left"></span>
                             <span x-show="matchAssignments[lIdx] !== undefined && !matchSubmitted"
-                                  class="ml-auto text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">
+                                  class="ml-auto text-xs text-gray-400 dark:text-gray-500 italic">
                               ✓ linked
                             </span>
                             <span x-show="matchSubmitted"
@@ -1191,8 +1018,10 @@
 
                       <!-- Connection arrows / SVG lines area -->
                       <svg class="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible hidden sm:block">
-                        <template x-for="line in matchLines">
-                          <path :d="line.path" :class="line.colorClass" stroke-width="3" fill="none" class="transition-all duration-300" />
+                        <template x-for="(line, lineIdx) in matchLines" :key="lineIdx">
+                          <g>
+                            <path :d="line.path" :class="line.colorClass" stroke-width="3" fill="none" class="transition-all duration-300" />
+                          </g>
                         </template>
                       </svg>
 
@@ -1202,7 +1031,11 @@
                         <template x-for="(rItem, rIdx) in shuffledRight" :key="'r-' + rItem.index">
                           <div class="match-item relative z-10"
                                :data-right-id="rItem.index"
-                               :class="getMatchColorClass(rItem.index, false)"
+                               :class="matchSubmitted
+                                  ? (matchResults[rItem.index] ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300' : 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300')
+                                  : (Object.values(matchAssignments).indexOf(rItem.index) !== -1
+                                    ? 'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-gray-800'
+                                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800')"
                                @click="_selectRight(rItem.index)"
                           >
                             <span class="text-gray-750 dark:text-gray-300" x-text="rItem.text"></span>
@@ -1231,9 +1064,9 @@
                             Try Again
                           </button>
                         </template>
-                        <!-- Show Answer Button -->
+                        <!-- Show Answer Button (subtle — discouraged) -->
                         <button @click="showMatchAnswers()"
-                                class="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium min-h-[44px]">
+                                class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline decoration-dotted underline-offset-2 transition-colors min-h-[44px]">
                           Show Answer
                         </button>
                       </div>
@@ -1353,25 +1186,7 @@
                     <!-- Cloze passage -->
                     <div class="cloze-passage text-gray-800 dark:text-gray-200 leading-relaxed mb-4">
                       <!-- Render passage by splitting on {{id}} and replacing blanks -->
-                      <template x-for="(part, cIdx) in (function() {
-                        var text = section.text || '';
-                        var parts = [];
-                        var regex = /\{\{([^}]+?)\}\}/g;
-                        var lastIdx = 0;
-                        var match;
-                        var blanks = section.blanks || [];
-                        while ((match = regex.exec(text)) !== null) {
-                          if (match.index > lastIdx) {
-                            parts.push({ type: 'text', content: text.substring(lastIdx, match.index) });
-                          }
-                          parts.push({ type: 'blank', blankId: match[1] });
-                          lastIdx = regex.lastIndex;
-                        }
-                        if (lastIdx < text.length) {
-                          parts.push({ type: 'text', content: text.substring(lastIdx) });
-                        }
-                        return parts;
-                      })()" :key="cIdx">
+                      <template x-for="(part, cIdx) in parseClozeText(section.text || '')" :key="cIdx">
                         <template x-if="part.type === 'text'">
                           <span x-html="renderContent(part.content)"></span>
                         </template>
@@ -1415,13 +1230,16 @@
                                 </template>
                                 <!-- Hint -->
                                 <button @click="toggleClozeHint(blank.id)"
-                                        class="cloze-hint-btn text-xs px-1.5 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                                        title="Show hint"
-                                        x-text="clozeHints[blank.id] ? '💡' : '💡'">
+                                        class="p-1 border rounded transition-colors flex items-center justify-center"
+                                        :class="clozeHints[blank.id]
+                                          ? 'bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-300'
+                                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-400 dark:text-gray-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-500 dark:hover:text-amber-300'"
+                                        title="Show hint">
+                                  💡
                                 </button>
                                 <div x-show="clozeHints[blank.id] && blank.hint"
                                      x-transition
-                                     class="cloze-hint-text absolute mt-1 p-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs whitespace-nowrap z-10"
+                                     class="cloze-hint-text absolute mt-1 p-1.5 bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-700 rounded text-xs whitespace-nowrap z-10 text-amber-800 dark:text-amber-200"
                                      x-text="'Hint: ' + blank.hint">
                                 </div>
                                 <!-- Result icon after submit -->
@@ -1537,29 +1355,9 @@
         <span x-text="($store.app.visibleIndices.indexOf($store.app.currentPageIndex) + 1)"></span>/<span x-text="$store.app.visibleCount"></span>
       </span>
 
-      <!-- Play Mode + Random Button -->
+      <!-- Random Button -->
       <div class="flex items-center gap-1" x-show="$store.app.pages.length > 0">
-        <button @click="$store.app.startPlayMode()"
-                x-show="!$store.app.playModeActive"
-                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-xs"
-                title="Auto-advance through pages">
-          ▶ Play All
-        </button>
-        <button @click="$store.app.stopPlayMode()"
-                x-show="$store.app.playModeActive"
-                class="px-2 py-1 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-medium"
-                title="Stop auto-advance">
-          ⏹ Stop
-        </button>
-        <button @click="
-          var vis = $store.app.visibleIndices;
-          var unseen = [];
-          for (var i = 0; i < vis.length; i++) {
-            if (!$store.app.isPageViewed(vis[i])) unseen.push(vis[i]);
-          }
-          var pool = unseen.length > 0 ? unseen : vis;
-          $store.app.goToPage(pool[Math.floor(Math.random() * pool.length)]);
-        "
+        <button @click="$store.app.goToRandomPage()"
                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-xs"
                 title="Go to a random page">
           🎲

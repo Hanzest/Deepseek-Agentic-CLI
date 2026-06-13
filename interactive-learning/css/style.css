@@ -921,14 +921,167 @@ html, body {
 .tts-btn.speaking { color:var(--accent-color); animation:pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-/* Play Mode */
-.play-mode-active { box-shadow:0 0 0 2px var(--accent-color); }
-.play-mode-controls { display:flex; align-items:center; gap:0.5rem; }
-.play-mode-delay { width:60px; font-size:0.75rem; }
 
 /* Reduced motion overrides */
 @media (prefers-reduced-motion: reduce) {
   .match-item, .sort-item, .flashcard-inner, .checklist-item { transition:none !important; }
   .pomodoro-timer { animation:none !important; }
   .tts-btn.speaking { animation:none !important; }
+}
+
+/* --------------------------------------------------------------------------
+   21. Base / Reset  (migrated from inline <style> in index.html)
+   -------------------------------------------------------------------------- */
+
+/* Base font */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Drop zone hover effect */
+.drop-zone-active {
+  @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30;
+}
+
+/* Smooth transitions for dark mode — scoped to cosmetic properties only.
+   NOTE: Do NOT include 'height' here — it breaks Alpine x-collapse plugin. */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* x-collapse controls its own height animation via inline style.
+   Reset the universal transition on the collapse wrapper so it doesn't interfere. */
+[x-collapse],
+.accordion-body {
+  transition: none !important;
+}
+
+/* Prevent text cursor on non-interactive elements */
+body {
+  user-select: none;
+}
+
+/* Re-enable selection for content / text areas */
+p, h1, h2, h3, h4, h5, h6, span, li, td, th, blockquote, pre, code,
+.prose, [x-html], .tab-content, .timeline-content,
+input, textarea, select, [contenteditable] {
+  user-select: text;
+}
+
+input, textarea, select {
+  cursor: text;
+}
+
+button, a, label, [role="button"], .cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded;
+}
+
+/* --------------------------------------------------------------------------
+   22. Toast Notifications  (migrated from inline <style> in index.html)
+   -------------------------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 24rem;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  animation: toast-slide-in 0.25s ease-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+.toast-leaving {
+  animation: toast-slide-out 0.2s ease-in forwards;
+}
+
+/* --------------------------------------------------------------------------
+   23. Sidebar Drag & Context Menu  (migrated from inline <style>)
+   -------------------------------------------------------------------------- */
+
+/* Sidebar drag ghost styling */
+.sortable-ghost {
+  opacity: 0.4;
+  background: #c7d2fe !important;
+}
+
+.sortable-drag {
+  opacity: 0.8;
+  transform: rotate(2deg);
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 160px;
+  animation: scale-in 0.12s ease-out;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+html.dark .context-menu {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* --------------------------------------------------------------------------
+   24. Layout & Utility  (migrated from inline <style>)
+   -------------------------------------------------------------------------- */
+
+/* Hamburger button — hidden on desktop, visible on mobile */
+.sidebar-toggle {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .sidebar-toggle {
+    display: flex;
+  }
+}
+
+/* x-cloak — hide elements until Alpine is ready */
+[x-cloak] { display: none !important; }
+
+/* Keyboard shortcut overlay fade */
+.shortcuts-overlay {
+  transition: opacity 0.2s ease;
+}
+
+/* Progress bar animation */
+.progress-fill {
+  transition: width 0.3s ease;
+}
+
+/* Lock viewport — prevent page-level scroll so sidebar stays fixed */
+html, body {
+  height: 100%;
+  overflow: hidden;
 }

@@ -142,12 +142,6 @@
           return this.flippedCards.indexOf(realIdx) !== -1;
         },
 
-        get isCardHard() {
-          var idx = function (i) {
-            return this.cardDifficulties[i] === 'hard';
-          }.bind(this);
-          return idx;
-        },
 
         get masteredCount() {
           var cards = this.section.cards || [];
@@ -336,13 +330,11 @@
         },
 
         get quizScorePercent() {
-          if (!this.quizTotalCount) return 0;
-          return Math.round((this.quizCorrectCount / this.quizTotalCount) * 100);
+          return Utils.scorePercent(this.quizCorrectCount, this.quizTotalCount);
         },
 
         get quizBestPercent() {
-          if (!this.quizBestTotal) return 0;
-          return Math.round((this.quizBestCorrect / this.quizBestTotal) * 100);
+          return Utils.scorePercent(this.quizBestCorrect, this.quizBestTotal);
         },
 
         // Fill-in-the-blank
@@ -370,18 +362,11 @@
         // Sorting
         _initSorting: function () {
           var items = this.section.items || [];
-          // Create shuffled copy of items
-          var shuffled = items.slice().map(function (item, idx) {
-            return { index: idx, text: item.text, correctOrder: item.correctOrder };
-          });
-          // Fisher-Yates shuffle
-          for (var i = shuffled.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var temp = shuffled[i];
-            shuffled[i] = shuffled[j];
-            shuffled[j] = temp;
-          }
-          this.sortedItems = shuffled;
+          this.sortedItems = Utils.shuffle(
+            items.map(function (item, idx) {
+              return { index: idx, text: item.text, correctOrder: item.correctOrder };
+            })
+          );
           this.sortingSubmitted = false;
           this.sortingResults = {};
           this.sortingCorrectCount = 0;
@@ -407,9 +392,7 @@
         },
 
         get sortingScorePercent() {
-          var items = this.section.items || [];
-          if (!items.length) return 0;
-          return Math.round((this.sortingCorrectCount / items.length) * 100);
+          return Utils.scorePercent(this.sortingCorrectCount, (this.section.items || []).length);
         },
 
         checkBlankInstant: function (sIndex) {
@@ -532,19 +515,9 @@
 
         initMatching: function () {
           var pairs = this.section.pairs || [];
-          // Build right-side array and shuffle it
-          var rightItems = [];
-          for (var i = 0; i < pairs.length; i++) {
-            rightItems.push({ index: i, text: pairs[i].right });
-          }
-          // Fisher-Yates shuffle
-          for (var i = rightItems.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var tmp = rightItems[i];
-            rightItems[i] = rightItems[j];
-            rightItems[j] = tmp;
-          }
-          this.shuffledRight = rightItems;
+          this.shuffledRight = Utils.shuffle(
+            pairs.map(function (pair, i) { return { index: i, text: pair.right }; })
+          );
           this.matchAssignments = {};
           this.matchSubmitted = false;
           this.matchResults = {};
@@ -614,9 +587,7 @@
         },
 
         get matchScorePercent() {
-          var total = (this.section.pairs || []).length;
-          if (!total) return 0;
-          return Math.round((this.matchCorrectCount / total) * 100);
+          return Utils.scorePercent(this.matchCorrectCount, (this.section.pairs || []).length);
         },
 
         showMatchAnswers: function () {
@@ -786,9 +757,7 @@
         },
 
         get clozeScorePercent() {
-          var total = this.clozeTotalBlanks;
-          if (!total) return 0;
-          return Math.round((this.clozeCorrectCount / total) * 100);
+          return Utils.scorePercent(this.clozeCorrectCount, this.clozeTotalBlanks);
         },
 
         /* ---- Text-to-Speech ---- */
@@ -823,58 +792,48 @@
         },
 
         /**
-         * Escape HTML to prevent XSS
+         * Escape HTML to prevent XSS — delegates to Utils.
          */
         escapeHtml: function (str) {
-          if (typeof str !== 'string') return String(str || '');
-          var div = document.createElement('div');
-          div.appendChild(document.createTextNode(str));
-          return div.innerHTML;
+          return Utils.escapeHtml(str);
         },
 
         /**
-         * Render simple markdown-like content (bold, italic, code, links, line breaks, headings, blockquotes)
+         * Render simple markdown-like content — delegates to Utils.
          */
         renderContent: function (text) {
-          if (typeof text !== 'string') return '';
-          var html = this.escapeHtml(text);
-          // Convert ### headings to <h3>
-          html = html.replace(/(?:^|\r?\n)###\s*(.+?)(?=\r?\n|$)/g, '<h3 class="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h3>');
-          // Convert > blockquotes to <blockquote>
-          html = html.replace(/(?:^|\r?\n)>\s*(.+?)(?=\r?\n|$)/g, '<blockquote class="border-l-4 border-indigo-500 dark:border-indigo-400 pl-4 py-1 my-3 italic text-gray-600 dark:text-gray-300">$1</blockquote>');
-          // Convert **bold** to <strong>
-          html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-          // Convert *italic* to <em>
-          html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-          // Convert `code` to <code>
-          html = html.replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded text-sm">$1</code>');
-          // Convert [text](url) to <a>
-          html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 underline">$1</a>');
-          // Convert newlines to <br>
-          html = html.replace(/\r?\n/g, '<br>');
-          return html;
+          return Utils.renderMarkdown(text);
         }
       };
     });
 
     /* ------------------------------------------------------------------ */
-    /*  Helper: renderMarkdownContent — for static x-html usage            */
+    /*  Helper: renderMarkdownContent — thin alias for window.Utils.renderMarkdown */
     /* ------------------------------------------------------------------ */
     window.renderMarkdownContent = function (text) {
-      if (typeof text !== 'string') return '';
-      var div = document.createElement('div');
-      div.appendChild(document.createTextNode(text));
-      var html = div.innerHTML;
-      // Convert ### headings to <h3>
-      html = html.replace(/(?:^|\r?\n)###\s*(.+?)(?=\r?\n|$)/g, '<h3 class="text-base font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h3>');
-      // Convert > blockquotes to <blockquote>
-      html = html.replace(/(?:^|\r?\n)>\s*(.+?)(?=\r?\n|$)/g, '<blockquote class="border-l-4 border-indigo-500 dark:border-indigo-400 pl-4 py-1 my-3 italic text-gray-600 dark:text-gray-300">$1</blockquote>');
-      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-      html = html.replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded text-sm">$1</code>');
-      html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 underline">$1</a>');
-      html = html.replace(/\r?\n/g, '<br>');
-      return html;
+      return Utils.renderMarkdown(text);
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Helper: parseClozeText — parse a cloze passage into parts array    */
+    /*  Returns: Array<{ type: 'text'|'blank', content?: string, blankId? }>  */
+    /* ------------------------------------------------------------------ */
+    window.parseClozeText = function (text) {
+      var parts = [];
+      var regex = /\{\{([^}]+?)\}\}/g;
+      var lastIdx = 0;
+      var match;
+      while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+          parts.push({ type: 'text', content: text.substring(lastIdx, match.index) });
+        }
+        parts.push({ type: 'blank', blankId: match[1] });
+        lastIdx = regex.lastIndex;
+      }
+      if (lastIdx < text.length) {
+        parts.push({ type: 'text', content: text.substring(lastIdx) });
+      }
+      return parts;
     };
 
   }); // end alpine:init
