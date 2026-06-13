@@ -9,14 +9,14 @@ const shortcutGroups: ShortcutGroup[] = [
   {
     title: 'Navigation',
     items: [
-      { keys: '← →', desc: 'Previous / Next page' },
       { keys: 'Ctrl+B', desc: 'Toggle sidebar' },
+      { keys: 'a / ←', desc: 'Previous step (flashcard/tab/quiz/slide)' },
+      { keys: 'd / →', desc: 'Next step (flashcard/tab/quiz/slide)' },
     ],
   },
   {
     title: 'Actions',
     items: [
-      { keys: 'R', desc: 'Go to a random page' },
       { keys: 'r', desc: 'Rename current page' },
       { keys: 'Delete', desc: 'Remove current page' },
     ],

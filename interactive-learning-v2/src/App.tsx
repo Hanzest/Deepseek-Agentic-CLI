@@ -17,6 +17,7 @@ import ToastContainer from './components/UI/ToastContainer';
 
 function AppShell() {
   const { state, nextPage, prevPage } = useAppContext();
+  useKeyboardShortcuts();
   const scrollPositions = useRef<Record<number, number>>({});
   const mainRef = useRef<HTMLDivElement | null>(null);
 

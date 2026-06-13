@@ -27,16 +27,6 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
-      // Arrow navigation
-      if (e.key === 'ArrowLeft' && !isInputFocused()) {
-        c.prevPage();
-        return;
-      }
-      if (e.key === 'ArrowRight' && !isInputFocused()) {
-        c.nextPage();
-        return;
-      }
-
       // Escape — Close overlays / cancel rename
       if (e.key === 'Escape') {
         if (c.state.showShortcuts) c.toggleShortcuts();
@@ -75,16 +65,30 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
-      // 'R' — Go to random page (Shift + r)
-      if (e.key === 'R' && !e.ctrlKey && !e.metaKey && !isInputFocused()) {
-        c.goToRandomPage();
-        return;
-      }
-
       // Delete — Delete current page
       if ((e.key === 'Delete' || e.key === 'Del') && c.currentPage && !e.ctrlKey && !e.metaKey) {
         if (!isInputFocused()) {
           c.removePage(c.state.currentPageIndex);
+        }
+        return;
+      }
+
+      // 'a' or ArrowLeft — Trigger Previous button (flashcard, quiz, tab, slide)
+      if ((e.key === 'a' || e.key === 'ArrowLeft') && !e.ctrlKey && !e.metaKey) {
+        if (!isInputFocused()) {
+          e.preventDefault();
+          const prevBtn = document.querySelector<HTMLButtonElement>('[data-nav-prev]:not([disabled])');
+          prevBtn?.click();
+        }
+        return;
+      }
+
+      // 'd' or ArrowRight — Trigger Next button (flashcard, quiz, tab, slide)
+      if ((e.key === 'd' || e.key === 'ArrowRight') && !e.ctrlKey && !e.metaKey) {
+        if (!isInputFocused()) {
+          e.preventDefault();
+          const nextBtn = document.querySelector<HTMLButtonElement>('[data-nav-next]:not([disabled])');
+          nextBtn?.click();
         }
         return;
       }

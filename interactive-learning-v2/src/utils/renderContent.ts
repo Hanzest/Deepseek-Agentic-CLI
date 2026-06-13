@@ -40,8 +40,44 @@ export function renderMarkdown(text: string): string {
     /\[(.+?)\]\((.+?)\)/g,
     '<a href="$2" target="_blank" rel="noopener" class="section-link">$1</a>'
   );
+  // Tables — convert markdown table blocks to HTML tables
+  html = html.replace(
+    /((?:\|[^\n]*\n?)+)/g,
+    (match: string) => {
+      const lines = match.trim().split(/\r?\n/);
+      if (lines.length < 3) return match;
+      // Check if second line is a separator (| --- | --- |)
+      if (!/^\|[-:\s|]+\|$/.test(lines[1].trim())) return match;
+      let tableHtml = '<table class="section-table">\n<thead>\n<tr>';
+      // Header row
+      const headerCells = lines[0].split('|').filter((c: string) => c.trim() !== '');
+      headerCells.forEach((cell: string) => {
+        tableHtml += `<th>${cell.trim()}</th>`;
+      });
+      tableHtml += '</tr>\n</thead>\n<tbody>\n';
+      // Data rows (skip separator line at index 1)
+      for (let i = 2; i < lines.length; i++) {
+        const cells = lines[i].split('|').filter((c: string) => c.trim() !== '');
+        if (cells.length === 0) continue;
+        tableHtml += '<tr>';
+        cells.forEach((cell: string) => {
+          tableHtml += `<td>${cell.trim()}</td>`;
+        });
+        tableHtml += '</tr>\n';
+      }
+      tableHtml += '</tbody>\n</table>';
+      return tableHtml;
+    }
+  );
+  // Protect table HTML newlines from the <br> conversion below
+  const TABLE_NL = '\x00TABLE_NL\x00';
+  html = html.replace(/(<table[^>]*>[\s\S]*?<\/table>)/g, (m) =>
+    m.replace(/\n/g, TABLE_NL)
+  );
   // Newlines → <br>
   html = html.replace(/\r?\n/g, '<br>');
+  // Restore table newlines
+  html = html.replace(new RegExp(TABLE_NL, 'g'), '\n');
   return html;
 }
 

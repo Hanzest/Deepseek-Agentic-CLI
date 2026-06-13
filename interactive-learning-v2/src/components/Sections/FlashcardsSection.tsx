@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { FlashcardsSection as FlashcardsSectionType, FlashcardProgress } from '../../types/schema';
 import { useAppContext } from '../../context/AppContext';
 import { renderMarkdown } from '../../utils/renderContent';
@@ -8,14 +8,17 @@ interface FlashcardsSectionProps {
   sectionIndex: number;
 }
 
-type Difficulty = 'easy' | 'medium' | 'hard' | null;
-
 export default function FlashcardsSection({ section, sectionIndex }: FlashcardsSectionProps) {
   const { state } = useAppContext();
   const [currentCard, setCurrentCard] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [difficulty, setDifficulty] = useState<Record<number, Difficulty>>({});
-  const [reviewHardMode, setReviewHardMode] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animTimeoutRef = useRef<number | null>(null);
+
+  // Cleanup animation timeout on unmount
+  useEffect(() => () => {
+    if (animTimeoutRef.current !== null) clearTimeout(animTimeoutRef.current);
+  }, []);
 
   const pageMeta = state.pages[state.currentPageIndex]?._meta;
   const flashcardProgress = pageMeta?.flashcardProgress?.[sectionIndex] || {};
@@ -23,44 +26,51 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
     .filter(([, v]) => v.known)
     .map(([k]) => Number(k));
 
-  const cards = reviewHardMode
-    ? section.cards.filter((_, i) => difficulty[i] === 'hard' || (!difficulty[i] && !masteredCards.includes(i)))
-    : section.cards;
+  const cards = section.cards;
 
   const totalCards = cards.length;
   const masteredCount = masteredCards.length;
   const allMastered = masteredCount === section.cards.length;
 
-  const handlePrev = useCallback(() => {
-    setFlipped(false);
-    setCurrentCard((p) => (p - 1 + totalCards) % totalCards);
+  const advanceCard = useCallback((dir: 1 | -1) => {
+    setCurrentCard((p) => {
+      const next = p + dir;
+      if (next < 0 || next >= totalCards) return p; // clamp at boundaries
+      return next;
+    });
   }, [totalCards]);
 
+  const handlePrev = useCallback(() => {
+    if (isAnimating || currentCard <= 0) return;
+    if (flipped) {
+      setIsAnimating(true);
+      setFlipped(false);
+      animTimeoutRef.current = window.setTimeout(() => {
+        advanceCard(-1);
+        setIsAnimating(false);
+      }, 600);
+    } else {
+      advanceCard(-1);
+    }
+  }, [flipped, isAnimating, advanceCard, currentCard]);
+
   const handleNext = useCallback(() => {
-    setFlipped(false);
-    setCurrentCard((p) => (p + 1) % totalCards);
-  }, [totalCards]);
+    if (isAnimating || currentCard >= totalCards - 1) return;
+    if (flipped) {
+      setIsAnimating(true);
+      setFlipped(false);
+      animTimeoutRef.current = window.setTimeout(() => {
+        advanceCard(1);
+        setIsAnimating(false);
+      }, 600);
+    } else {
+      advanceCard(1);
+    }
+  }, [flipped, isAnimating, advanceCard, currentCard, totalCards]);
 
   const handleFlip = () => setFlipped((p) => !p);
 
-  const handleDifficulty = (d: Difficulty) => {
-    const realIndex = cards[currentCard]
-      ? section.cards.indexOf(cards[currentCard])
-      : -1;
-    if (realIndex === -1) return;
-    setDifficulty((prev) => ({ ...prev, [realIndex]: d }));
-  };
-
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  if (allMastered && !reviewHardMode) {
+  if (allMastered) {
     return (
       <div style={{
         padding: '1.5rem',
@@ -102,26 +112,6 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
           marginBottom: '0.75rem',
         }}>{section.title}</h2>}
         <p style={{ color: 'var(--text-muted)' }}>No cards to review.</p>
-        {masteredCount > 0 && (
-          <button
-            onClick={() => { setReviewHardMode(false); setCurrentCard(0); setFlipped(false); }}
-            className="btn-base"
-            style={{
-              marginTop: '0.75rem',
-              padding: '0.5rem 1.25rem',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-secondary)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontWeight: 500,
-              fontSize: '0.875rem',
-              transition: 'var(--transition-fast)',
-            }}
-          >
-            Back to all cards
-          </button>
-        )}
       </div>
     );
   }
@@ -181,7 +171,7 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
           style={{
             position: 'relative',
             width: '100%',
-            minHeight: '180px',
+            minHeight: '270px',
             cursor: 'pointer',
             transformStyle: 'preserve-3d',
             transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -204,6 +194,7 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
             fontSize: '1.1rem',
             lineHeight: 1.6,
             textAlign: 'center',
+            overflowY: 'auto',
           }}>
             <div dangerouslySetInnerHTML={{ __html: renderMarkdown(currentCardData.front) }} />
           </div>
@@ -213,8 +204,8 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
             padding: '2rem',
             backgroundColor: 'var(--accent-light)',
             borderRadius: '12px',
@@ -223,7 +214,8 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
             color: 'var(--text-primary)',
             fontSize: '1.1rem',
             lineHeight: 1.6,
-            textAlign: 'center',
+            textAlign: 'left',
+            overflowY: 'auto',
           }}>
             <div dangerouslySetInnerHTML={{ __html: renderMarkdown(currentCardData.back) }} />
           </div>
@@ -240,15 +232,16 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
       }}>
         <button
           onClick={handlePrev}
-          disabled={totalCards <= 1}
+          disabled={currentCard <= 0 || isAnimating}
+          data-nav-prev="flashcards"
           className="btn-base"
           style={{
             padding: '0.5rem 1rem',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             backgroundColor: 'var(--bg-secondary)',
-            color: totalCards <= 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
-            cursor: totalCards <= 1 ? 'not-allowed' : 'pointer',
+            color: currentCard <= 0 || isAnimating ? 'var(--text-muted)' : 'var(--text-secondary)',
+            cursor: currentCard <= 0 || isAnimating ? 'not-allowed' : 'pointer',
             fontWeight: 500,
             fontSize: '0.875rem',
             transition: 'var(--transition-fast)',
@@ -265,15 +258,16 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
         </span>
         <button
           onClick={handleNext}
-          disabled={totalCards <= 1}
+          disabled={currentCard >= totalCards - 1 || isAnimating}
+          data-nav-next="flashcards"
           className="btn-base"
           style={{
             padding: '0.5rem 1rem',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             backgroundColor: 'var(--bg-secondary)',
-            color: totalCards <= 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
-            cursor: totalCards <= 1 ? 'not-allowed' : 'pointer',
+            color: currentCard >= totalCards - 1 || isAnimating ? 'var(--text-muted)' : 'var(--text-secondary)',
+            cursor: currentCard >= totalCards - 1 || isAnimating ? 'not-allowed' : 'pointer',
             fontWeight: 500,
             fontSize: '0.875rem',
             transition: 'var(--transition-fast)',
@@ -283,108 +277,9 @@ export default function FlashcardsSection({ section, sectionIndex }: FlashcardsS
         </button>
       </div>
 
-      {/* Difficulty Buttons */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        marginBottom: '0.75rem',
-      }}>
-        <button
-          onClick={() => handleDifficulty('easy')}
-          title="Easy"
-          className="btn-base"
-          style={{
-            padding: '0.4rem 0.8rem',
-            border: '1px solid var(--success)',
-            borderRadius: '6px',
-            backgroundColor: 'transparent',
-            color: 'var(--success)',
-            cursor: 'pointer',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            transition: 'var(--transition-fast)',
-          }}
-        >
-          ✓ Easy
-        </button>
-        <button
-          onClick={() => handleDifficulty('medium')}
-          title="Medium"
-          className="btn-base"
-          style={{
-            padding: '0.4rem 0.8rem',
-            border: '1px solid var(--warning)',
-            borderRadius: '6px',
-            backgroundColor: 'transparent',
-            color: 'var(--warning)',
-            cursor: 'pointer',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            transition: 'var(--transition-fast)',
-          }}
-        >
-          ~ Medium
-        </button>
-        <button
-          onClick={() => handleDifficulty('hard')}
-          title="Hard"
-          className="btn-base"
-          style={{
-            padding: '0.4rem 0.8rem',
-            border: '1px solid var(--error)',
-            borderRadius: '6px',
-            backgroundColor: 'transparent',
-            color: 'var(--error)',
-            cursor: 'pointer',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            transition: 'var(--transition-fast)',
-          }}
-        >
-          ✗ Hard
-        </button>
-      </div>
 
-      {/* TTS Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => speak(currentCardData.front + '. ' + currentCardData.back)}
-          className="btn-base"
-          style={{
-            padding: '0.5rem 1.25rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            backgroundColor: 'var(--bg-secondary)',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            fontWeight: 500,
-            fontSize: '0.875rem',
-            transition: 'var(--transition-fast)',
-          }}
-        >
-          🔊 Read Aloud
-        </button>
 
-        {/* Review Hard Cards Toggle */}
-        <button
-          onClick={() => { setReviewHardMode(!reviewHardMode); setCurrentCard(0); setFlipped(false); }}
-          className="btn-base"
-          style={{
-            padding: '0.5rem 1.25rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            backgroundColor: 'var(--bg-secondary)',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            fontWeight: 500,
-            fontSize: '0.875rem',
-            transition: 'var(--transition-fast)',
-          }}
-        >
-          {reviewHardMode ? 'Show All Cards' : 'Review Hard Cards'}
-        </button>
-      </div>
+
     </div>
   );
 }

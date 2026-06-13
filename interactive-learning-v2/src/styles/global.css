@@ -78,12 +78,25 @@ a:hover {
 
 .section-blockquote {
   border-left: 4px solid var(--accent);
-  padding-left: 1rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
   margin: 0.75rem 0;
   font-style: italic;
   color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 0 6px 6px 0;
+  position: relative;
+}
+
+.section-blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.75rem;
+  top: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  font-style: normal;
 }
 
 .section-code {
@@ -100,6 +113,39 @@ a:hover {
 }
 .section-link:hover {
   color: var(--accent-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Table styling for rendered markdown tables
+   -------------------------------------------------------------------------- */
+.section-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.section-table th,
+.section-table td {
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.section-table th {
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-table td {
+  color: var(--text-secondary);
+}
+
+.section-table tr:nth-child(even) td {
+  background-color: var(--bg-secondary);
 }
 
 /* --------------------------------------------------------------------------
@@ -235,7 +281,6 @@ a:hover {
   filter: brightness(1.05);
 }
 .btn-base:active {
-  transform: scale(0.97);
 }
 
 /* Card base style */

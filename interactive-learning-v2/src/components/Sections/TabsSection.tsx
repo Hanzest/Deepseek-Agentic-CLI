@@ -55,6 +55,9 @@ export default function TabsSection({ section }: TabsSectionProps) {
             aria-selected={i === activeTab}
             aria-controls={`tabpanel-${i}`}
             tabIndex={i === activeTab ? 0 : -1}
+            data-label={tab.label}
+            data-nav-prev="tabs"
+            data-nav-next="tabs"
             style={{
               padding: '0.5rem 1rem',
               border: 'none',
