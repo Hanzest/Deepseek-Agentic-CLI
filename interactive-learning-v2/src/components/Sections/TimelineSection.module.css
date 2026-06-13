@@ -1,0 +1,131 @@
+.timelineSection {
+  width: 100%;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+/* Vertical layout */
+.verticalTrack {
+  position: relative;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--color-border, #e5e7eb);
+}
+
+.verticalItem {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.dot {
+  position: absolute;
+  left: -1.625rem;
+  top: 0.375rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background-color: var(--color-primary, #4f46e5);
+  border: 2px solid var(--color-bg, #ffffff);
+}
+
+.verticalContent {
+  padding-left: 0.5rem;
+}
+
+.itemDate {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary, #4f46e5);
+  margin-bottom: 0.25rem;
+}
+
+.itemTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  margin-bottom: 0.375rem;
+}
+
+.itemDesc {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-muted, #6b7280);
+}
+
+/* Horizontal layout */
+.horizontalWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.horizontalTrack {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+  flex: 1;
+}
+
+.horizontalTrack::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontalTrack::-webkit-scrollbar-thumb {
+  background-color: var(--color-border, #e5e7eb);
+  border-radius: 3px;
+}
+
+.horizontalCard {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  background-color: var(--color-card-bg, #ffffff);
+}
+
+.cardDate {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary, #4f46e5);
+  margin-bottom: 0.375rem;
+}
+
+.cardTitle {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  margin-bottom: 0.5rem;
+}
+
+.cardDesc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted, #6b7280);
+}
+
+.arrowBtn {
+  background: none;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--color-text, #1a1a2e);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.arrowBtn:hover {
+  background-color: var(--color-hover-bg, #f9fafb);
+}

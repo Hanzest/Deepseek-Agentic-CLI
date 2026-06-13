@@ -1,0 +1,109 @@
+.matchingSection {
+  width: 100%;
+  position: relative;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.matchArea {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.connectionSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 2;
+  flex: 1;
+  max-width: 250px;
+}
+
+.matchItem {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  background-color: var(--color-card-bg, #ffffff);
+}
+
+.matchItem:hover {
+  border-color: var(--color-primary, #4f46e5);
+}
+
+.matchSelected {
+  border-color: var(--color-primary, #4f46e5);
+  background-color: var(--color-primary-light, #eef2ff);
+}
+
+.matchMatched {
+  border-style: dashed;
+}
+
+.matchCorrect {
+  border-color: var(--color-success, #10b981);
+  background-color: #ecfdf5;
+}
+
+.matchWrong {
+  border-color: var(--color-danger, #ef4444);
+  background-color: #fef2f2;
+}
+
+.actionRow {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.secondaryBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.scoreBanner {
+  margin-top: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-primary, #4f46e5);
+}

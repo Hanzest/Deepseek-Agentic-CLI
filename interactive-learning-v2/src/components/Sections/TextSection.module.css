@@ -1,0 +1,61 @@
+.textSection {
+  max-width: none;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.content {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-text, #1a1a2e);
+}
+
+.content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.content p {
+  margin-bottom: 0.75rem;
+}
+
+.content blockquote {
+  border-left: 4px solid var(--color-primary, #4f46e5);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--color-muted, #6b7280);
+  font-style: italic;
+}
+
+.content strong {
+  font-weight: 700;
+}
+
+.content em {
+  font-style: italic;
+}
+
+.content code {
+  background-color: var(--color-code-bg, #f3f4f6);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+.content a {
+  color: var(--color-primary, #4f46e5);
+  text-decoration: underline;
+}
+
+.content a:hover {
+  opacity: 0.8;
+}

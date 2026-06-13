@@ -1,0 +1,48 @@
+.zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px;
+  border: 2px dashed var(--color-border, #d1d5db);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.zone:hover {
+  border-color: var(--color-primary, #3b82f6);
+}
+
+.dragging {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-alpha, rgba(59, 130, 246, 0.06));
+}
+
+.uploadIcon {
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.dragging .uploadIcon {
+  color: var(--color-primary, #3b82f6);
+}
+
+.text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.dragging .text {
+  color: var(--color-primary, #3b82f6);
+  font-weight: 500;
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: #ef4444;
+}

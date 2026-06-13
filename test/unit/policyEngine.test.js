@@ -1,3 +1,4 @@
+import path from "path";
 import { describe, it, expect } from "vitest";
 import {
     createPolicyEngine,
@@ -112,6 +113,51 @@ describe("modeGatePolicy", () => {
         const result = modeGatePolicy({
             toolName: "write_or_create_file",
             args: { file_path: "artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(true);
+    });
+
+    it("allows write_or_create_file targeting ./artifacts/ in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "./artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(true);
+    });
+
+    it("allows write_or_create_file targeting artifacts with Windows backslash in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "artifacts\\active\\plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(true);
+    });
+
+    it("blocks write_or_create_file targeting ../src/ in plan mode (outside workspace)", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "../src/index.js" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(false);
+    });
+
+    it("blocks write_or_create_file targeting absolute C:/ path outside project in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "C:/Users/test/artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(false);
+    });
+
+    it("allows write_or_create_file targeting absolute path that resolves to project artifacts/ in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: path.resolve("artifacts/active/plan.md") },
             agentMode: "plan",
         });
         expect(result.allow).toBe(true);

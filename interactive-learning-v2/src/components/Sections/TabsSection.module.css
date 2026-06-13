@@ -1,0 +1,63 @@
+.tabsSection {
+  width: 100%;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.tabList {
+  display: flex;
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  overflow-x: auto;
+  gap: 0;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  position: relative;
+  color: var(--color-muted, #6b7280);
+  transition: color 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--color-text, #1a1a2e);
+}
+
+.activeTab {
+  color: var(--color-primary, #4f46e5);
+}
+
+.activeTab::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-primary, #4f46e5);
+}
+
+.inactiveTab {
+  color: var(--color-muted, #6b7280);
+}
+
+.tabPanel {
+  padding: 1rem 0;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.tabPanel[hidden] {
+  display: none;
+}

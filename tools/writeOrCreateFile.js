@@ -167,7 +167,7 @@ async function writeOrCreateFileCore({
 
     // ---- Timestamp prefix for new files written to artifacts/active/ ----
     let actual_path = resolved_path;
-    if (isInActive && !fileExists && mode !== "append") {
+    if (isInActive && !fileExists && mode !== "append" && isPlanFile(resolved_path)) {
         const dir = path.dirname(resolved_path);
         const base = path.basename(resolved_path);
         // Only timestamp if the basename does not already have a timestamp prefix
