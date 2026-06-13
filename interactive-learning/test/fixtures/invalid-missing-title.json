@@ -1,0 +1,12 @@
+{
+  "page": {
+    "description": "Missing title"
+  },
+  "sections": [
+    {
+      "type": "text",
+      "title": "Section",
+      "content": "Some content."
+    }
+  ]
+}

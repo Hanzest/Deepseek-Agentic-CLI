@@ -1,0 +1,12 @@
+{
+  "page": {
+    "title": "Bad Type Page"
+  },
+  "sections": [
+    {
+      "type": "video",
+      "title": "Video Section",
+      "source": "http://example.com"
+    }
+  ]
+}

@@ -1,0 +1,934 @@
+/* ==========================================================================
+   Interactive Learning SPA — Custom Styles
+   Tailwind CSS CDN handles utility classes; this file covers animations,
+   theming (light/dark), and advanced CSS features Tailwind can't handle.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Custom Properties (Light Theme — Default)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Borders */
+  --border-color: #e2e8f0;
+
+  /* Accent */
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.1);
+
+  /* Semantic */
+  --error-bg: #fef2f2;
+  --error-border: #fca5a5;
+  --error-text: #991b1b;
+  --success-bg: #f0fdf4;
+  --success-border: #86efac;
+  --success-text: #166534;
+  --warning-bg: #fffbeb;
+  --warning-border: #fcd34d;
+  --warning-text: #92400e;
+
+  /* Skeleton */
+  --skeleton-base: #e2e8f0;
+  --skeleton-shine: #f1f5f9;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+}
+
+/* --------------------------------------------------------------------------
+   2. Dark Theme Overrides
+   -------------------------------------------------------------------------- */
+html.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+
+  --border-color: #334155;
+
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --accent-light: rgba(129, 140, 248, 0.15);
+
+  --error-bg: #450a0a;
+  --error-border: #991b1b;
+  --error-text: #fca5a5;
+  --success-bg: #052e16;
+  --success-border: #166534;
+  --success-text: #86efac;
+  --warning-bg: #451a03;
+  --warning-border: #92400e;
+  --warning-text: #fcd34d;
+
+  --skeleton-base: #334155;
+  --skeleton-shine: #475569;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   3. Base Body / Theming
+   -------------------------------------------------------------------------- */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal),
+              color var(--transition-normal);
+}
+
+/* --------------------------------------------------------------------------
+   4. Flashcard 3D Flip
+   -------------------------------------------------------------------------- */
+.flashcard-container {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 28rem;
+  aspect-ratio: 3 / 2;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   5. Timeline Vertical Connector
+   -------------------------------------------------------------------------- */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+/* Vertical line */
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 2rem;
+  padding-left: 1rem;
+}
+
+/* Circle marker */
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.25rem;
+  top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  border: 3px solid var(--bg-primary);
+  box-shadow: 0 0 0 2px var(--accent-color);
+  z-index: 1;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* Timeline content */
+.timeline-content {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mobile: line stays on left (already left-aligned above) */
+@media (max-width: 768px) {
+  .timeline {
+    padding-left: 1.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Accordion Smooth Animation
+   -------------------------------------------------------------------------- */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-content.open {
+  max-height: 1000px;
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  transition: color var(--transition-fast);
+}
+
+.accordion-trigger:hover {
+  color: var(--accent-color);
+}
+
+.accordion-trigger::after {
+  content: '';
+  width: 0.75rem;
+  height: 0.75rem;
+  border-right: 2px solid var(--text-secondary);
+  border-bottom: 2px solid var(--text-secondary);
+  transform: rotate(45deg);
+  transition: transform var(--transition-normal);
+}
+
+.accordion-trigger[aria-expanded="true"]::after {
+  transform: rotate(-135deg);
+}
+
+/* --------------------------------------------------------------------------
+   7. Tab Transitions
+   -------------------------------------------------------------------------- */
+.tab-content {
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition: opacity var(--transition-normal),
+              transform var(--transition-normal);
+  display: none;
+}
+
+.tab-content.active {
+  opacity: 1;
+  transform: translateY(0);
+  display: block;
+}
+
+.tab-list {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  gap: 0;
+}
+
+.tab-button {
+  padding: 0.625rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-fast),
+              border-color var(--transition-fast);
+  min-height: 44px;
+}
+
+.tab-button:hover {
+  color: var(--text-primary);
+}
+
+.tab-button.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
+/* --------------------------------------------------------------------------
+   8. Drag-and-Drop Zone
+   -------------------------------------------------------------------------- */
+.drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--bg-secondary);
+  transition: border-color var(--transition-normal),
+              box-shadow var(--transition-normal),
+              background-color var(--transition-normal);
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone:hover {
+  border-color: var(--accent-color);
+  background-color: var(--accent-light);
+}
+
+.drop-zone.dragover,
+.drop-zone--active {
+  border-color: var(--accent-color);
+  background-color: var(--accent-light);
+  box-shadow: 0 0 0 3px var(--accent-color),
+              0 0 20px rgba(99, 102, 241, 0.25);
+  animation: drop-zone-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes drop-zone-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--accent-color),
+                0 0 15px rgba(99, 102, 241, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 5px var(--accent-color),
+                0 0 25px rgba(99, 102, 241, 0.35);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Skeleton Loading (Shimmer)
+   -------------------------------------------------------------------------- */
+.skeleton-pulse {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-shine) 37%,
+    var(--skeleton-base) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.25rem;
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Skeleton variants */
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.skeleton-text:last-child {
+  width: 60%;
+}
+
+.skeleton-heading {
+  height: 1.5rem;
+  margin-bottom: 0.75rem;
+  width: 75%;
+}
+
+.skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  height: 8rem;
+  border-radius: 0.5rem;
+  width: 100%;
+}
+
+.skeleton-button {
+  height: 2.5rem;
+  width: 8rem;
+  border-radius: 0.375rem;
+}
+
+/* --------------------------------------------------------------------------
+   10. Page Transitions (Fade + Slide)
+   -------------------------------------------------------------------------- */
+.page-enter {
+  opacity: 0;
+  transform: translateX(1.5rem);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity var(--transition-normal),
+              transform var(--transition-normal);
+}
+
+.page-leave {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-leave-active {
+  opacity: 0;
+  transform: translateX(-1.5rem);
+  transition: opacity var(--transition-normal),
+              transform var(--transition-normal);
+}
+
+/* Alternative vertical page transition */
+.page-enter-vertical {
+  opacity: 0;
+  transform: translateY(1.25rem);
+}
+
+.page-enter-vertical-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.page-leave-vertical {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-leave-vertical-active {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* --------------------------------------------------------------------------
+   11. Responsive — Mobile-First Sidebar (Drawer Pattern)
+   -------------------------------------------------------------------------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 16rem;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  z-index: 40;
+  transform: translateX(-100%);
+  transition: transform var(--transition-normal);
+  overflow-y: auto;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 39;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Desktop: sidebar visible */
+@media (min-width: 768px) {
+  .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+}
+
+/* Main content shift on desktop */
+.main-content {
+  margin-left: 0;
+  transition: margin-left var(--transition-normal);
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    margin-left: 16rem;
+  }
+}
+
+/* Touch targets >= 44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prevent horizontal overflow at 320px */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Container that works down to 320px */
+.responsive-container {
+  width: 100%;
+  max-width: 1920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Responsive grid helpers */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. Focus Indicators
+   -------------------------------------------------------------------------- */
+*:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 3px;
+  border-radius: 0.125rem;
+}
+
+/* Remove focus outline for mouse users (keeps :focus-visible only) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   13. Smooth Scrollbar Styling
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) var(--bg-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   14. Selection Colors
+   -------------------------------------------------------------------------- */
+::selection {
+  background-color: var(--accent-color);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: var(--accent-color);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   15. Error Panel (Red Theme)
+   -------------------------------------------------------------------------- */
+.error-panel {
+  background-color: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.error-panel__title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error-panel__list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.error-panel__list li + li {
+  margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   16. Quiz Option Hover States
+   -------------------------------------------------------------------------- */
+.quiz-option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9375rem;
+  transition: border-color var(--transition-fast),
+              background-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  min-height: 44px;
+}
+
+.quiz-option:hover {
+  border-color: var(--accent-color);
+  background-color: var(--accent-light);
+}
+
+.quiz-option.selected {
+  border-color: var(--accent-color);
+  background-color: var(--accent-light);
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.quiz-option.correct {
+  border-color: var(--success-border);
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
+.quiz-option.incorrect {
+  border-color: var(--error-border);
+  background-color: var(--error-bg);
+  color: var(--error-text);
+}
+
+/* --------------------------------------------------------------------------
+   17. Fill-in-the-Blank Input Styling
+   -------------------------------------------------------------------------- */
+.fill-blank-input {
+  display: inline-block;
+  min-width: 6rem;
+  max-width: 14rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: inherit;
+  font-family: inherit;
+  text-align: center;
+  transition: border-color var(--transition-fast);
+}
+
+.fill-blank-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent-color);
+}
+
+.fill-blank-input.correct {
+  border-bottom-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.fill-blank-input.incorrect {
+  border-bottom-color: var(--error-border);
+  color: var(--error-text);
+}
+
+/* --------------------------------------------------------------------------
+   18. Card / Panel Shared Styles
+   -------------------------------------------------------------------------- */
+.card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal),
+              border-color var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   19. Utility Animations
+   -------------------------------------------------------------------------- */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-in {
+  animation: fade-in var(--transition-normal) ease forwards;
+}
+
+.fade-in-up {
+  animation: fade-in-up var(--transition-normal) ease forwards;
+}
+
+.scale-in {
+  animation: scale-in var(--transition-normal) ease forwards;
+}
+
+/* --------------------------------------------------------------------------
+   20. prefers-reduced-motion — Disable ALL animations/transitions
+       (except opacity for fade effects)
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Allow opacity transitions only (fade effects are motion-safe) */
+  .fade-in,
+  .page-enter-active,
+  .page-leave-active,
+  .tab-content.active {
+    transition: opacity var(--transition-normal) !important;
+    transform: none !important;
+  }
+
+  .drop-zone.dragover,
+  .drop-zone--active {
+    animation: none !important;
+  }
+
+  .skeleton-pulse {
+    animation: none !important;
+    background: var(--skeleton-base) !important;
+  }
+
+  .flashcard-inner {
+    transition: none !important;
+  }
+
+  .flashcard-inner.flipped {
+    transform: none !important;
+  }
+
+  .accordion-content {
+    transition: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   NEW COMPONENT STYLES
+   -------------------------------------------------------------------------- */
+
+/* Matching component */
+.match-container { display:flex; gap:2rem; justify-content:center; }
+.match-column { flex:1; display:flex; flex-direction:column; gap:0.75rem; }
+.match-item { padding:0.75rem 1rem; border-radius:0.5rem; cursor:grab; border:2px solid var(--border-color); background:var(--bg-secondary); min-height:44px; transition:all 0.2s; }
+.match-item.dragging { opacity:0.5; transform:scale(0.95); }
+.match-item.matched { border-color:var(--accent-color); background:var(--accent-light); }
+.match-zone { min-height:44px; border:2px dashed var(--border-color); border-radius:0.5rem; display:flex; align-items:center; justify-content:center; padding:0.75rem 1rem; background:var(--bg-secondary); transition:all 0.2s; }
+.match-zone.drag-over { border-color:var(--accent-color); background:var(--accent-light); }
+.match-line { position:absolute; pointer-events:none; z-index:10; }
+.match-correct { border-color:var(--success-border) !important; background:var(--success-bg) !important; }
+.match-incorrect { border-color:var(--error-border) !important; background:var(--error-bg) !important; }
+
+/* Sorting component */
+.sort-container { display:flex; flex-direction:column; gap:0.25rem; }
+.sort-item { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; cursor:grab; border:1px solid var(--border-color); border-radius:0.5rem; margin-bottom:0.5rem; background:var(--bg-secondary); min-height:44px; transition:all 0.2s; }
+.sort-item.sorting-drag-over { border-color:var(--accent-color); background:var(--accent-light); }
+.sort-item.correct { border-color:var(--success-border); background:var(--success-bg); }
+.sort-item.incorrect { border-color:var(--error-border); background:var(--error-bg); }
+.sort-handle { cursor:grab; color:var(--text-muted); display:flex; align-items:center; }
+
+/* Checklist component */
+.checklist-progress { height:0.5rem; border-radius:999px; background:var(--bg-tertiary); overflow:hidden; margin-bottom:1rem; }
+.checklist-item { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; }
+.checklist-item.checked { opacity:0.6; text-decoration:line-through; }
+.checklist-checkbox { width:1.25rem; height:1.25rem; accent-color:var(--accent-color); cursor:pointer; }
+.checklist-optional { font-size:0.75rem; color:var(--text-muted); margin-left:auto; }
+
+/* Cloze component */
+.cloze-passage { font-size:1.1rem; line-height:2.5; padding:1rem; }
+.cloze-blank { display:inline-block; min-width:120px; border-bottom:2px dashed var(--accent-color); padding:0.25rem 0.5rem; margin:0 0.25rem; background:var(--bg-secondary); border-radius:0.25rem; }
+.cloze-blank select { background:transparent; border:none; outline:none; color:var(--text-primary); font:inherit; cursor:pointer; }
+.cloze-blank input { background:transparent; border:none; outline:none; color:var(--text-primary); font:inherit; width:100%; }
+.cloze-blank.correct { border-color:var(--success-border); background:var(--success-bg); }
+.cloze-blank.incorrect { border-color:var(--error-border); background:var(--error-bg); }
+.cloze-hint-btn { font-size:0.75rem; cursor:pointer; color:var(--accent-color); margin-left:0.5rem; background:none; border:none; }
+.cloze-hint-btn:hover { text-decoration:underline; }
+.cloze-hint-text { font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-top:0.25rem; }
+
+/* Horizontal Timeline */
+.timeline-horizontal { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; gap:1.5rem; padding:1rem 0; scrollbar-width:thin; }
+.timeline-horizontal .timeline-card { flex:0 0 280px; scroll-snap-align:start; padding:1.25rem; border:1px solid var(--border-color); border-radius:0.75rem; background:var(--bg-secondary); }
+.timeline-horizontal .timeline-card .date { font-size:0.75rem; font-weight:bold; color:var(--accent-color); }
+
+/* Pomodoro Timer */
+.pomodoro-timer { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.75rem; border-radius:999px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:0.875rem; }
+.pomodoro-timer.running { border-color:var(--accent-color); }
+.pomodoro-timer.break { border-color:var(--success-border); }
+.pomodoro-display { font-family:monospace; font-weight:bold; }
+.pomodoro-btn { padding:0.25rem; border-radius:50%; cursor:pointer; min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--text-primary); }
+.pomodoro-btn:hover { background:var(--bg-tertiary); }
+
+/* Dashboard */
+.dashboard-overlay { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
+.dashboard-panel { background:var(--bg-primary); border-radius:1rem; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; padding:2rem; box-shadow:var(--shadow-lg); }
+.dashboard-stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:1rem; margin:1.5rem 0; }
+.dashboard-stat-card { padding:1rem; text-align:center; border-radius:0.75rem; background:var(--bg-secondary); border:1px solid var(--border-color); }
+.dashboard-stat-value { font-size:2rem; font-weight:bold; color:var(--accent-color); }
+.dashboard-stat-label { font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; }
+
+/* Sticky Notes */
+.sticky-note-icon { cursor:pointer; opacity:0.5; transition:opacity 0.2s; }
+.sticky-note-icon:hover { opacity:1; }
+.sticky-note-icon.has-note { opacity:1; color:var(--accent-color); }
+.sticky-note-editor { margin-top:0.75rem; padding:0.75rem; border-radius:0.5rem; background:var(--bg-secondary); border:1px solid var(--border-color); min-height:60px; font-size:0.875rem; resize:vertical; width:100%; box-sizing:border-box; color:var(--text-primary); }
+
+/* Swipe indicator */
+.swipe-hint { position:absolute; top:50%; transform:translateY(-50%); font-size:2rem; opacity:0; transition:opacity 0.2s; pointer-events:none; }
+.swipe-hint.left { left:0.5rem; }
+.swipe-hint.right { right:0.5rem; }
+.swipe-hint.active { opacity:0.3; }
+
+/* TTS Button */
+.tts-btn { cursor:pointer; padding:0.25rem 0.5rem; border-radius:0.25rem; font-size:0.875rem; min-width:44px; display:inline-flex; align-items:center; justify-content:center; gap:0.25rem; background:none; border:none; color:var(--text-primary); }
+.tts-btn:hover { background:var(--bg-tertiary); }
+.tts-btn.speaking { color:var(--accent-color); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* Play Mode */
+.play-mode-active { box-shadow:0 0 0 2px var(--accent-color); }
+.play-mode-controls { display:flex; align-items:center; gap:0.5rem; }
+.play-mode-delay { width:60px; font-size:0.75rem; }
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  .match-item, .sort-item, .flashcard-inner, .checklist-item { transition:none !important; }
+  .pomodoro-timer { animation:none !important; }
+  .tts-btn.speaking { animation:none !important; }
+}
