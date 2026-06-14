@@ -182,6 +182,45 @@ describe("modeGatePolicy", () => {
         expect(result.reason).toContain("Plan Mode");
     });
 
+    // --- Plan Mode: broad artifacts/active path exemption (non-project) ---
+    it("allows write_or_create_file targeting z_swe/artifacts/active/ in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "z_swe/artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(true);
+    });
+
+    it("allows write_or_create_file targeting D:/.../artifacts/active/ absolute path in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "D:/Khanhs/artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(true);
+    });
+
+    it("blocks write_or_create_file targeting C:/artifacts/active/ (root level) in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "C:/artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(false);
+        expect(result.reason).toContain("Plan Mode");
+    });
+
+    it("blocks write_or_create_file targeting C:/.../artifacts/active/ (any C: path) in plan mode", () => {
+        const result = modeGatePolicy({
+            toolName: "write_or_create_file",
+            args: { file_path: "C:/Work/project/artifacts/active/plan.md" },
+            agentMode: "plan",
+        });
+        expect(result.allow).toBe(false);
+        expect(result.reason).toContain("Plan Mode");
+    });
+
     // --- Plan Mode: safe terminal commands ---
     it("allows git status in plan mode", () => {
         const result = modeGatePolicy({
