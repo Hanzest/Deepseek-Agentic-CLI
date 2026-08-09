@@ -10,6 +10,13 @@
  * @module tools/roleSystemPrompts
  */
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SKILLS_DIR = path.resolve(__dirname, "..", "docs", "skills");
+
 /**
  * Canonical role definitions used throughout the agentic system.
  * Each entry specifies:
@@ -33,8 +40,8 @@ export const ROLE_SYSTEM_PROMPT = [
       Only inspect files that are explicitly required to fulfill the Definition of Done.
       Exploratory or broad codebase searches are strictly prohibited.
       You are in Agent Mode.
-      When the task involves a domain covered by \`docs/skills/\`, use \`multi_file_search_string\`
-      with \`glob_pattern: "docs/skills/**/*.md"\` and a topic keyword to locate the relevant
+      When the task involves a domain covered by the skill library at \`${SKILLS_DIR}\`, use \`multi_file_search_string\`
+      with \`root_path: "${SKILLS_DIR}"\` and \`glob_pattern: "**/*.md"\` and a topic keyword to locate the relevant
       SKILL.md, then \`read_file_chunk\` to read it. Apply its constraints, principles, and
       anti-patterns to your implementation decisions. All tool calls can be batched.`,
     output_constraints:
