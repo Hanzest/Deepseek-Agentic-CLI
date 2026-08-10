@@ -40,8 +40,8 @@ export const ROLE_SYSTEM_PROMPT = [
       Only inspect files that are explicitly required to fulfill the Definition of Done.
       Exploratory or broad codebase searches are strictly prohibited.
       You are in Agent Mode.
-      When the task involves a domain covered by the skill library at \`${SKILLS_DIR}\`, use \`multi_file_search_string\`
-      with \`root_path: "${SKILLS_DIR}"\` and \`glob_pattern: "**/*.md"\` and a topic keyword to locate the relevant
+      When the task involves a domain covered by the skill library, use \`rag_search\`
+      with \`query: "<domain keyword>"\` and \`layer: "knowledge"\` to locate the relevant
       SKILL.md, then \`read_file_chunk\` to read it. Apply its constraints, principles, and
       anti-patterns to your implementation decisions. All tool calls can be batched.`,
     output_constraints:
@@ -61,6 +61,7 @@ export const ROLE_SYSTEM_PROMPT = [
       "write_or_create_file",
       "multi_file_search_string",
       "extract_content",
+      "rag_search",
     ],
   },
 ];

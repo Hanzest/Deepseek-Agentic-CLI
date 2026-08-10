@@ -1,0 +1,55 @@
+{
+  "name": "textbook",
+  "description": "Known-answer questions over knowledge/Introduction_to_Causal_Inference.pdf (Pearl).",
+  "source_file": "Introduction_to_Causal_Inference.pdf",
+  "queries": [
+    {
+      "id": "t1",
+      "query": "What is the Structural Causal Model (SCM) in causal inference?",
+      "expected_terms": ["Structural Causal Model", "SCM"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t2",
+      "query": "What are the three types of causal queries about interventions, counterfactuals, and mediation?",
+      "expected_terms": ["interventions", "counterfactuals", "mediation"],
+      "terms_match": "all"
+    },
+    {
+      "id": "t3",
+      "query": "What is a directed acyclic graph (DAG) or causal diagram used for in causal analysis?",
+      "expected_terms": ["causal diagram", "graphical model", "directed acyclic graph"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t4",
+      "query": "What is confounding and why does it matter for causal claims?",
+      "expected_terms": ["confounding", "confound"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t5",
+      "query": "How are causal effects identified from interventions (the do-calculus)?",
+      "expected_terms": ["intervention", "causal effect", "identif"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t6",
+      "query": "How does causal analysis differ from traditional statistical analysis?",
+      "expected_terms": ["statistical analysis", "causal analysis"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t7",
+      "query": "What is the potential-outcome framework?",
+      "expected_terms": ["potential-outcome", "counterfactual"],
+      "terms_match": "any"
+    },
+    {
+      "id": "t8",
+      "query": "What is mediation analysis and how are direct and indirect effects estimated?",
+      "expected_terms": ["mediation", "indirect effects"],
+      "terms_match": "any"
+    }
+  ]
+}

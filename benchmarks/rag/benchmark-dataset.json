@@ -1,0 +1,48 @@
+{
+  "name": "synthetic",
+  "description": "Small synthetic corpus with known answers for retrieval-quality metrics.",
+  "queries": [
+    {
+      "id": "s1",
+      "query": "How do I increase the API request timeout for long-running endpoints?",
+      "expected_file": "config-api-timeout.md",
+      "expected_terms": ["timeout_ms", "circuit breaker"],
+      "terms_match": "any"
+    },
+    {
+      "id": "s2",
+      "query": "What steps should I follow before deploying a new release?",
+      "expected_file": "deployment-checklist.md",
+      "expected_terms": ["migration", "backup", "canary"],
+      "terms_match": "any"
+    },
+    {
+      "id": "s3",
+      "query": "How does quantum entanglement work?",
+      "expected_file": "quantum-computing.md",
+      "expected_terms": ["entanglement", "correlated"],
+      "terms_match": "any"
+    },
+    {
+      "id": "s4",
+      "query": "What is the recommended password policy for user accounts?",
+      "expected_file": "auth-security.md",
+      "expected_terms": ["12 characters", "rate-limited"],
+      "terms_match": "any"
+    },
+    {
+      "id": "s5",
+      "query": "How are raw events transformed into analytical data?",
+      "expected_file": "data-pipeline.md",
+      "expected_terms": ["Parquet", "Spark", "deduplicate"],
+      "terms_match": "any"
+    },
+    {
+      "id": "s6",
+      "query": "Which roles exist in the access control model and how do API tokens expire?",
+      "expected_file": "auth-security.md",
+      "expected_terms": ["RBAC", "24 hours", "vault"],
+      "terms_match": "any"
+    }
+  ]
+}

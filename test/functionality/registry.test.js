@@ -9,12 +9,12 @@ describe("registry - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // Counts
   // -----------------------------------------------------------------------
-  it("ALL_TOOLS has exactly 10 tools", () => {
-    expect(Object.keys(ALL_TOOLS).length).toBe(10);
+  it("ALL_TOOLS has exactly 11 tools", () => {
+    expect(Object.keys(ALL_TOOLS).length).toBe(11);
   });
 
-  it("ORCHESTRATOR_TOOLS has exactly 10 tools", () => {
-    expect(Object.keys(ORCHESTRATOR_TOOLS).length).toBe(10);
+  it("ORCHESTRATOR_TOOLS has exactly 11 tools", () => {
+    expect(Object.keys(ORCHESTRATOR_TOOLS).length).toBe(11);
   });
 
   // -----------------------------------------------------------------------
@@ -43,9 +43,9 @@ describe("registry - Functionality / Happy Paths", () => {
   // -----------------------------------------------------------------------
   // buildSubagentTools - role-based tool resolution
   // -----------------------------------------------------------------------
-  it("buildSubagentTools('execution') returns all 9 tools", () => {
+  it("buildSubagentTools('execution') returns all 10 tools", () => {
     const tools = buildSubagentTools("execution");
-    expect(Object.keys(tools).length).toBe(9);
+    expect(Object.keys(tools).length).toBe(10);
   });
 
 
