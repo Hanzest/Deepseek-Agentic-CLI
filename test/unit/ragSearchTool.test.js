@@ -40,6 +40,8 @@ describe("rag_search_schema", () => {
         expect(props.top_k.default).toBe(5);
         expect(props.min_score.default).toBe(0.6);
         expect(props.max_prompt_tokens.type).toBe("integer");
+        expect(props.search_mode.enum).toEqual(["hybrid", "keyword", "dense"]);
+        expect(props.search_mode.default).toBe("hybrid");
     });
 });
 
@@ -69,6 +71,12 @@ describe("rag_search handler", () => {
         expect(indexSearchMock).toHaveBeenCalledWith({
             query: "q", namespace: "ops", layer: "knowledge", top_k: 3, max_prompt_tokens: 2000,
         });
+    });
+
+    it("forwards search_mode to index.search", async () => {
+        indexSearchMock.mockResolvedValue({ results: [], topScore: 0, lowConfidence: true, warning: "no relevant data found", truncated: false });
+        await rag_search({ query: "q", search_mode: "keyword" });
+        expect(indexSearchMock).toHaveBeenCalledWith({ query: "q", search_mode: "keyword" });
     });
 
     it("reports low-confidence warnings", async () => {

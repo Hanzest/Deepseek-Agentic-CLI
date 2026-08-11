@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import { BM25Index, tokenize, stopwords } from '../../lib/rag/bm25.js';
 
 describe('tokenize', () => {
@@ -112,5 +115,56 @@ describe('BM25Index document lifecycle', () => {
   it('search returns [] on an empty index or empty query features', () => {
     const index = build();
     expect(index.search('anything')).toEqual([]);
+  });
+});
+
+describe('BM25Index serialization & persistence', () => {
+  it('round-trips the full index state through serialize/deserialize', () => {
+    const index = build().init([
+      { id: 'a', text: 'the quick brown fox jumps' },
+      { id: 'b', text: 'quick red fox runs fast' },
+    ]);
+    const data = index.serialize();
+    expect(data.version).toBe(1);
+    expect(data.totalDocs).toBe(2);
+    expect(typeof data.postings).toBe('object');
+    expect(typeof data.documents).toBe('object');
+
+    const restored = new BM25Index().deserialize(data);
+    expect(restored.totalDocs).toBe(2);
+    expect(restored.documents.size).toBe(2);
+    // Search parity after restore.
+    expect(restored.search('quick fox').map((r) => r.id)).toEqual(index.search('quick fox').map((r) => r.id));
+    // Post-restore incremental adds still work (lazy postings rebuild).
+    restored.addDocument('c', 'lazy turtle walks slow');
+    expect(restored.search('lazy')[0].id).toBe('c');
+  });
+
+  it('deserialize is safe on null / malformed input', () => {
+    const index = build().addDocument('a', 'hello world');
+    expect(index.deserialize(null).totalDocs).toBe(1); // no-op
+    expect(index.deserialize({}).totalDocs).toBe(0);   // clears state
+  });
+
+  it('saveToFile/loadFromFile persist and restore the index', async () => {
+    const index = build().init([
+      { id: 'x', text: 'persisted alpha beta' },
+      { id: 'y', text: 'persisted gamma' },
+    ]);
+    const tmp = path.join(os.tmpdir(), `bm25-test-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+    await index.saveToFile(tmp);
+    const loaded = await BM25Index.loadFromFile(tmp);
+    expect(loaded).not.toBeNull();
+    expect(loaded.totalDocs).toBe(2);
+    expect(loaded.search('persisted').map((r) => r.id).sort()).toEqual(['x', 'y']);
+    fs.rmSync(tmp, { force: true });
+  });
+
+  it('loadFromFile returns null for missing/corrupt files', async () => {
+    expect(await BM25Index.loadFromFile(path.join(os.tmpdir(), 'definitely-missing-bm25.json'))).toBeNull();
+    const tmp = path.join(os.tmpdir(), `bm25-corrupt-${Date.now()}.json`);
+    fs.writeFileSync(tmp, 'not json{{', 'utf8');
+    expect(await BM25Index.loadFromFile(tmp)).toBeNull();
+    fs.rmSync(tmp, { force: true });
   });
 });

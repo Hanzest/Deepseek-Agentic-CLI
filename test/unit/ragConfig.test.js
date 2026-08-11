@@ -38,6 +38,8 @@ describe('rag config defaults', () => {
     expect(cfg.thresholds.max_retries).toBe(2);
     expect(cfg.tokenizer.safety_buffer_ratio).toBe(0.1);
     expect(cfg.watcher.debounce_ms).toBe(700);
+    // Live watching is restricted to knowledge/ — workspace never triggers ONNX.
+    expect(cfg.watcher.active_layers).toEqual(["knowledge"]);
     // Model stack defaults: FastEmbed e5-small + FlashRank MultiBERT.
     expect(cfg.embedding.model).toBe('intfloat/multilingual-e5-small');
     expect(cfg.embedding.quantize).toBe(true);

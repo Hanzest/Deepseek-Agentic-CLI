@@ -43,6 +43,7 @@
     "benchmark:rag": "node scripts/rag-benchmark.js",
     "benchmark:rag-textbook": "node scripts/rag-benchmark.js --dataset textbook",
     "benchmark:rag-tokens": "node scripts/rag-token-benchmark.js",
+    "benchmark:rag-performance": "node scripts/rag-performance-benchmark.js",
     "rag:pdf-check": "node scripts/rag-pdf-check.js",
     "rag:evaluate": "node scripts/rag-evaluation.js"
   },

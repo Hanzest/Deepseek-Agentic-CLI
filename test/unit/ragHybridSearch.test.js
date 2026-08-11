@@ -52,6 +52,8 @@ beforeEach(async () => {
     vectorStoreMock.searchDense.mockClear();
     vectorStoreMock.getAllChunks.mockClear();
     hybrid = await import("../../lib/rag/hybridSearch.js");
+    // Disable the disk cache so tests always build from the mocked store.
+    hybrid.setBm25Path(null);
     await hybrid.rebuildIndex(); // seeds module-level BM25 + chunkMetaById
 });
 
@@ -102,6 +104,44 @@ describe("hybridSearch.search", () => {
         expect(out.results.length).toBeGreaterThanOrEqual(1);
         expect(out.results[0].id).toBe("b");
         expect(typeof out.results[0].score).toBe("number");
+    });
+});
+
+describe("search_mode fast paths", () => {
+    it("keyword mode returns BM25-only hits without calling the embedder", async () => {
+        embedderMock.isAvailable.mockReturnValue(true);
+        const out = await hybrid.search({ query: "alpha", top_k: 10, search_mode: "keyword" });
+        expect(out.results.length).toBeGreaterThanOrEqual(1);
+        const ids = out.results.map((r) => r.id);
+        expect(ids).toContain("a"); // 'alpha' in chunk a (and c)
+        // Dense embedding is fully bypassed in the keyword fast-path.
+        expect(embedderMock.embed).not.toHaveBeenCalled();
+        // Metadata still attached from the chunk cache (not the vector store).
+        expect(out.results[0].text).toBeTruthy();
+        expect(out.results[0].dense_score).toBeNull();
+    });
+
+    it("keyword mode skips LanceDB stats (pure in-memory)", async () => {
+        vectorStoreMock.getStats.mockClear();
+        await hybrid.search({ query: "epsilon", top_k: 10, search_mode: "keyword" });
+        expect(vectorStoreMock.getStats).not.toHaveBeenCalled();
+    });
+
+    it("dense mode returns vector-store hits without BM25", async () => {
+        const out = await hybrid.search({ query: "alpha", top_k: 10, search_mode: "dense" });
+        expect(out.results.length).toBeGreaterThanOrEqual(1);
+        // The dense mock returns 'a' (cosine 0.95) for any query.
+        expect(out.results[0].id).toBe("a");
+        expect(out.results[0].score).toBeCloseTo(0.95, 5);
+        expect(out.results[0].bm25_score).toBeNull();
+    });
+
+    it("hybrid is the default mode and still fuses both", async () => {
+        const out = await hybrid.search({ query: "alpha", top_k: 10 });
+        expect(embedderMock.embed).toHaveBeenCalled();
+        const top = out.results[0];
+        expect(top.id).toBe("a");
+        expect(top.dense_score).toBeCloseTo(0.95, 5);
     });
 });
 

@@ -48,6 +48,13 @@ export const rag_search_schema = {
           type: 'integer',
           description: 'Cap on total context tokens injected; 10% safety buffer applied.',
         },
+        search_mode: {
+          type: 'string',
+          enum: ['hybrid', 'keyword', 'dense'],
+          default: 'hybrid',
+          description:
+            'Retrieval mode: hybrid (dense + BM25 + rerank, default), keyword (pure in-memory BM25 fast-path, ~2-5ms, zero ONNX CPU), dense (vector-store only).',
+        },
       },
       required: ['query'],
     },
