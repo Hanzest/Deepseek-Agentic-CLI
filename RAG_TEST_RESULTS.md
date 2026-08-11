@@ -164,7 +164,7 @@ and the agent still gets exactly the section it needs (with file + line citation
 ## 8. 🔁 How to re-run these tests yourself
 
 ```powershell
-# 0. (only needed once) download the AI models
+# 0. (only needed once) warm the AI models (FastEmbed e5-small + FlashRank MultiBERT)
 npm run setup:rag
 
 # 1. Verify your PDFs are readable (pre-flight gate)
@@ -230,8 +230,8 @@ real index or `knowledge/`/`workspace/` folders. Results land in
    sandboxed benchmarks; the real watcher indexes them in the background anyway.
 3. **Reranker made no difference on these small corpora** — it re-orders results; on tiny
    sets the order was already right. It'll matter more as your knowledge base grows.
-4. **Models must stay downloaded** — if you ever see "bm25-only" in `/status`, re-run
-   `npm run setup:rag`.
+4. **Model caches must stay warmed** — if you ever see "bm25-only" in `/status`, re-run
+   `npm run setup:rag` (FastEmbed e5-small + FlashRank MultiBERT caches).
 
 ---
 

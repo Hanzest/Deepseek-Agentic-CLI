@@ -1,0 +1,150 @@
+{
+  "name": "rag-evaluation-5metric",
+  "description": "12 evaluation scenarios for 5-metric RAG assessment (Context Relevance, Faithfulness, Answer Relevance, Bilingual Naturalness, Hallucination Check).",
+  "scenarios": [
+    {
+      "id": "en1",
+      "category": "english-in-domain",
+      "query": "How do I authenticate to the API and where is the bearer token stored?",
+      "language": "en",
+      "expected_source": "company-handbook.md",
+      "expected_section": "1. Authentication & API Tokens",
+      "expected_markers": ["Bearer", "eyJhbGciOiJIUzI1NiJ9", "API_TOKEN", "JSON Web Token"],
+      "markers_match": "any",
+      "ground_truth": "All services authenticate with a JSON Web Token. The CLI reads the token from the environment variable API_TOKEN and sends it as Authorization: Bearer header. Tokens expire after 8 hours and are refreshed automatically.",
+      "out_of_scope": false
+    },
+    {
+      "id": "en2",
+      "category": "english-in-domain",
+      "query": "What is the default request timeout and retry policy?",
+      "language": "en",
+      "expected_source": "company-handbook.md",
+      "expected_section": "2. Configuration & Timeouts",
+      "expected_markers": ["timeout: 30000", "max_retries: 2", "exponential backoff"],
+      "markers_match": "any",
+      "ground_truth": "The default request timeout is 30000 milliseconds and the client retries failed requests with max_retries: 2 and exponential backoff. Configuration changes take effect after a hot reload.",
+      "out_of_scope": false
+    },
+    {
+      "id": "en3",
+      "category": "english-in-domain",
+      "query": "What is the API rate limit and what happens when it is exceeded?",
+      "language": "en",
+      "expected_source": "company-handbook.md",
+      "expected_section": "4. REST API Rate Limits",
+      "expected_markers": ["60 requests per minute", "HTTP 429", "Retry-After"],
+      "markers_match": "any",
+      "ground_truth": "The public REST API enforces 60 requests per minute per API key. Returns HTTP 429 with a Retry-After header when exceeded.",
+      "out_of_scope": false
+    },
+    {
+      "id": "en4",
+      "category": "english-in-domain",
+      "query": "How does the LRU cache reduce latency and when is it invalidated?",
+      "language": "en",
+      "expected_source": "company-handbook.md",
+      "expected_section": "8. Caching & Performance",
+      "expected_markers": ["time-to-live of 300 seconds", "LRU cache", "800 ms", "120 ms"],
+      "markers_match": "any",
+      "ground_truth": "Repeated queries hit an LRU cache with a time-to-live of 300 seconds, cutting p95 latency from 800 ms to 120 ms. The cache is invalidated on config change and evicts entries beyond 1,000 items.",
+      "out_of_scope": false
+    },
+    {
+      "id": "vi1",
+      "category": "vietnamese",
+      "query": "Hồi quy tuyến tính bội có những giả định cơ bản nào?",
+      "language": "vi",
+      "expected_source": "rag-sample-vi.md",
+      "expected_section": "1. Hồi quy tuyến tính bội",
+      "expected_markers": ["homoscedasticity", "multicollinearity", "OLS", "bình phương nhỏ nhất"],
+      "markers_match": "any",
+      "ground_truth": "Giả định cơ bản gồm: tính tuyến tính, phương sai sai số không đổi (homoscedasticity), không có đa cộng tuyến hoàn hảo (multicollinearity), sai số phân phối chuẩn. Phương pháp ước lượng phổ biến nhất là OLS (bình phương nhỏ nhất).",
+      "out_of_scope": false
+    },
+    {
+      "id": "vi2",
+      "category": "vietnamese",
+      "query": "Quy trình kiểm định giả thuyết thống kê gồm mấy bước và p-value dùng để làm gì?",
+      "language": "vi",
+      "expected_source": "rag-sample-vi.md",
+      "expected_section": "2. Kiểm định giả thuyết thống kê",
+      "expected_markers": ["p-value", "H₀", "α = 0.05", "t-statistic"],
+      "markers_match": "any",
+      "ground_truth": "Quy trình gồm 5 bước: phát biểu giả thuyết, chọn mức ý nghĩa α, tính giá trị thống kê kiểm định, xác định p-value, so sánh p-value với α. Nếu p-value < α thì bác bỏ H₀.",
+      "out_of_scope": false
+    },
+    {
+      "id": "vi3",
+      "category": "vietnamese",
+      "query": "EFA là gì và điều kiện KMO tối thiểu là bao nhiêu?",
+      "language": "vi",
+      "expected_source": "rag-sample-vi.md",
+      "expected_section": "4. Phân tích nhân tố khám phá EFA",
+      "expected_markers": ["KMO", "Kaiser-Meyer-Olkin", "factor loading", "Varimax", "Cronbach"],
+      "markers_match": "any",
+      "ground_truth": "EFA (Exploratory Factor Analysis) khám phá cấu trúc tiềm ẩn của biến quan sát. KMO ≥ 0.5, Bartlett's test p < 0.05, factor loading ≥ 0.5, phương sai trích ≥ 50%.",
+      "out_of_scope": false
+    },
+    {
+      "id": "cl1",
+      "category": "cross-lingual",
+      "query": "Giải thích cơ chế xác thực API bằng token JWT",
+      "language": "vi",
+      "expected_source": "company-handbook.md",
+      "expected_section": "1. Authentication & API Tokens",
+      "expected_markers": ["Bearer", "JSON Web Token", "API_TOKEN"],
+      "markers_match": "any",
+      "ground_truth": "Tất cả dịch vụ xác thực bằng JSON Web Token. CLI đọc token từ biến môi trường API_TOKEN và gửi qua header Authorization: Bearer. Token hết hạn sau 8 giờ.",
+      "out_of_scope": false
+    },
+    {
+      "id": "cl2",
+      "category": "cross-lingual",
+      "query": "What are the assumptions of the ANOVA test and what is the F-statistic formula?",
+      "language": "en",
+      "expected_source": "rag-sample-vi.md",
+      "expected_section": "3. Phân tích phương sai ANOVA",
+      "expected_markers": ["ANOVA", "F-statistic", "SSB", "SSW", "Tukey HSD"],
+      "markers_match": "any",
+      "ground_truth": "ANOVA assumptions: normal distribution, homogeneity of variance, independent observations. F-statistic = MSB / MSW. Post-hoc testing with Tukey HSD when F is significant.",
+      "out_of_scope": false
+    },
+    {
+      "id": "oos1",
+      "category": "out-of-scope",
+      "query": "What is the capital of France and who is the current president?",
+      "language": "en",
+      "expected_source": null,
+      "expected_section": null,
+      "expected_markers": [],
+      "markers_match": "none",
+      "ground_truth": null,
+      "out_of_scope": true
+    },
+    {
+      "id": "oos2",
+      "category": "out-of-scope",
+      "query": "Cách nấu phở bò truyền thống Hà Nội",
+      "language": "vi",
+      "expected_source": null,
+      "expected_section": null,
+      "expected_markers": [],
+      "markers_match": "none",
+      "ground_truth": null,
+      "out_of_scope": true
+    },
+    {
+      "id": "oos3",
+      "category": "out-of-scope",
+      "query": "Explain quantum computing error correction using surface codes",
+      "language": "en",
+      "expected_source": null,
+      "expected_section": null,
+      "expected_markers": [],
+      "markers_match": "none",
+      "ground_truth": null,
+      "out_of_scope": true
+    }
+  ]
+}

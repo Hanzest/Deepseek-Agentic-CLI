@@ -199,15 +199,13 @@ const results = { dataset: datasetName, root, generatedAt: new Date().toISOStrin
 let primary = null;
 
 for (const m of modes) {
-  if (m.rerank) {
-    saveConfig({ reranker: { enabled: true } });
-    // Force hybridSearch to reload config (fresh module state is fine; config is read per search).
-  }
+  // Explicitly control the reranker so mode labels stay truthful under the new
+  // default (config.reranker.enabled = true): dense/bm25 modes run without it.
+  saveConfig({ reranker: { enabled: Boolean(m.rerank) } });
   const agg = await evaluateRun(m.name, dataset.queries);
   printTable(agg);
   results.modes.push(agg);
   if (!primary) primary = agg;
-  if (m.rerank) saveConfig({ reranker: { enabled: false } });
 }
 
 // ---- persistence ----

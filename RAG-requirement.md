@@ -162,7 +162,7 @@ Its primary goal is to **narrow context scope** before sending data to DeepSeek 
 
 - **Input token optimization:** Only the most relevant chunks are injected into the LLM prompt. The system must never feed full raw files.
 - **Low-latency search:** Query-to-result time must be near-instant to avoid disrupting the CLI workflow.
-- **Quantized embedding models:** Use lightweight, quantized embedding models (e.g., `bge-small-en-v1.5`, `nomic-embed-text`) executed via ONNX Runtime or `llama.cpp` to minimize CPU overhead. Non-quantized models on CPU are not acceptable for production use.
+- **Quantized embedding models:** Use lightweight, quantized embedding models — currently `intfloat/multilingual-e5-small` (INT8) via FastEmbed, re-ranked with FlashRank's `ms-marco-MultiBERT-L-6-v2` — executed CPU-only to minimize CPU and memory overhead. Non-quantized models on CPU are not acceptable for production use.
 - **Asynchronous background indexing:** Ingestion and re-indexing run as a non-blocking background process so they do not interrupt the user's active session.
 
 ---
@@ -211,7 +211,7 @@ Its primary goal is to **narrow context scope** before sending data to DeepSeek 
   - `pdfjs-dist` → PDF parsing (already used by `tools/extractContent.js`)
   - `mammoth` → DOCX parsing (already a dependency)
   - `ignore` → `.gitignore`-style pattern matching (reuse for `.ragignore`)
-- **New dependencies required:** `lancedb`, `onnxruntime-node` (embedding inference), `tree-sitter` + language grammars, `chokidar` (file watcher)
+- **New dependencies required:** `lancedb`, `@fastembed/fastembed` (embeddings, e5-small INT8), `flashrank` (re-ranking, MultiBERT ONNX), `tree-sitter` + language grammars, `chokidar` (file watcher)
 
 ### 3.2 Directory Layout (new files only)
 
@@ -223,10 +223,10 @@ lib/rag/
 ├── watcher.js            # chokidar file watcher for knowledge/ and workspace/
 ├── chunker.js            # Prose chunking (structure-aware + semantic)
 ├── astChunker.js         # tree-sitter AST chunking for code files
-├── embedder.js           # ONNX embedding model wrapper
+├── embedder.js           # FastEmbed (e5-small INT8) embedding wrapper
 ├── vectorStore.js        # LanceDB embedded store wrapper
 ├── hybridSearch.js       # Dense + BM25 hybrid search + metadata filtering
-├── reranker.js           # Optional cross-encoder re-ranking (ONNX)
+├── reranker.js           # FlashRank (MultiBERT ONNX) cross-encoder wrapper
 ├── reflectionLoop.js     # Query rewriting loop + confidence thresholds
 ├── tokenBudget.js        # max_prompt_tokens enforcement + safety buffer
 └── metadata.js           # Per-chunk metadata extraction + file hashing
@@ -317,7 +317,7 @@ Only these existing files require changes:
 | `tools/roleSystemPrompts.js` | Add `"rag_search"` to execution role's `tools` array |
 | `lib/orchestrator.js` | Add `ragInit()`/`ragShutdown()` calls, add `ragReady`/`ragChunkCount`/`ragLastIndexTime` to `SessionContext`, add `/rag` slash commands, update system prompt |
 | `.gitignore` | Add `.rag/`, `knowledge/`, `workspace/` entries |
-| `package.json` | Add new dependencies: `lancedb`, `onnxruntime-node`, `tree-sitter`, `chokidar` |
+| `package.json` | Add new dependencies: `lancedb`, `@fastembed/fastembed`, `flashrank`, `tree-sitter`, `chokidar` |
 
 No other existing files are modified. All RAG logic lives in `lib/rag/` and `tools/ragSearch.js`.
 

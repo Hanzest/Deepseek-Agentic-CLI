@@ -38,6 +38,11 @@ describe('rag config defaults', () => {
     expect(cfg.thresholds.max_retries).toBe(2);
     expect(cfg.tokenizer.safety_buffer_ratio).toBe(0.1);
     expect(cfg.watcher.debounce_ms).toBe(700);
+    // Model stack defaults: FastEmbed e5-small + FlashRank MultiBERT.
+    expect(cfg.embedding.model).toBe('intfloat/multilingual-e5-small');
+    expect(cfg.embedding.quantize).toBe(true);
+    expect(cfg.reranker.enabled).toBe(true);
+    expect(cfg.reranker.model).toBe('ms-marco-MultiBERT-L-6-v2');
   });
 
   it('loadConfig merges on-disk JSON over the defaults', () => {

@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "@fastembed/fastembed": "^0.7.0",
     "@lancedb/lancedb": "^0.33.0",
     "apache-arrow": "18.1.0",
     "cheerio": "^1.0.0",
@@ -8,6 +9,7 @@
     "cloakbrowser": "^0.3.31",
     "dotenv": "^17.4.2",
     "duckduckgo-search": "^1.0.7",
+    "flashrank": "^0.2.2",
     "ignore": "^7.0.0",
     "mammoth": "^1.12.0",
     "onnxruntime-node": "^1.27.0",
@@ -15,8 +17,6 @@
     "pdfjs-dist": "^5.4.296",
     "playwright-core": "^1.60.0",
     "tiktoken": "^1.0.20",
-    "tokenizers": "0.13.3",
-    "tokenizers-win32-x64-msvc": "^0.13.4-rc1",
     "tree-sitter": "^0.25.1",
     "tree-sitter-cpp": "^0.23.4",
     "tree-sitter-go": "^0.25.0",
@@ -43,7 +43,8 @@
     "benchmark:rag": "node scripts/rag-benchmark.js",
     "benchmark:rag-textbook": "node scripts/rag-benchmark.js --dataset textbook",
     "benchmark:rag-tokens": "node scripts/rag-token-benchmark.js",
-    "rag:pdf-check": "node scripts/rag-pdf-check.js"
+    "rag:pdf-check": "node scripts/rag-pdf-check.js",
+    "rag:evaluate": "node scripts/rag-evaluation.js"
   },
   "vitest": {
     "setupFiles": [

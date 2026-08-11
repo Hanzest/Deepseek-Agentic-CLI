@@ -2,155 +2,182 @@
 /**
  * setup-rag-models.js
  *
- * Downloads the embedding and reranker ONNX models (quantized) from Hugging Face
- * into the project-local cache at <root>/.rag/models/.
+ * Pre-warms the RAG model caches for the CPU-friendly stack:
  *
- * Models:
- *   - bge-small-en-v1.5 (embedding)
- *   - bge-reranker-base (reranker)
+ *   - Embedder: FastEmbed (Qdrant) — intfloat/multilingual-e5-small (INT8)
+ *     cached under <root>/.rag/models/fastembed
+ *   - Reranker: FlashRank — ms-marco-MultiBERT-L-6-v2 ONNX (managed by the
+ *     flashrank package's own cache)
  *
- * Each model requires three files: model_quantized.onnx, tokenizer.json, config.json.
+ * Both libraries self-download their ONNX artifacts on first use. This script
+ * triggers those downloads eagerly so the CLI never stalls on the first search.
+ * It is idempotent: re-running skips already-warmed caches and prints sizes.
  *
- * The script is idempotent: existing non-empty files are skipped.
+ * Usage:
+ *   node scripts/setup-rag-models.js                  # warm new caches
+ *   node scripts/setup-rag-models.js --cleanup-bge    # ...and delete legacy models
  *
- * Runnable via: node scripts/setup-rag-models.js
+ * Runnable via: npm run setup:rag [-- --cleanup-bge]
  */
 
-import { mkdir, writeFile, access } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MODELS_ROOT = path.resolve(__dirname, '..', '.rag', 'models');
+const ROOT = path.resolve(__dirname, '..');
+const MODELS_ROOT = path.join(ROOT, '.rag', 'models');
+const FASTEMBED_CACHE = path.join(MODELS_ROOT, 'fastembed');
+
+/** Legacy models replaced by this migration (~310 MB combined). */
+const LEGACY_MODELS = ['bge-small-en-v1.5', 'bge-reranker-base'];
+
+const args = process.argv.slice(2);
+const cleanupBge = args.includes('--cleanup-bge');
 
 /**
- * Model definitions.
- * @type {Array<{name: string, files: Array<{url: string, relativePath: string}>}>}
+ * Recursively compute a directory size in bytes.
+ * @param {string} dir
+ * @returns {number}
  */
-const MODELS = [
-  {
-    name: 'bge-small-en-v1.5',
-    files: [
-      {
-        url: 'https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/onnx/model_quantized.onnx',
-        relativePath: 'model_quantized.onnx',
-      },
-      {
-        url: 'https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/tokenizer.json',
-        relativePath: 'tokenizer.json',
-      },
-      {
-        url: 'https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/config.json',
-        relativePath: 'config.json',
-      },
-    ],
-  },
-  {
-    name: 'bge-reranker-base',
-    files: [
-      {
-        url: 'https://huggingface.co/Xenova/bge-reranker-base/resolve/main/onnx/model_quantized.onnx',
-        relativePath: 'model_quantized.onnx',
-      },
-      {
-        url: 'https://huggingface.co/Xenova/bge-reranker-base/resolve/main/tokenizer.json',
-        relativePath: 'tokenizer.json',
-      },
-      {
-        url: 'https://huggingface.co/Xenova/bge-reranker-base/resolve/main/config.json',
-        relativePath: 'config.json',
-      },
-    ],
-  },
-];
-
-/**
- * Returns true if the given file exists and has a non-zero size.
- * @param {string} filePath
- * @returns {Promise<boolean>}
- */
-async function fileExistsNonEmpty(filePath) {
-  try {
-    const st = await access(filePath, constants.F_OK);
-    void st;
-    const { stat } = await import('node:fs/promises');
-    const info = await stat(filePath);
-    return info.size > 0;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Downloads a single file to disk (accepting redirects).
- * @param {string} url
- * @param {string} destPath
- * @returns {Promise<number>} bytes written
- */
-async function downloadFile(url, destPath) {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
-  }
-  const buffer = Buffer.from(await res.arrayBuffer());
-  await writeFile(destPath, buffer);
-  return buffer.length;
-}
-
-/**
- * Ensures a single model file is present locally (skips if present & non-empty).
- * @param {string} modelName
- * @param {{url: string, relativePath: string}} fileDef
- * @param {Array<{action: string, name: string}>} summary
- */
-async function ensureFile(modelName, fileDef, summary) {
-  const destDir = path.join(MODELS_ROOT, modelName);
-  const destPath = path.join(destDir, fileDef.relativePath);
-
-  await mkdir(destDir, { recursive: true });
-
-  if (await fileExistsNonEmpty(destPath)) {
-    console.log(`SKIP  ${modelName}/${fileDef.relativePath} (already exists)`);
-    summary.push({ action: 'skipped', name: `${modelName}/${fileDef.relativePath}` });
-    return;
-  }
-
-  try {
-    const bytes = await downloadFile(fileDef.url, destPath);
-    console.log(`SAVED ${modelName}/${fileDef.relativePath} (${bytes} bytes)`);
-    summary.push({ action: 'downloaded', name: `${modelName}/${fileDef.relativePath}` });
-  } catch (err) {
-    console.warn(`WARN  ${modelName}/${fileDef.relativePath}: ${err.message}`);
-    summary.push({ action: 'failed', name: `${modelName}/${fileDef.relativePath}` });
-  }
-}
-
-/**
- * Orchestrates downloading all model files.
- */
-async function main() {
-  console.log(`Model cache root: ${MODELS_ROOT}`);
-  const summary = [];
-
-  for (const model of MODELS) {
-    console.log(`\n[${model.name}]`);
-    for (const fileDef of model.files) {
-      await ensureFile(model.name, fileDef, summary);
+function dirSizeBytes(dir) {
+  if (!fs.existsSync(dir)) return 0;
+  let total = 0;
+  const stack = [dir];
+  while (stack.length) {
+    const cur = stack.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(cur, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const p = path.join(cur, e.name);
+      if (e.isDirectory()) stack.push(p);
+      else if (e.isFile()) {
+        try {
+          total += fs.statSync(p).size;
+        } catch {
+          /* ignore */
+        }
+      }
     }
   }
+  return total;
+}
 
-  const downloaded = summary.filter((s) => s.action === 'downloaded').length;
-  const skipped = summary.filter((s) => s.action === 'skipped').length;
-  const failed = summary.filter((s) => s.action === 'failed').length;
+/**
+ * Human-readable byte size.
+ * @param {number} bytes
+ * @returns {string}
+ */
+function fmtBytes(bytes) {
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(2)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(2)} MB`;
+  if (bytes >= 1e3) return `${(bytes / 1e3).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+/**
+ * Warm the FastEmbed (e5-small) cache via the embedder wrapper.
+ * @returns {Promise<boolean>}
+ */
+async function warmEmbedder() {
+  const { init, embed, isAvailable } = await import('../lib/rag/embedder.js');
+  const ok = await init({ modelPath: FASTEMBED_CACHE });
+  if (!ok || !isAvailable()) {
+    console.log('  FAIL embedder cache not ready (check network / npm install)');
+    return false;
+  }
+  // Trigger a real inference so the ONNX session + tokenizer are fully loaded.
+  await embed(['FastEmbed warm-up probe.']);
+  const size = dirSizeBytes(FASTEMBED_CACHE);
+  console.log(`  OK   embedder ready (FastEmbed cache: ${fmtBytes(size)})`);
+  return true;
+}
+
+/**
+ * Warm the FlashRank (MultiBERT) cache via the reranker wrapper.
+ * @returns {Promise<boolean>}
+ */
+async function warmReranker() {
+  const { init, rerank, isAvailable } = await import('../lib/rag/reranker.js');
+  const ok = await init();
+  if (!ok || !isAvailable()) {
+    console.log('  FAIL reranker cache not ready (check network / npm install)');
+    return false;
+  }
+  // One tiny rerank forces FlashRank to fetch + load its ONNX model.
+  await rerank('FlashRank warm-up probe', [
+    { id: 'w1', text: 'FlashRank warm-up probe passage.' },
+  ], 1);
+  console.log('  OK   reranker ready (FlashRank model cache warmed)');
+  return true;
+}
+
+/**
+ * Delete the legacy bge model directories and report freed space.
+ * @returns {number} bytes freed
+ */
+function cleanupLegacyModels() {
+  let freed = 0;
+  for (const name of LEGACY_MODELS) {
+    const dir = path.join(MODELS_ROOT, name);
+    if (fs.existsSync(dir)) {
+      const sz = dirSizeBytes(dir);
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+        freed += sz;
+        console.log(`DELETED ${name} (${fmtBytes(sz)})`);
+      } catch (err) {
+        console.warn(`WARN  failed to delete ${name}: ${err?.message ?? err}`);
+      }
+    } else {
+      console.log(`SKIP  ${name} (not present)`);
+    }
+  }
+  return freed;
+}
+
+/**
+ * Orchestrates cache warm-up and optional legacy cleanup.
+ */
+async function main() {
+  fs.mkdirSync(MODELS_ROOT, { recursive: true });
+  console.log(`Model cache root: ${MODELS_ROOT}`);
+  console.log('Target stack: FastEmbed (e5-small INT8) + FlashRank (MultiBERT ONNX)\n');
+
+  console.log('[embedder] FastEmbed e5-small');
+  const embedderOk = await warmEmbedder();
+
+  console.log('\n[reranker] FlashRank MultiBERT');
+  const rerankerOk = await warmReranker();
+
+  let freed = 0;
+  if (cleanupBge) {
+    console.log('\n[cleanup] legacy bge models');
+    freed = cleanupLegacyModels();
+  } else if (LEGACY_MODELS.some((n) => fs.existsSync(path.join(MODELS_ROOT, n)))) {
+    console.log('\nNOTE  legacy bge model folders still present (~310 MB).');
+    console.log('      Delete them after verifying benchmarks with:');
+    console.log('        npm run setup:rag -- --cleanup-bge');
+  }
 
   console.log('\n=== Summary ===');
-  console.log(`Downloaded: ${downloaded}`);
-  console.log(`Skipped:    ${skipped}`);
-  console.log(`Failed:     ${failed}`);
-  console.log(
-    'This script is idempotent: re-running it will skip already-present non-empty files.',
-  );
+  console.log(`Embedder cache: ${embedderOk ? 'READY' : 'NOT READY'}`);
+  console.log(`Reranker cache: ${rerankerOk ? 'READY' : 'NOT READY'}`);
+  if (cleanupBge) console.log(`Legacy models freed: ${fmtBytes(freed)}`);
+  console.log('This script is idempotent: re-running skips already-warmed caches.');
+
+  if (!embedderOk || !rerankerOk) {
+    console.log('\nSome caches are not ready. If deps are missing, run `npm install` first;');
+    console.log('if the network is unavailable, re-run this script once online.');
+    process.exitCode = 1;
+  } else {
+    console.log('\nRollback (if ever needed): restore package.json deps + config.js defaults');
+    console.log('from git, re-download bge models, and run `/rag reindex`.');
+  }
 }
 
 main().catch((err) => {

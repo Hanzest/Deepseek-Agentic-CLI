@@ -21,3 +21,4 @@ work_dir/*
 .rag/
 knowledge/
 workspace/
+work_dir/
