@@ -41,6 +41,13 @@ describe('shouldExclude built-in patterns', () => {
     }
   });
 
+  it('allows the newly enabled document formats (epub/rtf/html)', () => {
+    const allowed = ['book.epub', 'notes.rtf', 'page.html', 'page.htm', 'page.xhtml'];
+    for (const p of allowed) {
+      expect(shouldExclude(p), p).toBe(false);
+    }
+  });
+
   it('rejects an extension not in the allowed whitelist', () => {
     expect(shouldExclude('archive.zip')).toBe(true);
   });

@@ -67,4 +67,10 @@ describe("tokenBudget", () => {
         expect(countTokens("a".repeat(17))).toBe(5); // ceil
         expect(countTokens(null)).toBe(0);
     });
+
+    it("countTokens uses CJK-aware estimation for CJK text", () => {
+        // 4 CJK chars / 1.5 chars-per-token -> 2
+        expect(countTokens("你好世界")).toBe(2);
+        expect(countTokens("你".repeat(15))).toBe(10); // 15 / 1.5
+    });
 });

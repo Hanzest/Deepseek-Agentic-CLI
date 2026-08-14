@@ -4,18 +4,15 @@ import crypto from "crypto";
 import zlib from "zlib";
 import { createToolHandler } from "./template.js";
 import { reconstructText, buildTable } from "../lib/pdfLayoutBuilder.js";
+import { extractDocxFile } from "../lib/rag/extractors/docx.js";
+import { extractEpubFile } from "../lib/rag/extractors/epub.js";
+import { extractRtfFile } from "../lib/rag/extractors/rtf.js";
+import { extractHtmlFile } from "../lib/rag/extractors/html.js";
+import { sanitizeText } from "../lib/rag/extractors/sanitize.js";
 
 // ---------------------------------------------------------------------------
 // Dynamic imports for document parsers (lazy-loaded only when needed)
 // ---------------------------------------------------------------------------
-let mammoth = null;
-async function getMammoth() {
-    if (!mammoth) {
-        mammoth = await import("mammoth");
-    }
-    return mammoth;
-}
-
 let pdfjsLib = null;
 async function getPdfJs() {
     if (!pdfjsLib) {
@@ -32,7 +29,7 @@ export const extract_content_schema = {
     function: {
         name: "extract_content",
         description:
-            "Extracts text content from .docx (Word) and .pdf documents. " +
+            "Extracts text content from .docx (Word), .pdf, .epub, .rtf and .html documents. " +
             "Returns structured JSON with the extracted text as Markdown-compatible content. " +
             "Supports optional page range filtering for PDFs and max_chars truncation. " +
             "When auto_paginate is enabled with max_chars>0, the tool automatically " +
@@ -46,7 +43,7 @@ export const extract_content_schema = {
                 file_path: {
                     type: "string",
                     description:
-                        "Absolute or relative path to the .docx or .pdf file to extract content from.",
+                        "Absolute or relative path to the document (.docx, .pdf, .epub, .rtf, .html) to extract content from.",
                 },
                 max_chars: {
                     type: "integer",
@@ -98,11 +95,14 @@ function resolvePath(filePath) {
 /**
  * Determine document type from file extension.
  * @param {string} ext - Lowercase file extension.
- * @returns {"docx" | "pdf" | null}
+ * @returns {"docx" | "pdf" | "epub" | "rtf" | "html" | null}
  */
 function getFileType(ext) {
     if (ext === ".docx") return "docx";
     if (ext === ".pdf") return "pdf";
+    if (ext === ".epub") return "epub";
+    if (ext === ".rtf") return "rtf";
+    if (ext === ".html" || ext === ".htm" || ext === ".xhtml") return "html";
     return null;
 }
 
@@ -209,20 +209,9 @@ function computeContentHash(content) {
  */
 
 // ---------------------------------------------------------------------------
-// DOCX Extraction
+// DOCX extraction now lives in lib/rag/extractors/docx.js (shared with the RAG
+// watcher): mammoth primary + XXE-guarded stdlib fallback.
 // ---------------------------------------------------------------------------
-
-/**
- * Extract text from a .docx file using mammoth.
- * @param {string} filePath
- * @returns {Promise<string>} Extracted plain text.
- */
-async function extractDocx(filePath) {
-    const mammothModule = await getMammoth();
-    const buffer = fs.readFileSync(filePath);
-    const result = await mammothModule.extractRawText({ buffer });
-    return result.value;
-}
 
 // ---------------------------------------------------------------------------
 // PDF Extraction (using pdfjs-dist directly)
@@ -343,7 +332,7 @@ async function extractContentCore({
     if (!fileType) {
         return buildError(
             toolName,
-            `Unsupported file extension '${ext}'. Only .docx and .pdf files are supported.`
+            `Unsupported file extension '${ext}'. Supported: .docx, .pdf, .epub, .rtf, .html.`
         );
     }
 
@@ -353,10 +342,10 @@ async function extractContentCore({
         let metadata = {};
 
         if (fileType === "docx") {
-            content = await extractDocx(resolvedPath);
+            content = await extractDocxFile(resolvedPath);
             // E5: page_count for DOCX — reads authoritative <Pages> from docProps/app.xml
             metadata.page_count = getDocxPageCount(resolvedPath, content);
-        } else {
+        } else if (fileType === "pdf") {
             // PDF
             const pageStartNum = page_start && page_start > 0 ? page_start : 1;
             const pageEndNum = page_end && page_end > 0 ? page_end : undefined;
@@ -370,7 +359,17 @@ async function extractContentCore({
             content = result.text;
             metadata.page_count = result.pageCount;
             metadata.truncated_at_page = result.truncatedAtPage;
+        } else {
+            // EPUB / RTF / HTML — shared extractors (no page-range support)
+            if (fileType === "epub") content = await extractEpubFile(resolvedPath);
+            else if (fileType === "rtf") content = await extractRtfFile(resolvedPath);
+            else content = await extractHtmlFile(resolvedPath);
         }
+
+        // Security: strip invisible Unicode code points (zero-width spacers,
+        // bidi controls, Unicode tag block) that can hide prompt injection in
+        // extracted documents — same sanitization the watcher applies.
+        content = sanitizeText(content ?? "");
 
         // 5. Handle auto-pagination (E1)
         //    When auto_paginate is true and max_chars > 0, the tool internally

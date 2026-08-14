@@ -30,7 +30,7 @@ node main.js
 | `knowledge/` | Permanent reference — skills, handbooks, docs you always want available | Instantly (~1 second) |
 | `workspace/` | Active working files — notes, drafts, scratch material | On next app start (or run `/rag reindex`) |
 
-**Supported file types:** `.md .txt .pdf .docx .py .js .ts .go .cpp .json .yaml .yml .log`
+**Supported file types:** `.md .txt .pdf .docx .epub .rtf .html .htm .xhtml .py .js .ts .go .cpp .json .yaml .yml .log`
 
 > 💡 **Tip:** long-lived reference → `knowledge/`. Things you're actively editing → `workspace/`.
 
@@ -119,3 +119,32 @@ node main.js
 - **Sandbox mode** — set the environment variable `RAG_ROOT` to an absolute path to make RAG use that folder instead of the repo (useful for experiments that must not touch your real index).
 - **No side effects** — the internal index lives in `.rag/` and never pollutes your `knowledge/` folder.
 - **Optional config** — most people never need it, but settings live in `.rag/config.json` (watched folders, model, thresholds, watcher timing). See `RAG_MODEL_MIGRATION.md` and `RAG-requirement.md` in the repo root for deeper reference.
+
+---
+
+## 7. Document extraction & security
+
+The RAG indexer extracts text from documents through a shared extraction layer
+(`lib/rag/extractors/`, ported from the [book-to-skill](https://github.com/virgiliojr94/book-to-skill)
+project and used by both the background watcher and the `extract_content` tool).
+
+**Format handling:**
+
+| Format | How it is parsed |
+|---|---|
+| `.md .txt` (+ code/config) | Read directly as UTF-8 (BOM-aware; UTF-16/32 detected) |
+| `.pdf` | `pdfjs` text layer + layout reconstruction, then boilerplate cleanup — repeated running headers/footers and edge page numbers are stripped, and words split across a line by a hyphen are joined |
+| `.docx` | `mammoth` first, falling back to a built-in XML parser; both paths run an XXE guard that refuses archives containing `DOCTYPE`/`ENTITY` declarations |
+| `.epub` | Built-in ZIP reader → OPF package → chapters extracted in **spine (reading) order** |
+| `.rtf` | Built-in parser: metadata tables (`\fonttbl`, `\info`, `\pict`, …) dropped, `\uN` escapes decoded |
+| `.html/.htm/.xhtml` | `script`/`style`/`head` skipped; block elements become line breaks, table cells are tab-joined |
+
+**Prompt-injection defense:** every indexed file is sanitized **before chunking**.
+Invisible Unicode code points that can hide malicious instructions — zero-width
+spacers, bidirectional formatting controls (the "Trojan Source" class,
+CVE-2021-42574), invisible letters, and the Unicode tag block (U+E0000–U+E007F) —
+are stripped so what the model retrieves matches what a human sees.
+
+> 💡 To index a book: drop the `.epub`/`.pdf`/`.docx`/`.rtf`/`.html` file into
+> `knowledge/` and ask about it. The `extract_content` tool supports the same
+> formats for one-off reads.
