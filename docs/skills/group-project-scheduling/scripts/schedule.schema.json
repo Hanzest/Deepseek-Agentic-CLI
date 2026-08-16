@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "group-project-scheduling-schema",
+  "title": "Group-Project Schedule",
+  "description": "Input for scripts/generate-schedule.js. Deadlines are anchored to final_deadline: the agent (or the generator with --compute-deadlines) derives intermediate deadlines from final_deadline − today — each task's deadline = today + (complexityWeight / maxWeight) × (window × 0.8), so easy tasks (L1=1) get short deadlines and heavy tasks (L3=3) get extended ones. All intermediate deadlines lie strictly between today and final_deadline.",
+  "type": "object",
+  "required": ["title", "phases"],
+  "properties": {
+    "title": { "type": "string", "description": "Title shown in the dark-red title bar, e.g., 'KẾ HOẠCH LÀM VIỆC NHÓM 3 – MIS'" },
+    "subtitle": { "type": "string", "description": "Optional subtitle/instruction line under the title." },
+    "today": { "type": "string", "format": "date", "description": "Anchor date (YYYY-MM-DD). Defaults to the generation date when omitted." },
+    "final_deadline": { "type": "string", "format": "date", "description": "Hard outer bound (YYYY-MM-DD). Required when any task relies on computed deadlines." },
+    "final_deadline_time": { "type": "string", "description": "Optional time text for the final deadline string, e.g., '23h00 ngày 29/05/2026'." },
+    "phases": {
+      "type": "array",
+      "description": "Ordered phases; each renders as a navy merged phase-header row followed by its task rows.",
+      "items": {
+        "type": "object",
+        "required": ["name", "tasks"],
+        "properties": {
+          "name": { "type": "string", "description": "Phase header text, e.g., 'Giai đoạn 1 – Tổng quan, lý thuyết và phân tích hiện trạng'." },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "task"],
+              "properties": {
+                "id": { "type": ["integer", "string"], "description": "Task ID (column ID)." },
+                "nhiemVu": { "type": "string", "description": "Nhiệm vụ / role group label (bold, often merged vertically)." },
+                "task": { "type": "string", "description": "Task cụ thể — specific deliverable description." },
+                "pic": { "type": ["string", "array"], "description": "PIC name(s). Array renders as comma-joined." },
+                "deadline": { "type": "string", "description": "Explicit deadline string, e.g., '23h59 ngày 20/04/2026'. When omitted, computed from final_deadline − today by complexity." },
+                "deadline_time": { "type": "string", "description": "Time-of-day prefix for computed deadlines, e.g., '23h59'. Default '23h59'." },
+                "complexity": { "enum": ["L1", "L2", "L3"], "description": "L1 easy = 1, L2 medium = 2, L3 heavy = 3 weight for deadline allocation. Required for computed deadlines." },
+                "tienDo": { "type": "string", "description": "Tiến độ — progress notes (free text)." },
+                "trangThai": { "enum": ["Chưa bắt đầu", "Đang thực hiện", "Hoàn thành", "Trễ hạn"], "default": "Chưa bắt đầu", "description": "Trạng thái status." },
+                "xemXet": { "type": "string", "description": "xem xét — review/QA note." },
+                "notes": { "type": "string", "description": "Notes, e.g., dependency 'Chọn phần này thì viết luôn phần ID 14'." },
+                "highlight": { "type": "boolean", "description": "true → full row yellow fill FFFFD966 (priority/vote rows)." },
+                "milestone": { "type": "boolean", "description": "true → full row red fill FFFF0000, white bold text (final submission / milestone)." },
+                "height": { "type": "number", "description": "Optional row height (points)." }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

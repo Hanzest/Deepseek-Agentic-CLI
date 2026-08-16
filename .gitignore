@@ -15,3 +15,10 @@ z_secrets
 image
 z_swe/fix_docs/*
 z_swe/Knight_CLI/*
+work_dir/*
+
+# RAG runtime data (auto-created)
+.rag/
+knowledge/
+workspace/
+work_dir/

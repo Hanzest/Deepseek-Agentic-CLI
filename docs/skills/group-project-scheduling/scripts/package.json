@@ -1,0 +1,10 @@
+{
+  "name": "group-project-scheduling-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-contained xlsx generator for the group-project-scheduling skill. Isolated from the repo root dependency tree (which has an unrelated peer-dep conflict).",
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}

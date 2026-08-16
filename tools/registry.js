@@ -42,6 +42,10 @@ import {
     extract_content_schema,
     extract_content,
 } from "./extractContent.js";
+import {
+    rag_search_schema,
+    rag_search,
+} from "./ragSearch.js";
 
 import { callToolsInBatch } from "./callToolsInBatch.js";
 import { getRoleEntry, VALID_ROLES } from "./roleSystemPrompts.js";
@@ -65,6 +69,7 @@ export const ALL_TOOLS = {
     multi_file_search_string: [multi_file_search_string_schema, multi_file_search_string],
     extract_content: [extract_content_schema, extract_content],
     delegate_sub_agents: [delegate_sub_agents_schema, delegate_sub_agents],
+    rag_search: [rag_search_schema, rag_search],
 };
 
 // ---------------------------------------------------------------------------
@@ -83,6 +88,7 @@ export const ORCHESTRATOR_TOOLS = {
     fetch_url: [fetch_url_schema, fetch_url, false],
     extract_content: [extract_content_schema, extract_content, false],
     delegate_sub_agents: [delegate_sub_agents_schema, delegate_sub_agents, false],
+    rag_search: [rag_search_schema, rag_search, false],
 };
 
 // ---------------------------------------------------------------------------

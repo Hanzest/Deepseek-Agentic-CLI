@@ -1,0 +1,146 @@
+{
+  "title": "KẾ HOẠCH LÀM VIỆC NHÓM 3 — MIS (Hệ thống thông tin quản lý)",
+  "subtitle": "Lịch trình được tính từ hạn nộp cuối cùng (23h00 ngày 29/05/2026) — thời hạn từng việc phân bổ theo độ nặng (L1 nhẹ / L2 trung bình / L3 nặng) kèm ~20% đệm. Không đặt deadline gấp gáp.",
+  "today": "2026-05-01",
+  "final_deadline": "2026-05-29",
+  "final_deadline_time": "23h00 ngày 29/05/2026",
+  "phases": [
+    {
+      "name": "Giai đoạn 1 — Tổng quan, lý thuyết và phân tích hiện trạng",
+      "tasks": [
+        {
+          "id": 1,
+          "nhiemVu": "Quản lý tiến độ và rà soát chất lượng nội dung nhóm",
+          "task": "Viết 1.1 + Vẽ BPMN 2.1 và 3.2.1",
+          "pic": "Phương",
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chọn phần này thì viết luôn phần ID 14"
+        },
+        {
+          "id": 2,
+          "nhiemVu": "Viết Chương 1",
+          "task": "1.2; 1.3 — Tổng quan lý thuyết",
+          "pic": "Trân",
+          "complexity": "L3",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": ""
+        },
+        {
+          "id": 3,
+          "nhiemVu": "Viết Chương 2",
+          "task": "2.2; 2.3.1; 2.3.2 — Phân tích hiện trạng",
+          "pic": "Huyền",
+          "complexity": "L3",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chọn phần này thì viết luôn phần ID 11"
+        },
+        {
+          "id": 4,
+          "nhiemVu": "Viết Chương 3",
+          "task": "3.2.2; 3.2.3 — Khảo sát và dữ liệu (riêng 3.2.x hoàn thành trước 23h59 ngày 07/05/2026)",
+          "pic": "Xuyến",
+          "complexity": "L3",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chọn phần này thì viết luôn phần ID 09"
+        },
+        {
+          "id": 5,
+          "nhiemVu": "Viết Chương 3 (tiếp)",
+          "task": "3.2.4 — Phân tích dữ liệu",
+          "pic": "Thùy",
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chọn phần này thì viết luôn phần ID 10"
+        }
+      ]
+    },
+    {
+      "name": "Giai đoạn 2 — Đề xuất MIS và triển khai hệ thống",
+      "tasks": [
+        {
+          "id": 6,
+          "nhiemVu": "Viết Chương 4",
+          "task": "4.1.1 + vẽ dashboard tương ứng (1 cái); 4.2",
+          "pic": "Xuyến",
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chương 4: 23h59 ngày 26/05/2026"
+        },
+        {
+          "id": 7,
+          "nhiemVu": "Viết Chương 5",
+          "task": "5.1; 5.2; 5.3 — Thiết kế và kiến trúc hệ thống",
+          "pic": ["Huyền", "Trâm", "Nhi"],
+          "complexity": "L3",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chương 5: 21h00 ngày 27/05/2026"
+        },
+        {
+          "id": 8,
+          "nhiemVu": "Viết Chương 6",
+          "task": "6.2; 6.3 — Triển khai và đánh giá",
+          "pic": "Trân",
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Chương 6: 23h59 ngày 28/05/2026"
+        }
+      ]
+    },
+    {
+      "name": "Giai đoạn 3 — Chuẩn bị slide, vote và thuyết trình online",
+      "tasks": [
+        {
+          "id": 9,
+          "nhiemVu": "Vote chọn ý tưởng poster quảng cáo",
+          "task": "Vote chọn ý tưởng cuối cùng trên Zalo",
+          "pic": "Tất cả",
+          "complexity": "L1",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "highlight": true,
+          "notes": "Quyết định trước khi làm slide"
+        },
+        {
+          "id": 10,
+          "nhiemVu": "Chuẩn bị slide",
+          "task": "Thiết kế slide + script thuyết trình",
+          "pic": ["Thùy", "Nhi", "Phương", "Trâm", "Huyền", "Trân", "Xuyến"],
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Deadline script: 23h59 ngày 28/05/2026"
+        },
+        {
+          "id": 11,
+          "nhiemVu": "Thuyết trình online + duyệt",
+          "task": "Duyệt thuyết trình 20h00 ngày 29/05/2026 (MS Team)",
+          "pic": "Tất cả",
+          "complexity": "L2",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "notes": "Mỗi nhóm 10–15 phút, quá giờ trừ 0.5 điểm/phút"
+        },
+        {
+          "id": 12,
+          "nhiemVu": "NỘP BÀI CUỐI KỲ",
+          "task": "Nộp báo cáo đồ án nhóm cuối kỳ online",
+          "pic": "Phương",
+          "deadline": "23h00 ngày 29/05/2026",
+          "tienDo": "",
+          "trangThai": "Chưa bắt đầu",
+          "milestone": true,
+          "notes": "Trễ hạn bị 0 điểm — hạn cứng tuyệt đối"
+        }
+      ]
+    }
+  ]
+}
