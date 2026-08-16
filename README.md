@@ -491,3 +491,7 @@ Available skill domains:
 - **Web Research** — web research methodology & tooling
 
 See `docs/README.md` for SKILL.md authoring guidelines.
+
+## Acknowledgments
+
+* Data extraction logic adapted from [`virgiliojr94`](https://github.com/virgiliojr94) (MIT License).
