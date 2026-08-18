@@ -38,8 +38,17 @@ describe('rag config defaults', () => {
     expect(cfg.thresholds.max_retries).toBe(2);
     expect(cfg.tokenizer.safety_buffer_ratio).toBe(0.1);
     expect(cfg.watcher.debounce_ms).toBe(700);
-    // Live watching is restricted to knowledge/ — workspace never triggers ONNX.
-    expect(cfg.watcher.active_layers).toEqual(["knowledge"]);
+    // Both layers are live-watched: knowledge/ (reference + skills) and
+    // workspace/ (the user's live project at the launch directory).
+    expect(cfg.watcher.active_layers).toEqual(["knowledge", "workspace"]);
+    // Watched roots are arrays (multi-root); workspace points at the live CWD.
+    expect(Array.isArray(cfg.watched.knowledge)).toBe(true);
+    expect(Array.isArray(cfg.watched.workspace)).toBe(true);
+    expect(cfg.watched.workspace).toContain(process.cwd());
+    // Skills are NOT indexed by RAG (matched by name via the skill registry).
+    expect(cfg.watched.knowledge.some((r) => r.includes('docs') && r.includes('skills'))).toBe(false);
+    // Index schema version is tracked so stale caches rebuild automatically.
+    expect(cfg.index.schemaVersion).toBe(3);
     // Model stack defaults: FastEmbed e5-small + FlashRank MultiBERT.
     expect(cfg.embedding.model).toBe('intfloat/multilingual-e5-small');
     expect(cfg.embedding.quantize).toBe(true);
@@ -57,6 +66,20 @@ describe('rag config defaults', () => {
     expect(cfg.thresholds.max_retries).toBe(2);
     expect(cfg.tokenizer.safety_buffer_ratio).toBe(0.1);
     expect(cfg.watcher.debounce_ms).toBe(700);
+  });
+
+  it('normalizes legacy single-string watched roots to arrays', () => {
+    fs.mkdirSync(ragDir, { recursive: true });
+    fs.writeFileSync(
+      configFile,
+      JSON.stringify({ watched: { knowledge: '/legacy/knowledge', workspace: '/legacy/ws' } }),
+      'utf8'
+    );
+    const cfg = loadConfig();
+    expect(Array.isArray(cfg.watched.knowledge)).toBe(true);
+    expect(cfg.watched.knowledge).toEqual(['/legacy/knowledge']);
+    expect(Array.isArray(cfg.watched.workspace)).toBe(true);
+    expect(cfg.watched.workspace).toEqual(['/legacy/ws']);
   });
 });
 
@@ -80,10 +103,11 @@ describe('rag getConfig / ensureDirs', () => {
   it('ensureDirs does not throw and creates the .rag directory', () => {
     expect(() => ensureDirs()).not.toThrow();
     expect(fs.existsSync(ragDir)).toBe(true);
-    // The knowledge/workspace watcher dirs as well as lancedb/models.
+    // Every watched root (multi-root arrays) plus lancedb/models.
     const cfg = loadConfig();
-    expect(fs.existsSync(cfg.watched.knowledge)).toBe(true);
-    expect(fs.existsSync(cfg.watched.workspace)).toBe(true);
+    for (const root of Object.values(cfg.watched).flat()) {
+      expect(fs.existsSync(root), root).toBe(true);
+    }
     expect(fs.existsSync(path.join(ragDir, 'lancedb'))).toBe(true);
     expect(fs.existsSync(path.join(ragDir, 'models'))).toBe(true);
   });

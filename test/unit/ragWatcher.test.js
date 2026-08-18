@@ -133,7 +133,7 @@ describe('watcher knowledge-only indexing + persistent cache', () => {
         await watcher2.stop();
     });
 
-    it('chokidar watch roots are restricted to knowledge/ only', async () => {
+    it('chokidar watches all active layer roots (knowledge + live project)', async () => {
         const { default: watcher } = await import('../../lib/rag/watcher.js');
         await watcher.start({
             onStatus: null,
@@ -145,7 +145,12 @@ describe('watcher knowledge-only indexing + persistent cache', () => {
         const chokidarMock = await import('chokidar');
         expect(chokidarMock.watch).toHaveBeenCalled();
         const [roots] = chokidarMock.watch.mock.calls[0];
-        expect(roots).toHaveLength(1); // only knowledge/
-        expect(path.normalize(roots[0])).toBe(path.normalize(path.join(tmpRoot, 'knowledge')));
+        // Sandbox (RAG_ROOT set): knowledge/ + workspace are created by
+        // ensureDirs and both are live-watched. Skills are NOT indexed (the
+        // skill registry matches them by name instead).
+        const normalized = roots.map((r) => path.normalize(r)).sort();
+        expect(normalized).toHaveLength(2);
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'knowledge')));
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'workspace')));
     });
 });

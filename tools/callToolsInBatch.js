@@ -17,6 +17,9 @@
 import { resetAlertCounter } from "./template.js";
 import { createPolicyEngine, modeGatePolicy, MUTATION_BLOCKED_TOOLS } from "../lib/policyEngine.js";
 import { C, colorize } from "../lib/colors.js";
+import { recordRead, invalidate } from "../lib/sessionMemory.js";
+import fs from "node:fs";
+import path from "node:path";
 
 // ---------------------------------------------------------------------------
 // Policy Engine singleton — pluggable guardrail pipeline.
@@ -33,9 +36,34 @@ const READ_ONLY_CACHED_TOOLS = new Set([
 ]);
 
 const readOnlyCache = new Map();
+/** Cap on cached entries; evicts the oldest (insertion order) beyond this. */
+const READ_CACHE_MAX = 500;
+
+function cacheSet(key, value) {
+    readOnlyCache.set(key, value);
+    if (readOnlyCache.size > READ_CACHE_MAX) {
+        const oldest = readOnlyCache.keys().next().value;
+        if (oldest !== undefined) readOnlyCache.delete(oldest);
+    }
+}
 
 export function clearReadOnlyCache() {
     readOnlyCache.clear();
+}
+
+/**
+ * Extract a short human summary from a read_file_chunk result: the first
+ * non-empty content line (line-number prefix and --- markers stripped).
+ * @param {string} content - Raw tool result.
+ * @returns {string} Summary (≤120 chars) or ''.
+ */
+function summarizeChunk(content) {
+    if (typeof content !== "string") return "";
+    for (const raw of content.split("\n")) {
+        const line = raw.replace(/^\s*\d+\|\s*/, "").trim();
+        if (line && !line.startsWith("---")) return line.slice(0, 120);
+    }
+    return "";
 }
 
 const W = 56; // separator width
@@ -315,6 +343,11 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
             const ms = performance.now() - start;
             timings.push({ name: p.name, ms, index });
             result = compressToolResult(p.name, result);
+            // Mutation tools invalidate the session file-memory entry for the
+            // touched file so stale "already read" summaries are never reused.
+            if ((p.name === "write_or_create_file" || p.name === "patch_file") && p.args?.file_path) {
+                try { invalidate(path.resolve(p.args.file_path)); } catch { /* ignore */ }
+            }
             return result;
         };
 
@@ -342,8 +375,23 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
         if (READ_ONLY_CACHED_TOOLS.has(p.name)) {
             const cacheKey = `${p.name}:${JSON.stringify(p.args)}`;
             return (async () => {
+                // read_file_chunk caches are invalidated when the file's mtime
+                // changes on disk (external edits); other cached tools rely on
+                // mutation-tool clearing (see timedHandler).
+                if (p.name === "read_file_chunk" && p.args?.file_path) {
+                    try {
+                        const st = fs.statSync(p.args.file_path);
+                        const hit = readOnlyCache.get(cacheKey);
+                        if (hit && hit.__mtimeMs !== undefined && hit.__mtimeMs !== st.mtimeMs) {
+                            readOnlyCache.delete(cacheKey);
+                        }
+                    } catch {
+                        readOnlyCache.delete(cacheKey);
+                    }
+                }
                 if (readOnlyCache.has(cacheKey)) {
-                    const cachedResult = readOnlyCache.get(cacheKey);
+                    const cached = readOnlyCache.get(cacheKey);
+                    const cachedResult = cached && cached.__content !== undefined ? cached.__content : cached;
                     timings.push({ name: p.name, ms: 0, index });
                     return {
                         role: "tool",
@@ -353,7 +401,24 @@ export async function callToolsInBatch(tool_calls, TOOL_REGISTRY, messages, agen
                     };
                 }
                 const content = await timedHandler();
-                readOnlyCache.set(cacheKey, content);
+                if (p.name === "read_file_chunk" && p.args?.file_path) {
+                    try {
+                        const st = fs.statSync(p.args.file_path);
+                        cacheSet(cacheKey, { __mtimeMs: st.mtimeMs, __content: content });
+                        // Record into session file-memory so the model knows this
+                        // file is already loaded (token savings across turns).
+                        const lines = Math.max(1, (Number(p.args.end_line) || 0) - (Number(p.args.start_line) || 0) + 1);
+                        recordRead(p.args.file_path, {
+                            mtimeMs: st.mtimeMs,
+                            lines,
+                            summary: summarizeChunk(content),
+                        });
+                    } catch {
+                        cacheSet(cacheKey, content);
+                    }
+                } else {
+                    cacheSet(cacheKey, content);
+                }
                 return {
                     role: "tool",
                     tool_call_id: p.id,

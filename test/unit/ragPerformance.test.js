@@ -136,8 +136,8 @@ describe('Pillar 2 — keyword zero-ONNX fast path', () => {
     });
 });
 
-describe('Pillar 3 — watcher watches knowledge/ only', () => {
-    it('restricts chokidar roots to knowledge/ (workspace/ is ignored)', async () => {
+describe('Pillar 3 — watcher watches all active layers', () => {
+    it('watches knowledge/ + workspace (live project) roots', async () => {
         fs.mkdirSync(path.join(tmpRoot, 'knowledge'), { recursive: true });
         fs.writeFileSync(path.join(tmpRoot, 'knowledge', 'k.md'), '# K\n\ntext', 'utf8');
         fs.mkdirSync(path.join(tmpRoot, 'workspace'), { recursive: true });
@@ -153,8 +153,10 @@ describe('Pillar 3 — watcher watches knowledge/ only', () => {
         const chokidarModule = await import('chokidar');
         expect(chokidarModule.watch).toHaveBeenCalled();
         const [roots] = chokidarModule.watch.mock.calls[0];
-        expect(roots).toHaveLength(1);
-        expect(path.normalize(roots[0])).toBe(path.normalize(path.join(tmpRoot, 'knowledge')));
+        const normalized = roots.map((r) => path.normalize(r)).sort();
+        expect(normalized).toHaveLength(2);
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'knowledge')));
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'workspace')));
     });
 });
 

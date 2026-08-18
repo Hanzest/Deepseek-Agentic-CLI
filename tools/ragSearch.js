@@ -16,7 +16,7 @@ export const rag_search_schema = {
   function: {
     name: 'rag_search',
     description:
-      'Search the local RAG knowledge base (knowledge/ + workspace/ layers) and return the most relevant chunks with similarity scores and source locations. Automatically invoked for local file, internal knowledge, and writing-with-references tasks.',
+      'Search the local RAG index (the project working directory + knowledge base: skills, references) and return the most relevant chunks with similarity scores, file paths, and line ranges. Use this to find indexed file content instead of scanning the project tree or re-reading whole files.',
     parameters: {
       type: 'object',
       properties: {
@@ -32,7 +32,8 @@ export const rag_search_schema = {
           type: 'string',
           enum: ['knowledge', 'workspace', 'both'],
           default: 'both',
-          description: 'Which layer to search.',
+          description:
+            'knowledge = curated references + skills; workspace = the live project you launched the CLI from; both = everything.',
         },
         top_k: {
           type: 'integer',
@@ -53,7 +54,7 @@ export const rag_search_schema = {
           enum: ['hybrid', 'keyword', 'dense'],
           default: 'hybrid',
           description:
-            'Retrieval mode: hybrid (dense + BM25 + rerank, default), keyword (pure in-memory BM25 fast-path, ~2-5ms, zero ONNX CPU), dense (vector-store only).',
+            'Retrieval mode: hybrid (default, best quality), keyword (fast, exact-word), dense (semantic only). Prefer the default unless speed is explicitly requested.',
         },
       },
       required: ['query'],
