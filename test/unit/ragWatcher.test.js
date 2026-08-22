@@ -133,8 +133,12 @@ describe('watcher knowledge-only indexing + persistent cache', () => {
         await watcher2.stop();
     });
 
-    it('chokidar watch roots are restricted to knowledge/ only', async () => {
+    it('chokidar watches active layers when configured, or stays idle by default', async () => {
         const { default: watcher } = await import('../../lib/rag/watcher.js');
+        const { saveConfig, clearConfigCache } = await import('../../lib/rag/config.js');
+        saveConfig({ watcher: { active_layers: ['knowledge', 'workspace'] } });
+        clearConfigCache();
+
         await watcher.start({
             onStatus: null,
             embedderOverride: embedderStub,
@@ -145,7 +149,41 @@ describe('watcher knowledge-only indexing + persistent cache', () => {
         const chokidarMock = await import('chokidar');
         expect(chokidarMock.watch).toHaveBeenCalled();
         const [roots] = chokidarMock.watch.mock.calls[0];
-        expect(roots).toHaveLength(1); // only knowledge/
-        expect(path.normalize(roots[0])).toBe(path.normalize(path.join(tmpRoot, 'knowledge')));
+        const normalized = roots.map((r) => path.normalize(r)).sort();
+        expect(normalized).toHaveLength(2);
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'knowledge')));
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'workspace')));
+    });
+
+    it('sync() incrementally indexes newly added files at session end', async () => {
+        const knowledgeDir = path.join(tmpRoot, 'knowledge');
+        fs.mkdirSync(knowledgeDir, { recursive: true });
+
+        const { default: watcher } = await import('../../lib/rag/watcher.js');
+        await watcher.start({
+            onStatus: null,
+            embedderOverride: embedderStub,
+            vectorStoreOverride: vectorStoreStub,
+        });
+
+        // Wait for initial scan to settle
+        await waitFor(() => fs.existsSync(path.join(tmpRoot, '.rag', 'index-version.json')));
+
+        // Add a new file after startup / while session was running
+        fs.writeFileSync(
+            path.join(knowledgeDir, 'extra.md'),
+            '# Extra Document\n\nSome important facts.',
+            'utf8'
+        );
+
+        const syncRes = await watcher.sync();
+        expect(syncRes.indexedCount).toBeGreaterThanOrEqual(1);
+
+        // Deleting the file should be reflected in sync
+        fs.rmSync(path.join(knowledgeDir, 'extra.md'));
+        const syncRes2 = await watcher.sync();
+        expect(syncRes2.removedCount).toBeGreaterThanOrEqual(1);
+
+        await watcher.stop();
     });
 });

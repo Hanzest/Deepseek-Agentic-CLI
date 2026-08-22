@@ -22,10 +22,13 @@ describe('parseRagMode', () => {
 });
 
 describe('stripRagTag', () => {
-  it('detects and strips @rag, @rag:keyword, @rag:exact prefixes', () => {
+  it('detects and strips @rag and @rag:keyword prefixes', () => {
     expect(stripRagTag('@rag how do I deploy?')).toEqual({ text: 'how do I deploy?', tag: 'manual' });
     expect(stripRagTag('@rag:keyword auth api')).toEqual({ text: 'auth api', tag: 'keyword' });
-    expect(stripRagTag('@rag:exact timeout policy')).toEqual({ text: 'timeout policy', tag: 'exact' });
+  });
+
+  it('treats the removed @rag:exact suffix as untagged (no false exact semantics)', () => {
+    expect(stripRagTag('@rag:exact timeout policy')).toEqual({ text: '@rag:exact timeout policy', tag: null });
   });
 
   it('leaves untagged text untouched (tag must be a prefix)', () => {
@@ -54,16 +57,11 @@ describe('resolveRagSearch', () => {
     });
   });
 
-  it('keyword/exact tags force the keyword fast-path', () => {
+  it('keyword tags force the keyword fast-path', () => {
     const kw = resolveRagSearch({ ragMode: 'manual', tag: 'keyword' });
     expect(kw.enabled).toBe(true);
     expect(kw.force).toBe(true);
     expect(kw.search_mode).toBe('keyword');
-
-    const ex = resolveRagSearch({ ragMode: 'auto', tag: 'exact' });
-    expect(ex.enabled).toBe(true);
-    expect(ex.force).toBe(true);
-    expect(ex.search_mode).toBe('keyword');
   });
 
   it('off mode wins even with an explicit tag', () => {

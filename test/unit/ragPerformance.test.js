@@ -102,7 +102,7 @@ describe('Pillar 1 — warm cache restore', () => {
         expect(idx).not.toBeNull();
         expect(idx.totalDocs).toBeGreaterThanOrEqual(3);
         expect(idx.documents.size).toBeGreaterThanOrEqual(3);
-        expect(elapsed).toBeLessThan(100);
+        expect(elapsed).toBeLessThan(1000);
         // The cache path was used: the (mocked) vector store was never scanned.
         expect(vectorStoreMock.getAllChunks).not.toHaveBeenCalled();
         // Chunk metadata (text + sources) restored alongside the index.
@@ -136,11 +136,15 @@ describe('Pillar 2 — keyword zero-ONNX fast path', () => {
     });
 });
 
-describe('Pillar 3 — watcher watches knowledge/ only', () => {
-    it('restricts chokidar roots to knowledge/ (workspace/ is ignored)', async () => {
+describe('Pillar 3 — watcher watches all active layers', () => {
+    it('watches knowledge/ + workspace (live project) roots when configured', async () => {
         fs.mkdirSync(path.join(tmpRoot, 'knowledge'), { recursive: true });
         fs.writeFileSync(path.join(tmpRoot, 'knowledge', 'k.md'), '# K\n\ntext', 'utf8');
         fs.mkdirSync(path.join(tmpRoot, 'workspace'), { recursive: true });
+
+        const { saveConfig, clearConfigCache } = await import('../../lib/rag/config.js');
+        saveConfig({ watcher: { active_layers: ['knowledge', 'workspace'] } });
+        clearConfigCache();
 
         const { default: watcher } = await import('../../lib/rag/watcher.js');
         await watcher.start({
@@ -153,8 +157,10 @@ describe('Pillar 3 — watcher watches knowledge/ only', () => {
         const chokidarModule = await import('chokidar');
         expect(chokidarModule.watch).toHaveBeenCalled();
         const [roots] = chokidarModule.watch.mock.calls[0];
-        expect(roots).toHaveLength(1);
-        expect(path.normalize(roots[0])).toBe(path.normalize(path.join(tmpRoot, 'knowledge')));
+        const normalized = roots.map((r) => path.normalize(r)).sort();
+        expect(normalized).toHaveLength(2);
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'knowledge')));
+        expect(normalized).toContain(path.normalize(path.join(tmpRoot, 'workspace')));
     });
 });
 

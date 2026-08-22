@@ -11,6 +11,7 @@
     "today": { "type": "string", "format": "date", "description": "Anchor date (YYYY-MM-DD). Defaults to the generation date when omitted." },
     "final_deadline": { "type": "string", "format": "date", "description": "Hard outer bound (YYYY-MM-DD). Required when any task relies on computed deadlines." },
     "final_deadline_time": { "type": "string", "description": "Optional time text for the final deadline string, e.g., '23h00 ngày 29/05/2026'." },
+    "columns": { "type": "array", "description": "Optional custom column set, rendered left-to-right in the header row. Defaults to the 9 template columns. Each item must be one of the template column names.", "items": { "enum": ["Nhiệm vụ", "ID", "Task cụ thể", "PIC", "Deadline", "Tiến độ", "Trạng thái", "xem xét", "Notes"] } },
     "phases": {
       "type": "array",
       "description": "Ordered phases; each renders as a navy merged phase-header row followed by its task rows.",

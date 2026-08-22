@@ -23,16 +23,26 @@ node main.js
 
 ---
 
-## 2. Where to put your files
+## 2. What gets indexed
 
-| Folder | Purpose | When updates appear |
+| Source | Purpose | When updates appear |
 |---|---|---|
-| `knowledge/` | Permanent reference — skills, handbooks, docs you always want available | Instantly (~1 second) |
-| `workspace/` | Active working files — notes, drafts, scratch material | On next app start (or run `/rag reindex`) |
+| `knowledge/` | Permanent reference — handbooks, docs you always want available | Instantly (~1 second) |
+| **Your project** — the folder you launch the CLI from | Active working files, source code, notes | Instantly (~1 second) |
+
+**Skills are NOT indexed by RAG** — they are matched by exact name from a built-in list
+(`docs/skills/`), so the assistant picks the right `SKILL.md` instantly without a fuzzy search.
+
+There is no separate `workspace/` folder to maintain: the CLI indexes your **live project**
+(the working directory at launch), honoring `.gitignore` + `.ragignore`. Edit a file and it is
+re-indexed automatically — no manual `/rag reindex` for normal edits.
 
 **Supported file types:** `.md .txt .pdf .docx .epub .rtf .html .htm .xhtml .py .js .ts .go .cpp .json .yaml .yml .log`
 
-> 💡 **Tip:** long-lived reference → `knowledge/`. Things you're actively editing → `workspace/`.
+> Lockfiles (`package-lock.json`, `yarn.lock`, ...), `node_modules`, `.env`, build output,
+> `chat_history/` and `artifacts/` are excluded automatically.
+
+> 💡 **Tip:** long-lived reference → `knowledge/`. Everything else → just work in your project normally.
 
 ---
 
@@ -97,10 +107,8 @@ node main.js
 1. Drop `policy.pdf` into `knowledge/`
 2. Wait ~1 second, then ask about it.
 
-**Workspace file changed:**
-```powershell
-/rag reindex       # pick up workspace/ changes immediately
-```
+**Editing files in your project:** changes are picked up automatically (~1 second). If something
+seems stale, run `/rag reindex` to force a full rebuild.
 
 **Nothing found?**
 ```powershell
@@ -115,7 +123,9 @@ node main.js
 ## 6. Tips
 
 - **Keep it organized** — clearly named, folder-structured files give better results.
-- **Sensitive files?** Create a `.ragignore` file inside `knowledge/` (or `workspace/`) listing patterns to skip, e.g. `secrets/`. Files like `.env`, `node_modules`, `.git`, `chat_history/`, and `artifacts/` are already excluded automatically.
+- **Sensitive files?** Create a `.ragignore` file inside `knowledge/` (or the project root) listing
+  patterns to skip, e.g. `secrets/`. Files like `.env`, `node_modules`, `.git`, `chat_history/`,
+  `artifacts/`, and lockfiles are already excluded automatically.
 - **Sandbox mode** — set the environment variable `RAG_ROOT` to an absolute path to make RAG use that folder instead of the repo (useful for experiments that must not touch your real index).
 - **No side effects** — the internal index lives in `.rag/` and never pollutes your `knowledge/` folder.
 - **Optional config** — most people never need it, but settings live in `.rag/config.json` (watched folders, model, thresholds, watcher timing). See `RAG_MODEL_MIGRATION.md` and `RAG-requirement.md` in the repo root for deeper reference.
