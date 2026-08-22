@@ -21,8 +21,8 @@ const P = {
   titleText: 'FFF3F3F3',
   border: 'FFBFBFBF',
 };
-const COLUMNS = ['Nhiệm vụ', 'ID', 'Task cụ thể', 'PIC', 'Deadline', 'Tiến độ', 'Trạng thái', 'xem xét', 'Notes'];
-const WIDTHS = [26, 7, 44, 18, 24, 20, 16, 10, 26];
+const DEFAULT_COLUMNS = ['Nhiệm vụ', 'ID', 'Task cụ thể', 'PIC', 'Deadline', 'Tiến độ', 'Trạng thái', 'xem xét', 'Notes'];
+const WIDTH_BY_NAME = { 'Nhiệm vụ': 26, ID: 7, 'Task cụ thể': 44, PIC: 18, Deadline: 24, 'Tiến độ': 20, 'Trạng thái': 16, 'xem xét': 10, Notes: 26 };
 const STATUSES = ['Chưa bắt đầu', 'Đang thực hiện', 'Hoàn thành', 'Trễ hạn'];
 const WEIGHTS = { L1: 1, L2: 2, L3: 3 };
 const BUFFER = 0.2;
@@ -81,10 +81,11 @@ async function main() {
   }
   const sched = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
   const today = computeDeadlines(sched);
+  const COLUMNS = Array.isArray(sched.columns) && sched.columns.length ? sched.columns : DEFAULT_COLUMNS;
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(sched.title ? sched.title.replace(/[\\/?*[\]]/g, '_').slice(0, 31) : 'Lịch trình nhóm');
-  COLUMNS.forEach((_, i) => { ws.getColumn(i + 1).width = WIDTHS[i]; });
+  COLUMNS.forEach((name, i) => { ws.getColumn(i + 1).width = WIDTH_BY_NAME[name] ?? 20; });
   const N = COLUMNS.length;
   let r = 1;
 
@@ -134,28 +135,27 @@ async function main() {
     for (const t of phase.tasks || []) {
       const row = ws.getRow(r);
       row.height = t.height || 34;
-      const values = [
-        t.nhiemVu ?? '',
-        t.id ?? '',
-        t.task ?? '',
-        flatPIC(t.pic),
-        t.deadline ?? '',
-        t.tienDo ?? '',
-        t.trangThai ?? 'Chưa bắt đầu',
-        t.xemXet ?? '',
-        t.notes ?? '',
-      ];
-      values.forEach((v, i) => {
+      const FIELD_MAP = {
+        'Nhiệm vụ': t.nhiemVu ?? '',
+        ID: t.id ?? '',
+        'Task cụ thể': t.task ?? '',
+        PIC: flatPIC(t.pic),
+        Deadline: t.deadline ?? '',
+        'Tiến độ': t.tienDo ?? '',
+        'Trạng thái': t.trangThai ?? 'Chưa bắt đầu',
+        'xem xét': t.xemXet ?? '',
+        Notes: t.notes ?? '',
+      };
+      const deadlineCol = COLUMNS.indexOf('Deadline') + 1;
+      COLUMNS.forEach((name, i) => {
         const cell = ws.getCell(r, i + 1);
-        cell.value = v;
+        cell.value = FIELD_MAP[name] ?? '';
         cell.border = border;
-        cell.alignment = i === 2 || i === 8 ? leftMid : centerMid;
-        cell.font = font(12, i === 0 || i === 3, P.body);
+        cell.alignment = name === 'Task cụ thể' || name === 'Notes' ? leftMid : centerMid;
+        cell.font = font(12, name === 'Nhiệm vụ' || name === 'PIC', P.body);
       });
-      if (t._computed) {
-        // computed deadlines get default body color; explicit ones get red emphasis
-      } else if (t.deadline && !t.milestone) {
-        ws.getCell(r, 5).font = font(12, true, P.red);
+      if (!t._computed && t.deadline && !t.milestone && deadlineCol) {
+        ws.getCell(r, deadlineCol).font = font(12, true, P.red);
       }
       if (t.highlight) {
         for (let i = 1; i <= N; i++) ws.getCell(r, i).fill = fill(P.yellow);

@@ -38,9 +38,10 @@ describe('rag config defaults', () => {
     expect(cfg.thresholds.max_retries).toBe(2);
     expect(cfg.tokenizer.safety_buffer_ratio).toBe(0.1);
     expect(cfg.watcher.debounce_ms).toBe(700);
-    // Both layers are live-watched: knowledge/ (reference + skills) and
-    // workspace/ (the user's live project at the launch directory).
-    expect(cfg.watcher.active_layers).toEqual(["knowledge", "workspace"]);
+    // Real-time watching during chat is disabled by default (active_layers: [])
+    // to avoid background CPU spikes / terminal noise while chatting.
+    // Changes are synchronized at session-end / exit or via /rag sync.
+    expect(cfg.watcher.active_layers).toEqual([]);
     // Watched roots are arrays (multi-root); workspace points at the live CWD.
     expect(Array.isArray(cfg.watched.knowledge)).toBe(true);
     expect(Array.isArray(cfg.watched.workspace)).toBe(true);
